@@ -71,18 +71,18 @@ export default defineConfig([
     },
   },
 ])
+```
 
 ## Development
 
 ### Install dependencies
 ```
-npm instal
+npm install
 ```
 
 ### Start development server
 ```
 npm run dev
-
 ```
 
 ### Build
