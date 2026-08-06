@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: '/magic-catalog/', // Set the base path for the application in github pages
+  base: '/magic_catalog/', // Set the base path for the application in github pages
   plugins: [
     react(),
     VitePWA({
@@ -12,7 +12,7 @@ export default defineConfig({
       manifest: {
         name: 'Magic Catalog',
         short_name: 'MagicCatalog',
-        start_url: '/magic-catalog/',
+        start_url: '/magic_catalog/',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#000000',
