@@ -72,16 +72,92 @@ export default defineConfig([
   },
 ])
 
+## Development
+
+### Install dependencies
+```
+npm instal
 ```
 
-WIP
-Dixie --> IndexedDB
+### Start development server
+```
+npm run dev
+
+```
+
+### Build
+To generate the production build:
+```
+npm run build
+```
+
+### Deploy
+```
+npm run deploy
+```
+
+URL: https://laisolizq.github.io/magic_catalog/
+
+Deploy the PWA automatically every time a commit is pushed to main, especially after merging dev → main.
+
+## PWA Support
+
+To make this project installable on mobile/tablet/desktop, we use:
+
+### Vite Plugin PWA
+This plugin has been installed:
+```
+npm install vite-plugin-pwa --save-dev
+```
+This plugin automatically generates:
+  - manifest.json
+  - service worker
+  - offline caching
+  - “Add to Home Screen” installation prompt
+
+## Future Work (WIP)
+### IndexedDB (Dexie)
+Dexie will be used to store card data offline.
+
+Install:
 ```
 npm install dexie
 ```
 
-Workbox --> service workers 
+### Service Workers (Workbox)
+Workbox will be used for advanced caching strategies.
+
+Install:
 ```
 npm install workbox-window workbox-build
+```
 
+Why Dexie?
+
+Dexie provides a clean, fast, type-safe API on top of IndexedDB, ideal for:
+  - storing thousands of Magic cards
+  - filtering by set, color, type, rarity
+  - caching images
+  - offline-first behavior
+
+Why Workbox?
+
+Workbox simplifies service worker creation and caching strategies:
+  - precaching
+  - runtime caching
+  - offline fallback
+  - image caching
+  - network-first / cache-first strategies
+
+## Project Structure
+
+```
+src/
+  components/     → Reusable UI components
+  pages/          → Page-level views (CardList, CardDetail, etc.)
+  db/             → IndexedDB logic (Dexie)
+  hooks/          → Custom React hooks
+  utils/          → Helpers and utilities
+  styles/         → Global and component styles
+public/
 ```
