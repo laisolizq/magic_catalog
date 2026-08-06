@@ -1,1 +1,1 @@
-if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/magic-catalog/sw.js', { scope: '/magic-catalog/' })})}
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/magic_catalog/sw.js', { scope: '/magic_catalog/' })})}
