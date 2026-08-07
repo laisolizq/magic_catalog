@@ -2,6 +2,9 @@
   "name": "magic_catalog",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
   "forwardPorts": [5173],
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,type=bind,readonly"
+  ],
   "containerEnv": {
     "http_proxy": "${localEnv:http_proxy}",
     "https_proxy": "${localEnv:https_proxy}",
