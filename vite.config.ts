@@ -4,6 +4,16 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   base: '/magic_catalog/', // Set the base path for the application in github pages
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+  },
+  preview: {
+    host: true,
+    port: 4173,
+    strictPort: true,
+  },
   plugins: [
     react(),
     VitePWA({
