@@ -23,3 +23,4 @@ build/
 # Cache
 .cache/
 vite-cache/
+package-lock.json
