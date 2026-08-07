@@ -17,6 +17,32 @@
   }
 }
 
+.install {
+  font-size: 16px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  color: var(--text-h);
+  background: var(--social-bg);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: box-shadow 0.3s, transform 0.1s;
+
+  &:hover {
+    box-shadow: var(--shadow);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+.ios-hint {
+  margin: 0;
+  max-width: 32rem;
+  color: var(--text);
+  font-size: 14px;
+}
+
 .hero {
   position: relative;
 

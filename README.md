@@ -1,3 +1,7 @@
+# Github Pages
+
+[https://laisolizq.github.io/magic_catalog/](https://laisolizq.github.io/magic_catalog/)
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
