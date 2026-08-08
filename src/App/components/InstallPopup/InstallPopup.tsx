@@ -11,7 +11,10 @@ interface BeforeInstallPromptEvent extends Event {
 export function InstallPopup() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null)
-  const [isInstalled, setIsInstalled] = useState(false)
+  // Start as installed if already running in standalone mode
+  const [isInstalled, setIsInstalled] = useState(
+    () => window.matchMedia('(display-mode: standalone)').matches
+  )
 
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches
   const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
