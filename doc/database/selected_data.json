@@ -1,0 +1,50 @@
+{
+  
+  "name": "Costly Plunder",
+  "lang": "en",
+  "released_at": "2017-09-29",
+  "uri": "https://api.scryfall.com/cards/c3f1f41e-98fc-4f6b-b287-c8899dff8ab0",
+  "scryfall_uri": "https://scryfall.com/card/xln/96/costly-plunder?utm_source=api",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "As an additional cost to cast this spell, sacrifice an artifact or creature.\nDraw two cards.",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "legalities": {
+    "standard": "not_legal",
+    "future": "not_legal",
+    "historic": "legal",
+    "timeless": "legal",
+    "gladiator": "legal",
+    "pioneer": "legal",
+    "modern": "legal",
+    "legacy": "legal",
+    "pauper": "legal",
+    "vintage": "legal",
+    "penny": "legal",
+    "commander": "legal",
+    "oathbreaker": "legal",
+    "standardbrawl": "not_legal",
+    "brawl": "legal",
+    "competitivebrawl": "legal",
+    "alchemy": "not_legal",
+    "paupercommander": "legal",
+    "duel": "legal",
+    "oldschool": "not_legal",
+    "premodern": "not_legal",
+    "predh": "not_legal",
+    "tlr": "legal"
+  },
+  "collector_number": "96",
+  "digital": false,
+  "rarity": "common",
+  "flavor_text": "No lock of iron is a match for Vraska's will of stone.",
+  "artist": "Ben Maier",
+  "border_color": "black",
+  "frame": "2015"
+}
