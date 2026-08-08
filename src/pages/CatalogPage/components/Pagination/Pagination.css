@@ -1,0 +1,34 @@
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.pagination button {
+  border: 1px solid var(--ink-soft);
+  border-radius: 8px;
+  min-width: 2rem;
+  padding: 0.35rem 0.55rem;
+  background: color-mix(in srgb, var(--paper) 85%, white);
+  color: var(--ink-strong);
+  cursor: pointer;
+}
+
+.pagination-ellipsis {
+  color: var(--ink-soft);
+  padding: 0 0.15rem;
+}
+
+.pagination button.is-current {
+  background: var(--ink-strong);
+  color: var(--paper);
+}
+
+.pagination button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

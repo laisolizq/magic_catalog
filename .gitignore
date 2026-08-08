@@ -24,3 +24,4 @@ build/
 .cache/
 vite-cache/
 package-lock.json
+scripts/__pycache__/*
