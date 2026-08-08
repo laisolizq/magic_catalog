@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { List } from './components/List/List'
 import { SearchBar } from './components/SearchBar/SearchBar'
+import { CardModal } from './components/CardModal/CardModal'
 import { mockCards } from '../../data/mockCards'
 import type { Card } from '../../types/card'
 import { filterCards, getUniqueSets, getUniqueTypes } from '../../utils/cardFilters'
@@ -94,33 +95,7 @@ export function CatalogPage() {
       <div ref={sentinelRef} aria-hidden="true" />
 
       {selectedCard && (
-        <div
-          className="card-modal-overlay"
-          role="presentation"
-          onClick={() => setSelectedCard(null)}
-        >
-          <aside
-            className="card-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label={`${selectedCard.name} details`}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2>{selectedCard.name}</h2>
-            <p>{selectedCard.typeLine}</p>
-            <p>
-              {selectedCard.power ?? '-'} / {selectedCard.toughness ?? '-'}
-            </p>
-            <p>{selectedCard.oracleText}</p>
-            <p>
-              set {selectedCard.set} | rarity {selectedCard.rarity} | color{' '}
-              {selectedCard.colors.join('')}
-            </p>
-            <button type="button" onClick={() => setSelectedCard(null)}>
-              Close
-            </button>
-          </aside>
-        </div>
+        <CardModal card={selectedCard} onClose={() => setSelectedCard(null)} />
       )}
     </section>
   )

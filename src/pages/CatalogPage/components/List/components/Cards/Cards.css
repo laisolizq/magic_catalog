@@ -121,6 +121,12 @@
   cursor: pointer;
 }
 
+.oracle-symbol {
+  width: 1em;
+  height: 1em;
+  vertical-align: text-bottom;
+}
+
 .power-line {
   position: absolute;
   bottom: 0.3rem;

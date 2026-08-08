@@ -19,6 +19,48 @@ function getFrameClass(colors: Card['colors']) {
   return `frame-${colors[0].toLowerCase()}`
 }
 
+function symbolUrl(sym: string): string {
+  return `https://svgs.scryfall.io/card-symbols/${sym}.svg`
+}
+
+function stripParentheticalText(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => line.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s{2,}/g, ' ').trim())
+    .join('\n')
+}
+
+function renderOracleText(text: string) {
+  const lines = text.split('\n')
+
+  return lines.flatMap((line, lineIndex) => {
+    const parts = line.split(/(\{[^}]+\})/g).filter(Boolean)
+    const renderedLine = parts.map((part, partIndex) => {
+      const match = part.match(/^\{([^}]+)\}$/)
+      if (!match) {
+        return <span key={`text-${lineIndex}-${partIndex}`}>{part}</span>
+      }
+
+      const symbol = match[1]
+      return (
+        <img
+          key={`sym-${lineIndex}-${partIndex}`}
+          className="oracle-symbol"
+          src={symbolUrl(symbol)}
+          alt={symbol}
+          aria-hidden="true"
+        />
+      )
+    })
+
+    if (lineIndex === lines.length - 1) {
+      return renderedLine
+    }
+
+    return [...renderedLine, <br key={`line-break-${lineIndex}`} />]
+  })
+}
+
 export function Cards({
   card,
   isOracleExpanded,
@@ -26,6 +68,7 @@ export function Cards({
   onOpenDetails,
 }: CardsProps) {
   const hasPowerAndToughness = Boolean(card.power || card.toughness)
+  const oracleText = isOracleExpanded ? card.oracleText : stripParentheticalText(card.oracleText)
 
   return (
     <article
@@ -67,7 +110,7 @@ export function Cards({
           aria-expanded={isOracleExpanded}
           aria-label={`Toggle oracle text for ${card.name}`}
         >
-          {card.oracleText}
+          {renderOracleText(oracleText)}
         </p>
       </div>
 
