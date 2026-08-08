@@ -1,5 +1,6 @@
-import type { Card } from '../../types/card'
-import { Cards } from '../Cards/Cards'
+import type { Card } from '../../../../types/card'
+import { Cards } from './components/Cards/Cards'
+import './List.css'
 
 interface ListProps {
   cards: Card[]

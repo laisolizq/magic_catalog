@@ -1,26 +1,20 @@
-import { useCallback, useState } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
-import { InstallPopup } from './components/InstallPopup/InstallPopup'
-import { Navigation } from './components/Navigation/Navigation'
-import { Router } from './components/Router/Router'
+import { InstallPopup } from './App/components/InstallPopup/InstallPopup'
+import { Navigation } from './App/components/Navigation/Navigation'
+import { CatalogPage } from './pages/CatalogPage/CatalogPage'
 import './App.css'
 
 function App() {
-  const [currentRoute, setCurrentRoute] = useState('/catalog')
-
-  const handleNavigate = useCallback((route: string) => {
-    window.location.hash = route
-    setCurrentRoute(route)
-  }, [])
-
-  const handleRouteChange = useCallback((route: string) => {
-    setCurrentRoute(route)
-  }, [])
-
   return (
     <div className="app-shell">
-      <Navigation currentRoute={currentRoute} onNavigate={handleNavigate} />
-      <Router onRouteChange={handleRouteChange} />
+      <Navigation />
+      <main className="app-main">
+        <Routes>
+          <Route path="/catalog" element={<CatalogPage />} />
+          <Route path="*" element={<Navigate to="/catalog" replace />} />
+        </Routes>
+      </main>
       <InstallPopup />
     </div>
   )

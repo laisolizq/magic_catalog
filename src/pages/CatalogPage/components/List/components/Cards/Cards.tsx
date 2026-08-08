@@ -1,4 +1,6 @@
-import type { Card } from '../../types/card'
+import type { Card } from '../../../../../../types/card'
+import { ManaCost } from './components/ManaCost/ManaCost'
+import './Cards.css'
 
 interface CardsProps {
   card: Card
@@ -23,6 +25,8 @@ export function Cards({
   onToggleOracle,
   onOpenDetails,
 }: CardsProps) {
+  const hasPowerAndToughness = Boolean(card.power || card.toughness)
+
   return (
     <article
       className={`card-tile ${getFrameClass(card.colors)} ${getRarityClass(card.rarity)}`}
@@ -36,38 +40,47 @@ export function Cards({
       tabIndex={0}
       aria-label={`Open details for ${card.name}`}
     >
-      <img className="card-thumb" src={card.imageUrl} alt={card.name} loading="lazy" />
-
       <div className="card-main">
         <header className="card-headline">
           <h3>{card.name}</h3>
-          <span className="mana-cost">{card.manaCost || '-'}</span>
+          <ManaCost cost={card.manaCost} />
         </header>
 
         <p className="type-line">{card.typeLine}</p>
 
-        {(card.power || card.toughness) && (
-          <p className="power-line">
-            {card.power ?? '-'} / {card.toughness ?? '-'}
-          </p>
-        )}
 
-        <button
-          className="oracle-toggle"
-          type="button"
+
+        <p
+          className={isOracleExpanded ? 'oracle expanded' : 'oracle collapsed'}
           onClick={(event) => {
             event.stopPropagation()
             onToggleOracle(card.id)
           }}
+          onKeyUp={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.stopPropagation()
+              onToggleOracle(card.id)
+            }
+          }}
+          role="button"
+          tabIndex={0}
           aria-expanded={isOracleExpanded}
+          aria-label={`Toggle oracle text for ${card.name}`}
         >
-          Card Oracle
-        </button>
-
-        <p className={isOracleExpanded ? 'oracle expanded' : 'oracle collapsed'}>
           {card.oracleText}
         </p>
       </div>
+
+      <aside className={`card-media rarity-frame-${card.rarity}`} aria-hidden="true">
+        <div className="card-art-frame">
+          <img className="card-thumb" src={card.artCropUrl ?? card.imageUrl} alt={card.name} loading="lazy" />
+          {hasPowerAndToughness && (
+            <span className="power-line">
+              {card.power ?? '-'} / {card.toughness ?? '-'}
+            </span>
+          )}
+        </div>
+      </aside>
     </article>
   )
 }

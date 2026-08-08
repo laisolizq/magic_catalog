@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { List } from '../../components/List/List'
-import { Pagination } from '../../components/Pagination/Pagination'
-import { SearchBar } from '../../components/SearchBar/SearchBar'
+import { List } from './components/List/List'
+import { SearchBar } from './components/SearchBar/SearchBar'
 import { mockCards } from '../../data/mockCards'
 import type { Card } from '../../types/card'
 import { filterCards, getUniqueSets, getUniqueTypes } from '../../utils/cardFilters'
+import './CatalogPage.css'
 
-const PAGE_SIZE = 6
+const BATCH_SIZE = 12
 
 export function CatalogPage() {
   const [query, setQuery] = useState('')
@@ -15,9 +15,10 @@ export function CatalogPage() {
   const [typeValue, setTypeValue] = useState('all')
   const [rarityValue, setRarityValue] = useState('all')
   const [colorValue, setColorValue] = useState('all')
-  const [page, setPage] = useState(1)
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
   const [expandedOracles, setExpandedOracles] = useState<Record<string, boolean>>({})
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   const filteredCards = useMemo(
     () =>
@@ -31,29 +32,35 @@ export function CatalogPage() {
     [query, setValue, typeValue, rarityValue, colorValue],
   )
 
-  const totalPages = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-  const currentSlice = filteredCards.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE,
-  )
+  // Reset visible window whenever filters change
+  useEffect(() => {
+    setVisibleCount(BATCH_SIZE)
+  }, [query, setValue, typeValue, rarityValue, colorValue])
+
+  // Load next batch when the sentinel scrolls into view
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, filteredCards.length))
+        }
+      },
+      { rootMargin: '300px' },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [filteredCards.length])
 
   const setOptions = useMemo(() => getUniqueSets(mockCards), [])
   const typeOptions = useMemo(() => getUniqueTypes(mockCards), [])
-
-  const updatePageOnFilter = (updater: () => void) => {
-    updater()
-    setPage(1)
-  }
+  const visibleCards = filteredCards.slice(0, visibleCount)
 
   return (
     <section className="catalog-page" aria-label="Catalog Page">
-      <div className="catalog-hero">
-        <p className="mini-kicker">set:tla cn≥1 cn≤286</p>
-        <h1>i</h1>
-        <p className="hero-subtitle">Main purpose: review limited set cards</p>
-      </div>
-
       <SearchBar
         query={query}
         setValue={setValue}
@@ -62,13 +69,11 @@ export function CatalogPage() {
         colorValue={colorValue}
         setOptions={setOptions}
         typeOptions={typeOptions}
-        onQueryChange={(value) => updatePageOnFilter(() => setQuery(value))}
-        onSetChange={(value) => updatePageOnFilter(() => setSetValue(value))}
-        onTypeChange={(value) => updatePageOnFilter(() => setTypeValue(value))}
-        onRarityChange={(value) =>
-          updatePageOnFilter(() => setRarityValue(value))
-        }
-        onColorChange={(value) => updatePageOnFilter(() => setColorValue(value))}
+        onQueryChange={(value) => setQuery(value)}
+        onSetChange={(value) => setSetValue(value)}
+        onTypeChange={(value) => setTypeValue(value)}
+        onRarityChange={(value) => setRarityValue(value)}
+        onColorChange={(value) => setColorValue(value)}
       />
 
       <p className="results-line">
@@ -77,7 +82,7 @@ export function CatalogPage() {
       </p>
 
       <List
-        cards={currentSlice}
+        cards={visibleCards}
         expandedOracles={expandedOracles}
         onToggleOracle={(cardId) =>
           setExpandedOracles((prev) => ({ ...prev, [cardId]: !prev[cardId] }))
@@ -85,15 +90,8 @@ export function CatalogPage() {
         onOpenDetails={(card) => setSelectedCard(card)}
       />
 
-      <Pagination
-        currentPage={safePage}
-        totalPages={totalPages}
-        onPageChange={(nextPage) => {
-          if (nextPage >= 1 && nextPage <= totalPages) {
-            setPage(nextPage)
-          }
-        }}
-      />
+      {/* Sentinel: entering viewport triggers the next batch load */}
+      <div ref={sentinelRef} aria-hidden="true" />
 
       {selectedCard && (
         <div

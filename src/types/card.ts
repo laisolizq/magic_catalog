@@ -12,4 +12,5 @@ export interface Card {
   rarity: 'common' | 'uncommon' | 'rare' | 'mythic'
   colors: CardColor[]
   imageUrl: string
+  artCropUrl?: string
 }

@@ -28,10 +28,16 @@ describe('SearchBar', () => {
       />,
     )
 
-    fireEvent.change(screen.getByPlaceholderText(/search by card name/i), {
+    fireEvent.change(screen.getByRole('textbox', { name: /search cards/i }), {
       target: { value: 'counterspell' },
     })
     expect(onQueryChange).toHaveBeenCalledWith('counterspell')
+
+    expect(screen.queryByRole('combobox', { name: 'set' })).not.toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /show advanced query options/i }),
+    )
 
     fireEvent.change(screen.getByRole('combobox', { name: 'set' }), {
       target: { value: 'bro' },

@@ -3,11 +3,18 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: '/magic_catalog/', // Set the base path for the application in github pages
+  base: '/magic_catalog/',
+  // Pre-bundle heavy deps at server start instead of blocking first request
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-dom/client', 'react-router-dom'],
+  },
   server: {
     host: true,
     port: 5173,
     strictPort: true,
+    warmup: {
+      clientFiles: ['./src/main.tsx', './src/App.tsx'],
+    },
   },
   preview: {
     host: true,

@@ -1,0 +1,19 @@
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+.empty-state {
+  margin: 0;
+  border: 1px dashed var(--ink-soft);
+  border-radius: 10px;
+  padding: 1.2rem;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 900px) {
+  .cards-grid {
+    gap: 0.7rem;
+  }
+}
