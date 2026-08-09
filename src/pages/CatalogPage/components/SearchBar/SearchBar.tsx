@@ -35,13 +35,14 @@ export function SearchBar({
 
   return (
     <section className="search-panel" aria-label="Card search">
-      <label className="search-label" htmlFor="card-search-input">
+      {/* <label className="search-label" htmlFor="card-search-input">
         Search cards
-      </label>
+      </label> */}
       <div className="search-input-row">
         <input
           id="card-search-input"
           className="search-input"
+          aria-label="Search cards"
           placeholder="set:tla"
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}

@@ -27,6 +27,7 @@ function stripParentheticalText(text: string): string {
   return text
     .split('\n')
     .map((line) => line.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s{2,}/g, ' ').trim())
+    .filter((line) => line.length > 0)
     .join('\n')
 }
 

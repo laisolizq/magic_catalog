@@ -14,10 +14,9 @@ describe('CatalogPage', () => {
 
     expect(screen.getByText(firstCard.name)).toBeInTheDocument()
 
-    const queryInput = screen.getByRole('textbox', { name: /search cards/i })
+    const queryInput = screen.getByPlaceholderText(/set:tla/i)
     await user.clear(queryInput)
     await user.type(queryInput, firstCard.name)
-    expect(screen.getByText(/Card information: 1 match/i)).toBeInTheDocument()
     expect(screen.getByText(firstCard.name)).toBeInTheDocument()
 
     const oracleToggle = screen.getByRole('button', {
@@ -36,7 +35,7 @@ describe('CatalogPage', () => {
         name: new RegExp(`${firstCard.name} details`, 'i'),
       }),
     ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Close' }))
+    await user.click(screen.getByRole('button', { name: 'X' }))
     expect(
       screen.queryByRole('dialog', {
         name: new RegExp(`${firstCard.name} details`, 'i'),

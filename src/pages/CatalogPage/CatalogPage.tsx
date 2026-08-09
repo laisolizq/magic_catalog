@@ -77,10 +77,10 @@ export function CatalogPage() {
         onColorChange={(value) => setColorValue(value)}
       />
 
-      <p className="results-line">
+      {/* <p className="results-line">
         Card information: {filteredCards.length} match
         {filteredCards.length === 1 ? '' : 'es'}
-      </p>
+      </p> */}
 
       <List
         cards={visibleCards}
