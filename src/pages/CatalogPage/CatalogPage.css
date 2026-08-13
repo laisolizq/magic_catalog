@@ -3,6 +3,30 @@
   gap: 1rem;
 }
 
+.search-bar-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  transform: translateY(0);
+  transition: transform 0.2s ease;
+
+  /*
+   * Important:
+   * The wrapper has the same background as the page so
+   * cards don't appear through it while scrolling.
+   */
+  background: var(--paper);
+}
+
+.search-bar-wrapper.search-visible {
+  transform: translateY(0);
+}
+
+.search-bar-wrapper.search-hidden {
+  transform: translateY(-100%);
+}
+
 .catalog-hero {
   background:
     radial-gradient(120% 120% at 0% 0%, #f8e8d8 0%, transparent 55%),

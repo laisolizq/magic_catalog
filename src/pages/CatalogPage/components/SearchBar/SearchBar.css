@@ -53,6 +53,16 @@
   color: var(--paper);
 }
 
+.advanced-toggle svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s ease;
+}
+
+.advanced-toggle svg.is-open {
+  transform: rotate(180deg);
+}
+
 .filters-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

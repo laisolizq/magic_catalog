@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 import './SearchBar.css'
 
 interface SearchBarProps {
@@ -10,6 +8,8 @@ interface SearchBarProps {
   colorValue: string
   setOptions: string[]
   typeOptions: string[]
+  isAdvancedOpen: boolean
+  onAdvancedOpenChange: (value: boolean) => void
   onQueryChange: (value: string) => void
   onSetChange: (value: string) => void
   onTypeChange: (value: string) => void
@@ -25,19 +25,16 @@ export function SearchBar({
   colorValue,
   setOptions,
   typeOptions,
+  isAdvancedOpen,
+  onAdvancedOpenChange,
   onQueryChange,
   onSetChange,
   onTypeChange,
   onRarityChange,
   onColorChange,
 }: SearchBarProps) {
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
-
   return (
     <section className="search-panel" aria-label="Card search">
-      {/* <label className="search-label" htmlFor="card-search-input">
-        Search cards
-      </label> */}
       <div className="search-input-row">
         <input
           id="card-search-input"
@@ -47,6 +44,7 @@ export function SearchBar({
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
         />
+
         <button
           type="button"
           className="advanced-toggle"
@@ -57,15 +55,24 @@ export function SearchBar({
           }
           aria-expanded={isAdvancedOpen}
           aria-controls="advanced-query-options"
-          onClick={() => setIsAdvancedOpen((prev) => !prev)}
+          onClick={() => onAdvancedOpenChange(!isAdvancedOpen)}
         >
-          +
+          <svg
+            className={isAdvancedOpen ? 'is-open' : ''}
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M6 9l6 6 6-6H6z" />
+          </svg>
         </button>
       </div>
 
       {isAdvancedOpen && (
         <div id="advanced-query-options">
           <p className="advanced-title">advanced query options</p>
+
           <div className="filters-grid">
             <label>
               set
@@ -74,6 +81,7 @@ export function SearchBar({
                 onChange={(event) => onSetChange(event.target.value)}
               >
                 <option value="all">all</option>
+
                 {setOptions.map((setOption) => (
                   <option key={setOption} value={setOption}>
                     {setOption}
@@ -89,6 +97,7 @@ export function SearchBar({
                 onChange={(event) => onTypeChange(event.target.value)}
               >
                 <option value="all">all</option>
+
                 {typeOptions.map((typeOption) => (
                   <option key={typeOption} value={typeOption}>
                     {typeOption}

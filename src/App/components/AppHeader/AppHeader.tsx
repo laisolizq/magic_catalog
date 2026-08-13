@@ -12,7 +12,7 @@ export function AppHeader() {
         />
 
         <span className="app-name">
-          Magic Catalog
+          Cardscade
         </span>
       </div>
 
