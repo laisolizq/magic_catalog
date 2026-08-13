@@ -25,7 +25,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
+      includeAssets: ['favicon.svg', 'logo_cardscade.png'],
       manifest: {
         name: 'Magic Catalog',
         short_name: 'MagicCatalog',
@@ -36,13 +36,13 @@ export default defineConfig({
         theme_color: '#2b2216',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'logo_cardscade.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'logo_cardscade.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
