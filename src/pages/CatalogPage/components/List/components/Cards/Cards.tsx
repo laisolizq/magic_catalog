@@ -26,7 +26,12 @@ function symbolUrl(sym: string): string {
 function stripParentheticalText(text: string): string {
   return text
     .split('\n')
-    .map((line) => line.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s{2,}/g, ' ').trim())
+    .map((line) =>
+      line
+        .replace(/\s*\([^)]*\)\s*/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim(),
+    )
     .filter((line) => line.length > 0)
     .join('\n')
 }
@@ -36,13 +41,20 @@ function renderOracleText(text: string) {
 
   return lines.flatMap((line, lineIndex) => {
     const parts = line.split(/(\{[^}]+\})/g).filter(Boolean)
+
     const renderedLine = parts.map((part, partIndex) => {
       const match = part.match(/^\{([^}]+)\}$/)
+
       if (!match) {
-        return <span key={`text-${lineIndex}-${partIndex}`}>{part}</span>
+        return (
+          <span key={`text-${lineIndex}-${partIndex}`}>
+            {part}
+          </span>
+        )
       }
 
       const symbol = match[1]
+
       return (
         <img
           key={`sym-${lineIndex}-${partIndex}`}
@@ -58,7 +70,10 @@ function renderOracleText(text: string) {
       return renderedLine
     }
 
-    return [...renderedLine, <br key={`line-break-${lineIndex}`} />]
+    return [
+      ...renderedLine,
+      <br key={`line-break-${lineIndex}`} />,
+    ]
   })
 }
 
@@ -69,11 +84,16 @@ export function Cards({
   onOpenDetails,
 }: CardsProps) {
   const hasPowerAndToughness = Boolean(card.power || card.toughness)
-  const oracleText = isOracleExpanded ? card.oracleText : stripParentheticalText(card.oracleText)
+
+  const oracleText = isOracleExpanded
+    ? card.oracleText
+    : stripParentheticalText(card.oracleText)
 
   return (
     <article
-      className={`card-tile ${getFrameClass(card.colors)} ${getRarityClass(card.rarity)}`}
+      className={`card-tile ${getFrameClass(card.colors)} ${getRarityClass(
+        card.rarity,
+      )}`}
       onClick={() => onOpenDetails(card)}
       onKeyUp={(event) => {
         if (event.key === 'Enter') {
@@ -92,10 +112,12 @@ export function Cards({
 
         <p className="type-line">{card.typeLine}</p>
 
-
-
         <p
-          className={isOracleExpanded ? 'oracle expanded' : 'oracle collapsed'}
+          className={
+            isOracleExpanded
+              ? 'oracle expanded'
+              : 'oracle collapsed'
+          }
           onClick={(event) => {
             event.stopPropagation()
             onToggleOracle(card.id)
@@ -115,9 +137,18 @@ export function Cards({
         </p>
       </div>
 
-      <aside className={`card-media rarity-frame-${card.rarity}`} aria-hidden="true">
+      <aside
+        className={`card-media rarity-frame-${card.rarity}`}
+        aria-hidden="true"
+      >
         <div className="card-art-frame">
-          <img className="card-thumb" src={card.artCropUrl ?? card.imageUrl} alt={card.name} loading="lazy" />
+          <img
+            className="card-thumb"
+            src={card.artCropUrl ?? card.imageUrl}
+            alt={card.name}
+            loading="lazy"
+          />
+
           {hasPowerAndToughness && (
             <span className="power-line">
               {card.power ?? '-'} / {card.toughness ?? '-'}

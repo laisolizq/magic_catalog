@@ -1,240 +1,407 @@
 .card-tile {
-  border: 2px solid var(--ink-soft);
+  --card-color: #b3b5b8;
+  --card-color-soft: rgb(179 181 184 / 22%);
+  --card-border: #777b80;
+
   border-radius: 14px;
+
   display: grid;
   grid-template-columns: minmax(0, 1fr) 138px;
   gap: 0.7rem;
-  padding: 0.55rem;
-  background: linear-gradient(180deg, #fffaf3 0%, #f7efe3 100%);
+
+  padding: 0.65rem;
+
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgb(255 255 255 / 10%),
+      transparent 45%
+    ),
+    linear-gradient(
+      135deg,
+      var(--card-color-soft),
+      rgb(0 0 0 / 10%)
+    );
+
   text-align: left;
+
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease;
+
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+
   width: min(100%, 620px);
   max-width: 100%;
   margin: 0 auto;
+
   min-width: 0;
   box-sizing: border-box;
   overflow: hidden;
+
+  position: relative;
 }
 
 .card-tile:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 0 color-mix(in srgb, var(--ink-soft) 30%, transparent);
+
+  box-shadow:
+    0 5px 10px rgb(0 0 0 / 18%),
+    inset 0 0 18px rgb(255 255 255 / 5%);
 }
+
+
+/* =========================================================
+   CARD COLOURS
+   ========================================================= */
+
+.frame-w {
+  --card-color: #d8c58e;
+  --card-color-soft: rgb(216 197 142 / 32%);
+  --card-border: #c6aa61;
+}
+
+.frame-u {
+  --card-color: #719dcc;
+  --card-color-soft: rgb(113 157 204 / 28%);
+  --card-border: #4c79aa;
+}
+
+.frame-b {
+  --card-color: #656578;
+  --card-color-soft: rgb(101 101 120 / 30%);
+  --card-border: #3e3e4d;
+}
+
+.frame-r {
+  --card-color: #c87358;
+  --card-color-soft: rgb(200 115 88 / 30%);
+  --card-border: #a24e39;
+}
+
+.frame-g {
+  --card-color: #78a66f;
+  --card-color-soft: rgb(120 166 111 / 30%);
+  --card-border: #56864e;
+}
+
+.frame-multi {
+  --card-color: #ad8d67;
+  --card-color-soft: rgb(173 141 103 / 28%);
+  --card-border: #886943;
+}
+
+.frame-c {
+  --card-color: #9b9da0;
+  --card-color-soft: rgb(155 157 160 / 25%);
+  --card-border: #777a7e;
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
 
 .card-main {
   min-width: 0;
+
   display: grid;
   grid-template-rows: auto auto auto 1fr;
+
   gap: 0.35rem;
+
   overflow: hidden;
+
+  border-radius: 9px;
+
 }
 
-.card-media {
-  align-self: start;
-  min-width: 0;
-  border-radius: 12px;
-  border: 3px solid color-mix(in srgb, var(--ink-soft) 55%, transparent);
-  padding: 0;
-  background: #f5ecdf;
-}
 
-.card-art-frame {
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--ink-soft) 35%, transparent);
-  background: #efe4d1;
-  overflow: hidden;
-  aspect-ratio: 3 / 4;
-  position: relative;
-}
-
-.card-thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
+/* =========================================================
+   HEADER
+   ========================================================= */
 
 .card-headline {
   display: flex;
+
   justify-content: space-between;
   align-items: flex-start;
+
   gap: 0.5rem;
 }
 
 .card-headline h3 {
   margin: 0;
+
   font-size: 0.95rem;
   line-height: 1.15;
+
   color: var(--ink-strong);
+
   min-width: 0;
 }
 
-.mana-cost,
-.type-line,
-.power-line,
-.oracle {
-  margin: 0;
-}
 
-.type-line,
-.power-line,
-.oracle {
-  font-size: 0.8rem;
-  color: var(--ink-soft);
-}
+/* =========================================================
+   TYPE LINE
+   ========================================================= */
 
 .type-line {
-  padding-bottom: 0.15rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink-soft) 40%, transparent);
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  font-style: italic;
 }
 
-.oracle-toggle {
-  justify-self: start;
-  border: 1px solid color-mix(in srgb, var(--ink-soft) 55%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 86%, white);
-  color: var(--ink-strong);
-  padding: 0.18rem 0.55rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+
+/* =========================================================
+   ORACLE TEXT
+   ========================================================= */
+
+.oracle {
+  margin: 0;
+
+  color: var(--ink-soft);
+
+  font-size: 0.8rem;
+
   cursor: pointer;
+
+  min-width: 0;
 }
 
 .oracle.collapsed {
   line-height: 1.35;
+
   max-height: calc(1.35em * 2);
+
   overflow: hidden;
+
   min-width: 0;
+
   text-overflow: ellipsis;
+
   display: -webkit-box;
+
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
 .oracle.expanded {
   white-space: normal;
+
   overflow-wrap: anywhere;
 }
 
-.oracle {
-  cursor: pointer;
-}
+
+/* =========================================================
+   MANA SYMBOLS
+   ========================================================= */
 
 .oracle-symbol {
   width: 1em;
   height: 1em;
+
   vertical-align: text-bottom;
 }
 
+
+/* =========================================================
+   IMAGE
+   ========================================================= */
+
+.card-media {
+  align-self: start;
+
+  min-width: 0;
+
+  border: none;
+
+  padding: 0;
+
+  background: transparent;
+
+  /*
+   * Pull the image out to the edge of the card.
+   */
+  margin: -0.65rem -0.65rem -0.65rem 0;
+
+  overflow: hidden;
+
+  display: flex;
+
+  align-items: flex-start;
+
+  /*
+   * IMPORTANT:
+   * The image keeps its own height.
+   * It does not follow the height of the oracle text.
+   */
+  height: 138px;
+
+  flex-shrink: 0;
+}
+
+.card-art-frame {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  min-width: 0;
+
+  overflow: hidden;
+
+  /*
+   * Rounded semicircle on the left side.
+   */
+  border-radius: 50% 0 0 50%;
+
+  border: none;
+
+  background: #302820;
+
+  flex-shrink: 0;
+}
+
+.card-thumb {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  display: block;
+
+  /*
+   * Slightly soften the image so it
+   * integrates with the card frame.
+   */
+  filter: saturate(0.92);
+}
+
+
+/* =========================================================
+   POWER / TOUGHNESS
+   ========================================================= */
+
 .power-line {
   position: absolute;
+
   bottom: 0.3rem;
   right: 0.3rem;
-  border: 1px solid color-mix(in srgb, var(--ink-soft) 60%, transparent);
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--ink-soft) 60%,
+      transparent
+    );
+
   border-radius: 7px;
+
   padding: 0.1rem 0.45rem;
+
   font-weight: 600;
+
   font-size: 0.8rem;
+
   color: var(--ink-strong);
+
   background: rgb(255 253 248 / 88%);
+
   backdrop-filter: blur(2px);
 }
 
+
+/* =========================================================
+   RARITY
+   ========================================================= */
+
 .rarity-frame-common {
-  border-color: #000000;
+  border-color: var(--card-border);
 }
 
 .rarity-frame-uncommon {
-  border-color: #89a0ac;
+  border-color: #81949e;
 }
 
 .rarity-frame-rare {
-  border-color: #d39f34;
+  border-color: #c59a3b;
 }
 
 .rarity-frame-mythic {
-  border-color: #d0642b;
+  border-color: #c45e2d;
 }
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
 
 @media (max-width: 640px) {
   .card-tile {
     grid-template-columns: minmax(0, 1fr) 72px;
+
     width: 100%;
     max-width: 100%;
+
     gap: 0.45rem;
+
+    padding: 0.5rem;
   }
 
-  .card-media {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-    align-items: stretch;
-    gap: 0.25rem;
+  .card-main {
+    gap: 0.3rem;
   }
 
-  .card-art-frame {
-    aspect-ratio: 3 / 4;
+  .card-headline h3 {
+    font-size: 0.88rem;
+  }
+
+  .type-line,
+  .oracle {
+    font-size: 0.75rem;
   }
 
   .oracle.collapsed {
     display: -webkit-box;
+
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
+
     white-space: normal;
+
     overflow: hidden;
+
     text-overflow: ellipsis;
+
     line-height: 1.35;
+
     max-height: calc(1.35em * 2);
   }
 
   .oracle.expanded {
     white-space: normal;
+
     overflow-wrap: anywhere;
+
     word-break: break-word;
   }
-}
 
-.frame-w {
-  border-left: 6px solid #f3d27f;
-}
+  .card-media {
+    margin: -0.5rem -0.5rem -0.5rem 0;
 
-.frame-u {
-  border-left: 6px solid #88b8ff;
-}
+    /*
+     * Fixed image height on mobile too.
+     * It will not grow when the oracle expands.
+     */
+    height: 100px;
+  }
 
-.frame-b {
-  border-left: 6px solid #7f86a8;
-}
+  .card-art-frame {
+    height: 100%;
 
-.frame-r {
-  border-left: 6px solid #f09a7f;
-}
-
-.frame-g {
-  border-left: 6px solid #8bc9a8;
-}
-
-.frame-multi {
-  border-left: 6px solid #d3ae7e;
-}
-
-.frame-c {
-  border-left: 6px solid #b3b5b8;
-}
-
-.rarity-common {
-  box-shadow: inset 0 -2px 0 #a3a5ab;
-}
-
-.rarity-uncommon {
-  box-shadow: inset 0 -2px 0 #89a0ac;
-}
-
-.rarity-rare {
-  box-shadow: inset 0 -2px 0 #d39f34;
-}
-
-.rarity-mythic {
-  box-shadow: inset 0 -2px 0 #d0642b;
+    border-radius: 50% 0 0 50%;
+  }
 }
