@@ -27,8 +27,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'logo_cardscade.png'],
       manifest: {
-        name: 'Magic Catalog',
-        short_name: 'MagicCatalog',
+        name: 'Cardscade',
+        short_name: 'Cardscade',
         description: 'Browse and review Magic: The Gathering cards',
         start_url: '/magic_catalog/',
         display: 'standalone',

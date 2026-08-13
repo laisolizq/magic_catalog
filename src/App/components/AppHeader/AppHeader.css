@@ -1,0 +1,41 @@
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  height: 64px;
+  padding: 0 16px;
+
+  border-bottom: 1px solid var(--border-color);
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-logo {
+  width: 40px;
+  height: 40px;
+}
+
+.app-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.install-cta {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ios-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  text-align: right;
+}

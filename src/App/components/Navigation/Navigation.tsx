@@ -8,7 +8,7 @@ export function Navigation() {
   return (
     <header className="topbar" aria-label="Navigation">
       <Link className="brand" to="/catalog">
-        Magic Catalog
+        Cardscade
       </Link>
 
       <nav>
