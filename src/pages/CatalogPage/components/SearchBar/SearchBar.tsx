@@ -9,7 +9,9 @@ interface SearchBarProps {
   setOptions: string[]
   typeOptions: string[]
   isAdvancedOpen: boolean
+  expandAllCards: boolean
   onAdvancedOpenChange: (value: boolean) => void
+  onExpandAllChange: (value: boolean) => void
   onQueryChange: (value: string) => void
   onSetChange: (value: string) => void
   onTypeChange: (value: string) => void
@@ -26,7 +28,9 @@ export function SearchBar({
   setOptions,
   typeOptions,
   isAdvancedOpen,
+  expandAllCards,
   onAdvancedOpenChange,
+  onExpandAllChange,
   onQueryChange,
   onSetChange,
   onTypeChange,
@@ -135,6 +139,15 @@ export function SearchBar({
               </select>
             </label>
           </div>
+
+          <label className="expand-all-option">
+            <input
+              type="checkbox"
+              checked={expandAllCards}
+              onChange={(event) => onExpandAllChange(event.target.checked)}
+            />
+            <span>Expand  oracles</span>
+          </label>
         </div>
       )}
     </section>

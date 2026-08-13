@@ -22,9 +22,12 @@ export function CatalogPage() {
   const [colorValue, setColorValue] = useState('all')
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
+
   const [expandedOracles, setExpandedOracles] = useState<
     Record<string, boolean>
   >({})
+
+  const [expandAllCards, setExpandAllCards] = useState(false)
 
   const [isSearchVisible, setIsSearchVisible] = useState(true)
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
@@ -45,10 +48,30 @@ export function CatalogPage() {
     [query, setValue, typeValue, rarityValue, colorValue],
   )
 
-  // Reset visible cards whenever filters change
+  // Reset visible cards and expanded state whenever filters change
   useEffect(() => {
     setVisibleCount(BATCH_SIZE)
-  }, [query, setValue, typeValue, rarityValue, colorValue])
+
+    if (expandAllCards) {
+      const expanded: Record<string, boolean> = {}
+
+      filteredCards.forEach((card) => {
+        expanded[card.id] = true
+      })
+
+      setExpandedOracles(expanded)
+    } else {
+      setExpandedOracles({})
+    }
+  }, [
+    query,
+    setValue,
+    typeValue,
+    rarityValue,
+    colorValue,
+    filteredCards,
+    expandAllCards,
+  ])
 
   // Show/hide search bar depending on scroll direction
   useEffect(() => {
@@ -106,6 +129,50 @@ export function CatalogPage() {
   const typeOptions = useMemo(() => getUniqueTypes(mockCards), [])
   const visibleCards = filteredCards.slice(0, visibleCount)
 
+  const handleExpandAllChange = (checked: boolean) => {
+    const currentScrollY = window.scrollY
+
+    // Ignore scroll events caused by cards changing their height
+    ignoreScrollRef.current = true
+
+    setExpandAllCards(checked)
+
+    if (checked) {
+      const expanded: Record<string, boolean> = {}
+
+      filteredCards.forEach((card) => {
+        expanded[card.id] = true
+      })
+
+      setExpandedOracles(expanded)
+    } else {
+      setExpandedOracles({})
+    }
+
+    // The search bar must remain visible
+    setIsSearchVisible(true)
+
+    /*
+    * Expanding/collapsing all cards changes the page height.
+    * Restore the scroll position after the layout has been recalculated.
+    */
+    requestAnimationFrame(() => {
+      window.scrollTo({
+        top: currentScrollY,
+        behavior: 'instant',
+      })
+
+      lastScrollY.current = currentScrollY
+
+      // Wait one more frame so layout changes are completely settled
+      requestAnimationFrame(() => {
+        ignoreScrollRef.current = false
+        lastScrollY.current = window.scrollY
+        setIsSearchVisible(true)
+      })
+    })
+  }
+
   const handleAdvancedOpenChange = (value: boolean) => {
     const currentScrollY = window.scrollY
 
@@ -147,7 +214,9 @@ export function CatalogPage() {
           setOptions={setOptions}
           typeOptions={typeOptions}
           isAdvancedOpen={isAdvancedOpen}
+          expandAllCards={expandAllCards}
           onAdvancedOpenChange={handleAdvancedOpenChange}
+          onExpandAllChange={handleExpandAllChange}
           onQueryChange={(value) => setQuery(value)}
           onSetChange={(value) => setSetValue(value)}
           onTypeChange={(value) => setTypeValue(value)}
