@@ -154,6 +154,72 @@
   font-style: italic;
 }
 
+.type-line-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.set-rarity {
+  margin-left: auto;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.set-symbol {
+  width: 0.95rem;
+  height: 0.95rem;
+  display: block;
+}
+
+/*
+ * Scryfall set SVGs are monochrome, so we tint the symbol per rarity
+ * using filter values tuned to MTG-like rarity tones.
+ */
+.set-rarity.rarity-common .set-symbol {
+  filter: none;
+}
+
+.set-rarity.rarity-uncommon .set-symbol {
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(77%)
+    sepia(4%)
+    saturate(366%)
+    hue-rotate(161deg)
+    brightness(90%)
+    contrast(88%);
+}
+
+.set-rarity.rarity-rare .set-symbol {
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(73%)
+    sepia(38%)
+    saturate(1174%)
+    hue-rotate(358deg)
+    brightness(98%)
+    contrast(90%);
+}
+
+.set-rarity.rarity-mythic .set-symbol {
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(52%)
+    sepia(68%)
+    saturate(1164%)
+    hue-rotate(353deg)
+    brightness(94%)
+    contrast(94%);
+}
+
 
 /* =========================================================
    ORACLE TEXT
@@ -362,6 +428,15 @@
 
   .type-line {
     font-size: 0.75rem;
+  }
+
+  .set-rarity {
+    margin-left: auto;
+  }
+
+  .set-symbol {
+    width: 0.85rem;
+    height: 0.85rem;
   }
 
   .oracle {

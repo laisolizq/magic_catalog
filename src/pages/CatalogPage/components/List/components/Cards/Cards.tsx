@@ -23,6 +23,10 @@ function symbolUrl(sym: string): string {
   return `https://svgs.scryfall.io/card-symbols/${sym}.svg`
 }
 
+function setSymbolUrl(setCode: string, rarity: Card['rarity']): string {
+  return `https://svgs.scryfall.io/sets/${setCode}.svg?rarity=${rarity}`
+}
+
 function stripParentheticalText(text: string): string {
   return text
     .split('\n')
@@ -110,7 +114,23 @@ export function Cards({
           <ManaCost cost={card.manaCost} />
         </header>
 
-        <p className="type-line">{card.typeLine}</p>
+        <div className="type-line-row">
+          <p className="type-line">{card.typeLine}</p>
+
+          <span
+            className={`set-rarity rarity-${card.rarity}`}
+            aria-label={`${card.set.toUpperCase()} ${card.rarity}`}
+            title={`${card.set.toUpperCase()} • ${card.rarity}`}
+          >
+            <img
+              className="set-symbol"
+              src={setSymbolUrl(card.set, card.rarity)}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+            />
+          </span>
+        </div>
 
         <p
           className={
