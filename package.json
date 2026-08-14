@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "prepare": "sh scripts/setup-git-hooks.sh",
+    "hooks:install": "sh scripts/setup-git-hooks.sh",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
