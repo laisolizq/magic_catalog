@@ -87,21 +87,7 @@ export function Cards({
   onToggleOracle,
   onOpenDetails,
 }: CardsProps) {
-  const faces = Array.isArray((card as any).faces)
-    ? (card as any).faces as CardFace[]
-    : [
-        {
-          name: (card as any).name,
-          manaCost: (card as any).manaCost,
-          typeLine: (card as any).typeLine,
-          power: (card as any).power,
-          toughness: (card as any).toughness,
-          oracleText: (card as any).oracleText,
-          colors: (card as any).colors ?? [],
-          imageUrl: (card as any).imageUrl,
-          artCropUrl: (card as any).artCropUrl,
-        } as CardFace,
-      ]
+  const faces: CardFace[] = card.faces
 
   return (
     <div className="card-face-group">
@@ -121,13 +107,37 @@ export function Cards({
             onClick={() => onOpenDetails(card, faceIndex)}
             onKeyUp={(event) => {
               if (event.key === 'Enter') {
-                onOpenDetails(card)
+                onOpenDetails(card, faceIndex)
               }
             }}
             role="button"
             tabIndex={0}
             aria-label={`Open details for ${face.name}`}
           >
+            <aside
+              className={`card-media rarity-frame-${card.rarity}`}
+              aria-hidden="true"
+            >
+              <div className="card-art-frame">
+                <img
+                  className="card-thumb"
+                  src={face.artCropUrl ?? face.imageUrl}
+                  alt={face.name}
+                  loading="lazy"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onOpenDetails(card, faceIndex)
+                  }}
+                />
+
+                {hasPowerAndToughness && (
+                  <span className="power-line">
+                    {face.power ?? '-'} / {face.toughness ?? '-'}
+                  </span>
+                )}
+              </div>
+            </aside>
+
             <div className="card-main">
               <header className="card-headline">
                 <h3>{face.name}</h3>
@@ -176,30 +186,6 @@ export function Cards({
                 {renderOracleText(oracleText)}
               </p>
             </div>
-
-            <aside
-              className={`card-media rarity-frame-${card.rarity}`}
-              aria-hidden="true"
-            >
-              <div className="card-art-frame">
-                  <img
-                    className="card-thumb"
-                    src={face.artCropUrl ?? face.imageUrl}
-                    alt={face.name}
-                    loading="lazy"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onOpenDetails(card, faceIndex)
-                    }}
-                  />
-
-                {hasPowerAndToughness && (
-                  <span className="power-line">
-                    {face.power ?? '-'} / {face.toughness ?? '-'}
-                  </span>
-                )}
-              </div>
-            </aside>
           </article>
         )
       })}

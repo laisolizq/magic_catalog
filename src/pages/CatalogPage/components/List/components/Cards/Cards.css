@@ -2,12 +2,13 @@
   --card-color: #b3b5b8;
   --card-color-soft: rgb(179 181 184 / 22%);
   --card-border: #777b80;
+  --card-media-width: 138px;
+  --card-media-height: 138px;
+  --card-media-gap: 0.7rem;
 
   border-radius: 14px;
 
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 138px;
-  gap: 0.7rem;
+  display: block;
 
   padding: 0.65rem;
 
@@ -40,6 +41,12 @@
   overflow: hidden;
 
   position: relative;
+}
+
+.card-tile::after {
+  content: '';
+  display: block;
+  clear: both;
 }
 
 .card-tile:hover {
@@ -105,16 +112,10 @@
 .card-main {
   min-width: 0;
 
-  display: grid;
-  grid-template-rows: auto auto auto 1fr;
-
-  gap: 0.35rem;
-
-  overflow: hidden;
+  overflow: visible;
 
   border-radius: 9px;
   padding: 0rem 0rem 0rem 0.2rem;
-
 }
 
 
@@ -136,6 +137,9 @@
 
   font-size: 0.95rem;
   line-height: 1.15;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-synthesis: weight;
 
   color: var(--ink-strong);
 
@@ -159,6 +163,7 @@
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
+  margin-top: 0.35rem;
 }
 
 .set-rarity {
@@ -247,6 +252,7 @@
 
 .oracle {
   margin: 0;
+  margin-top: 0.35rem;
 
   color: var(--ink-soft);
 
@@ -298,7 +304,10 @@
    ========================================================= */
 
 .card-media {
-  align-self: start;
+  float: right;
+
+  width: var(--card-media-width);
+  height: var(--card-media-height);
 
   min-width: 0;
 
@@ -311,20 +320,13 @@
   /*
    * Pull the image out to the edge of the card.
    */
-  margin: -0.65rem -0.65rem -0.65rem 0;
+  margin: -0.65rem -0.65rem -0.65rem var(--card-media-gap);
 
   overflow: hidden;
 
   display: flex;
 
   align-items: flex-start;
-
-  /*
-   * IMPORTANT:
-   * The image keeps its own height.
-   * It does not follow the height of the oracle text.
-   */
-  height: 138px;
 
   flex-shrink: 0;
 }
@@ -428,18 +430,14 @@
 
 @media (max-width: 640px) {
   .card-tile {
-    grid-template-columns: minmax(0, 1fr) 85px;
+    --card-media-width: 85px;
+    --card-media-height: 100px;
+    --card-media-gap: 0.45rem;
 
     width: 100%;
     max-width: 100%;
 
-    gap: 0.45rem;
-
     padding: 0.5rem;
-  }
-
-  .card-main {
-    gap: 0.2rem;
   }
 
   .card-headline h3 {
@@ -489,13 +487,7 @@
   }
 
   .card-media {
-    margin: -0.5rem -0.5rem -0.5rem 0;
-  
-    /*
-     * Fixed image height on mobile too.
-     * It will not grow when the oracle expands.
-     */
-    height: 100px;
+    margin: -0.5rem -0.5rem -0.5rem var(--card-media-gap);
   }
 
   .card-art-frame {
