@@ -6,7 +6,7 @@ interface ListProps {
   cards: Card[]
   expandedOracles: Record<string, boolean>
   onToggleOracle: (cardId: string) => void
-  onOpenDetails: (card: Card) => void
+  onOpenDetails: (card: Card, faceIndex?: number) => void
 }
 
 export function List({

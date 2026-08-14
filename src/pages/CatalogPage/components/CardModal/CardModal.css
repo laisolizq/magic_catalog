@@ -66,7 +66,7 @@
 
 @media (max-width: 480px) {
   .card-modal-overlay {
-    place-items: start center;
+    place-items: center;
     padding: calc(0.25rem + env(safe-area-inset-top)) 0.5rem 0.5rem;
   }
 

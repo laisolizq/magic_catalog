@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { Card } from '../../../../types/card'
 import './CardModal.css'
 
 interface CardModalProps {
   card: Card
+  initialFaceIndex?: number
   onClose: () => void
   onShowPrevious: () => void
   onShowNext: () => void
@@ -18,6 +19,7 @@ const SWIPE_THRESHOLD = 60
 
 export function CardModal({
   card,
+  initialFaceIndex = 0,
   onClose,
   onShowPrevious,
   onShowNext,
@@ -27,6 +29,9 @@ export function CardModal({
   nextCard,
 }: CardModalProps) {
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
+  const [currentFaceIndex, setCurrentFaceIndex] = useState<number>(
+    Math.max(0, Math.min(initialFaceIndex, (card.faces || []).length - 1)),
+  )
 
   useEffect(() => {
     const { body } = document
@@ -58,20 +63,34 @@ export function CardModal({
     const absX = Math.abs(deltaX)
     const absY = Math.abs(deltaY)
 
-    if (absX > absY) {
+    // Horizontal swipes: close modal
+    if (absX > absY && absX > SWIPE_THRESHOLD) {
       if (deltaX < -SWIPE_THRESHOLD) {
         onClose()
       }
       return
     }
 
-    if (deltaY < -SWIPE_THRESHOLD && hasNext) {
-      onShowNext()
-      return
-    }
+    // Vertical swipes: navigate faces; if at boundary, navigate cards
+    if (absY > absX && absY > SWIPE_THRESHOLD) {
+      if (deltaY < -SWIPE_THRESHOLD) {
+        // swipe up -> next face
+        if ((card.faces || []).length - 1 > currentFaceIndex) {
+          setCurrentFaceIndex((i) => i + 1)
+        } else if (hasNext) {
+          onShowNext()
+        }
+        return
+      }
 
-    if (deltaY > SWIPE_THRESHOLD && hasPrevious) {
-      onShowPrevious()
+      if (deltaY > SWIPE_THRESHOLD) {
+        // swipe down -> previous face
+        if (currentFaceIndex > 0) {
+          setCurrentFaceIndex((i) => i - 1)
+        } else if (hasPrevious) {
+          onShowPrevious()
+        }
+      }
     }
   }
 
@@ -82,29 +101,60 @@ export function CardModal({
         return
       }
 
-      if (event.key === 'ArrowUp' && hasNext) {
-        onShowNext()
+      if (event.key === 'ArrowLeft') {
+        onClose()
         return
       }
 
-      if (event.key === 'ArrowDown' && hasPrevious) {
-        onShowPrevious()
+      if (event.key === 'ArrowUp') {
+        // previous face
+        if (currentFaceIndex > 0) {
+          setCurrentFaceIndex((i) => i - 1)
+        } else if (hasPrevious) {
+          onShowPrevious()
+        }
+        return
+      }
+
+      if (event.key === 'ArrowDown') {
+        // next face
+        if (currentFaceIndex < (card.faces || []).length - 1) {
+          setCurrentFaceIndex((i) => i + 1)
+        } else if (hasNext) {
+          onShowNext()
+        }
+        return
       }
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [hasNext, hasPrevious, onClose, onShowNext, onShowPrevious])
+  }, [currentFaceIndex, hasNext, hasPrevious, onClose, onShowNext, onShowPrevious, card.faces])
 
   useEffect(() => {
-    const urls = [card.imageUrl, previousCard?.imageUrl, nextCard?.imageUrl]
-      .filter((url): url is string => Boolean(url))
+    // preload current card faces and neighbor cards' primary faces
+    const faces = card.faces || []
+    const urls: string[] = []
+    faces.forEach((f) => f.imageUrl && urls.push(f.imageUrl))
+    const prev = previousCard?.faces?.[0]
+    const next = nextCard?.faces?.[0]
+    if (prev?.imageUrl) urls.push(prev.imageUrl)
+    if (next?.imageUrl) urls.push(next.imageUrl)
 
     urls.forEach((url) => {
       const img = new Image()
       img.src = url
     })
-  }, [card.imageUrl, nextCard?.imageUrl, previousCard?.imageUrl])
+  }, [card, previousCard, nextCard])
+
+  useEffect(() => {
+    // Sync when initialFaceIndex changes (opening a different face)
+    setCurrentFaceIndex(
+      Math.max(0, Math.min(initialFaceIndex, (card.faces || []).length - 1)),
+    )
+  }, [initialFaceIndex, card.faces])
+
+  const face = card.faces?.[currentFaceIndex]
 
   return (
     <div className="card-modal-overlay" role="presentation" onClick={onClose}>
@@ -112,7 +162,7 @@ export function CardModal({
         className="card-modal"
         role="dialog"
         aria-modal="true"
-        aria-label={`${card.name} details`}
+        aria-label={`${face?.name ?? ''} details`}
         onClick={(event) => event.stopPropagation()}
         onTouchStart={(event) => {
           const touch = event.changedTouches[0]
@@ -128,10 +178,10 @@ export function CardModal({
         }}
       >
         <div className="card-modal-image-wrap">
-          <img className="card-modal-image" src={card.imageUrl} alt={card.name} />
+          <img className="card-modal-image" src={face?.imageUrl} alt={face?.name} />
         </div>
         <div className="card-modal-actions">
-          <button type="button" onClick={onClose}>
+          <button type="button" onClick={onClose} aria-label="Close">
             X
           </button>
         </div>

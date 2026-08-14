@@ -15,6 +15,7 @@ from urllib.request import Request, urlopen
 USER_AGENT = "magic_catalog/1.0 (download_tla_set script)"
 REQUEST_TIMEOUT_SECONDS = 30
 MAX_RETRIES = 4
+
 VALID_RARITIES = {"common", "uncommon", "rare", "mythic"}
 VALID_COLORS = {"W", "U", "B", "R", "G"}
 
@@ -23,95 +24,107 @@ def safe_string(value: Any) -> str:
     return value if isinstance(value, str) else ""
 
 
-def first_face_with_image(card: dict[str, Any]) -> dict[str, Any] | None:
-    card_faces = card.get("card_faces")
-    if not isinstance(card_faces, list):
-        return None
+def safe_colors(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
 
-    for face in card_faces:
-        if isinstance(face, dict) and isinstance(face.get("image_uris"), dict):
-            if safe_string(face["image_uris"].get("normal")):
-                return face
-
-    return None
+    return [
+        color
+        for color in value
+        if isinstance(color, str) and color in VALID_COLORS
+    ]
 
 
-def build_oracle_text(card: dict[str, Any]) -> str:
-    oracle_text = safe_string(card.get("oracle_text"))
-    if oracle_text:
-        return oracle_text
+def get_image_url(data: dict[str, Any], key: str) -> str:
+    image_uris = data.get("image_uris")
 
-    card_faces = card.get("card_faces")
-    if not isinstance(card_faces, list):
+    if not isinstance(image_uris, dict):
         return ""
 
-    parts: list[str] = []
-    for face in card_faces:
-        if isinstance(face, dict):
-            text = safe_string(face.get("oracle_text"))
-            if text:
-                parts.append(text)
-
-    return " // ".join(parts)
+    return safe_string(image_uris.get(key))
 
 
-def to_mock_card(card: dict[str, Any]) -> dict[str, Any] | None:
-    face_with_image = first_face_with_image(card)
-    image_url = safe_string(card.get("image_uris", {}).get("normal"))
-    if not image_url and face_with_image:
-        image_url = safe_string(face_with_image.get("image_uris", {}).get("normal"))
+def build_face_from_data(data: dict[str, Any]) -> dict[str, Any] | None:
+    image_url = get_image_url(data, "normal")
 
     if not image_url:
         return None
 
-    art_crop_url = safe_string(card.get("image_uris", {}).get("art_crop"))
-    if not art_crop_url and face_with_image:
-        art_crop_url = safe_string(face_with_image.get("image_uris", {}).get("art_crop"))
-    if not art_crop_url:
-        art_crop_url = image_url
+    face: dict[str, Any] = {
+        "name": safe_string(data.get("name")),
+        "manaCost": safe_string(data.get("mana_cost")),
+        "typeLine": safe_string(data.get("type_line")),
+        "oracleText": safe_string(data.get("oracle_text")),
+        "colors": safe_colors(data.get("colors")),
+        "imageUrl": image_url,
+        "artCropUrl": get_image_url(data, "art_crop") or image_url,
+    }
+
+    power = safe_string(data.get("power"))
+    if power:
+        face["power"] = power
+
+    toughness = safe_string(data.get("toughness"))
+    if toughness:
+        face["toughness"] = toughness
+
+    return face
+
+
+def build_faces(card: dict[str, Any]) -> list[dict[str, Any]]:
+    """
+    Build a normalized faces array.
+
+    - Normal cards don't have card_faces, so we create one face
+      from the card itself.
+    - Double-faced cards have card_faces, so we create one face
+      for every entry.
+    """
+
+    card_faces = card.get("card_faces")
+
+    if isinstance(card_faces, list) and card_faces:
+        faces: list[dict[str, Any]] = []
+
+        for raw_face in card_faces:
+            if not isinstance(raw_face, dict):
+                continue
+
+            face = build_face_from_data(raw_face)
+
+            if face is not None:
+                faces.append(face)
+
+        return faces
+
+    face = build_face_from_data(card)
+
+    return [face] if face is not None else []
+
+
+def to_mock_card(card: dict[str, Any]) -> dict[str, Any] | None:
+    set_code = safe_string(card.get("set"))
+    collector_number = safe_string(card.get("collector_number"))
+
+    if not set_code or not collector_number:
+        return None
+
+    faces = build_faces(card)
+
+    if not faces:
+        return None
 
     rarity = safe_string(card.get("rarity"))
+
     if rarity not in VALID_RARITIES:
         rarity = "common"
 
-    colors_raw = card.get("colors")
-    colors = []
-    if isinstance(colors_raw, list):
-        colors = [color for color in colors_raw if isinstance(color, str) and color in VALID_COLORS]
-
-    first_face = None
-    card_faces = card.get("card_faces")
-    if isinstance(card_faces, list) and card_faces and isinstance(card_faces[0], dict):
-        first_face = card_faces[0]
-
-    power = safe_string(card.get("power"))
-    if not power and first_face:
-        power = safe_string(first_face.get("power"))
-
-    toughness = safe_string(card.get("toughness"))
-    if not toughness and first_face:
-        toughness = safe_string(first_face.get("toughness"))
-
-    mock_card: dict[str, Any] = {
-        "id": f"{safe_string(card.get('set'))}-{safe_string(card.get('collector_number'))}",
-        "name": safe_string(card.get("name")),
-        "manaCost": safe_string(card.get("mana_cost")),
-        "typeLine": safe_string(card.get("type_line")),
-        "oracleText": build_oracle_text(card),
-        "set": safe_string(card.get("set")),
+    return {
+        "id": f"{set_code}-{collector_number}",
         "rarity": rarity,
-        "colors": colors,
-        "imageUrl": image_url,
-        "artCropUrl": art_crop_url,
+        "set": set_code,
+        "faces": faces,
     }
-
-    if power:
-        mock_card["power"] = power
-
-    if toughness:
-        mock_card["toughness"] = toughness
-
-    return mock_card
 
 
 def collector_sort_key(card: dict[str, Any]) -> tuple[str, int, str]:
@@ -120,6 +133,7 @@ def collector_sort_key(card: dict[str, Any]) -> tuple[str, int, str]:
 
     digits = ""
     suffix = ""
+
     for index, char in enumerate(collector):
         if char.isdigit():
             digits += char
@@ -128,6 +142,7 @@ def collector_sort_key(card: dict[str, Any]) -> tuple[str, int, str]:
             break
 
     collector_number = int(digits) if digits else 0
+
     return set_code, collector_number, suffix.lower()
 
 
@@ -135,29 +150,46 @@ def quote(value: Any) -> str:
     return json.dumps(value, ensure_ascii=True)
 
 
+def format_face(face: dict[str, Any]) -> str:
+    lines = [
+        "      {",
+        f"        name: {quote(face['name'])},",
+        f"        manaCost: {quote(face['manaCost'])},",
+        f"        typeLine: {quote(face['typeLine'])},",
+        f"        oracleText: {quote(face['oracleText'])},",
+        "        colors: ["
+        + ", ".join(quote(color) for color in face["colors"])
+        + "],",
+        f"        imageUrl: {quote(face['imageUrl'])},",
+        f"        artCropUrl: {quote(face['artCropUrl'])},",
+    ]
+
+    if "power" in face:
+        lines.append(f"        power: {quote(face['power'])},")
+
+    if "toughness" in face:
+        lines.append(f"        toughness: {quote(face['toughness'])},")
+
+    lines.append("      },")
+
+    return "\n".join(lines)
+
+
 def format_card(card: dict[str, Any]) -> str:
     lines = [
         "  {",
         f"    id: {quote(card['id'])},",
-        f"    name: {quote(card['name'])},",
-        f"    manaCost: {quote(card['manaCost'])},",
-        f"    typeLine: {quote(card['typeLine'])},",
+        f"    rarity: {quote(card['rarity'])},",
+        f"    set: {quote(card['set'])},",
+        "    faces: [",
     ]
 
-    if "power" in card:
-        lines.append(f"    power: {quote(card['power'])},")
-
-    if "toughness" in card:
-        lines.append(f"    toughness: {quote(card['toughness'])},")
+    for face in card["faces"]:
+        lines.append(format_face(face))
 
     lines.extend(
         [
-            f"    oracleText: {quote(card['oracleText'])},",
-            f"    set: {quote(card['set'])},",
-            f"    rarity: {quote(card['rarity'])},",
-            "    colors: [" + ", ".join(quote(color) for color in card["colors"]) + "],",
-            f"    imageUrl: {quote(card['imageUrl'])},",
-            f"    artCropUrl: {quote(card['artCropUrl'])},",
+            "    ],",
             "  },",
         ]
     )
@@ -176,24 +208,41 @@ def fetch_json_with_retries(url: str) -> dict[str, Any]:
         )
 
         try:
-            with urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+            with urlopen(
+                request,
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            ) as response:
                 payload = response.read().decode("utf-8")
+
             return json.loads(payload)
-        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as error:
+
+        except (
+            HTTPError,
+            URLError,
+            TimeoutError,
+            json.JSONDecodeError,
+        ) as error:
             if attempt == MAX_RETRIES:
                 raise
 
             print(
-                f"Request failed (attempt {attempt}/{MAX_RETRIES}). Retrying: {error}",
+                f"Request failed "
+                f"(attempt {attempt}/{MAX_RETRIES}). "
+                f"Retrying: {error}",
                 file=sys.stderr,
             )
+
             time.sleep(1.5)
 
     raise RuntimeError("Unable to fetch cards from Scryfall.")
 
 
 def fetch_all_cards(set_code: str) -> list[dict[str, Any]]:
-    query = f"https://api.scryfall.com/cards/search?order=set&q=e:{set_code}&unique=prints"
+    query = (
+        "https://api.scryfall.com/cards/search"
+        f"?order=set&q=e:{set_code}&unique=prints"
+    )
+
     cards: list[dict[str, Any]] = []
     next_url: str | None = query
 
@@ -201,18 +250,32 @@ def fetch_all_cards(set_code: str) -> list[dict[str, Any]]:
         payload = fetch_json_with_retries(next_url)
 
         data = payload.get("data")
+
         if isinstance(data, list):
-            cards.extend(item for item in data if isinstance(item, dict))
+            cards.extend(
+                item
+                for item in data
+                if isinstance(item, dict)
+            )
 
         has_more = bool(payload.get("has_more"))
         next_page = payload.get("next_page")
-        next_url = next_page if has_more and isinstance(next_page, str) else None
+
+        next_url = (
+            next_page
+            if has_more and isinstance(next_page, str)
+            else None
+        )
 
     return cards
 
 
-def write_mock_cards_file(cards: list[dict[str, Any]], output_path: Path) -> None:
+def write_mock_cards_file(
+    cards: list[dict[str, Any]],
+    output_path: Path,
+) -> None:
     generated_at = datetime.now(timezone.utc).isoformat()
+
     body_lines = [
         "import type { Card } from '../types/card'",
         "",
@@ -220,23 +283,47 @@ def write_mock_cards_file(cards: list[dict[str, Any]], output_path: Path) -> Non
         "export const mockCards: Card[] = [",
     ]
 
-    body_lines.extend(format_card(card) for card in cards)
-    body_lines.extend([
-        "]",
-        "",
-    ])
+    body_lines.extend(
+        format_card(card)
+        for card in cards
+    )
 
-    output_path.write_text("\n".join(body_lines), encoding="utf-8")
+    body_lines.extend(
+        [
+            "]",
+            "",
+        ]
+    )
+
+    output_path.write_text(
+        "\n".join(body_lines),
+        encoding="utf-8",
+    )
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Download a set from Scryfall and generate mockCards.ts")
-    parser.add_argument("--set", default="tla", help="Scryfall set code (default: tla)")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Download a set from Scryfall "
+            "and generate mockCards.ts"
+        )
+    )
+
+    parser.add_argument(
+        "--set",
+        default="tla",
+        help="Scryfall set code (default: tla)",
+    )
+
     parser.add_argument(
         "--output",
         default="src/data/mockCards.ts",
-        help="Output TypeScript file path (default: src/data/mockCards.ts)",
+        help=(
+            "Output TypeScript file path "
+            "(default: src/data/mockCards.ts)"
+        ),
     )
+
     return parser.parse_args()
 
 
@@ -244,15 +331,38 @@ def main() -> int:
     args = parse_args()
 
     root_dir = Path(__file__).resolve().parent.parent
-    output_path = (root_dir / args.output).resolve()
 
-    all_cards = fetch_all_cards(args.set.lower())
-    mock_cards = [card for card in (to_mock_card(card) for card in all_cards) if card is not None]
-    mock_cards.sort(key=collector_sort_key)
+    output_path = (
+        root_dir / args.output
+    ).resolve()
 
-    write_mock_cards_file(mock_cards, output_path)
+    all_cards = fetch_all_cards(
+        args.set.lower()
+    )
 
-    print(f"Saved {len(mock_cards)} cards to {output_path}")
+    mock_cards = [
+        card
+        for card in (
+            to_mock_card(card)
+            for card in all_cards
+        )
+        if card is not None
+    ]
+
+    mock_cards.sort(
+        key=collector_sort_key
+    )
+
+    write_mock_cards_file(
+        mock_cards,
+        output_path,
+    )
+
+    print(
+        f"Saved {len(mock_cards)} cards "
+        f"to {output_path}"
+    )
+
     return 0
 
 

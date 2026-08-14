@@ -14,6 +14,27 @@ import './CatalogPage.css'
 
 const BATCH_SIZE = 12
 
+/**
+ * Converts the new Scryfall structure:
+ *
+ * {
+ *   id,
+ *   rarity,
+ *   set,
+ *   faces: [...]
+ * }
+ *
+ * into the structure currently expected by the UI.
+ *
+ * For now we display the first face of every card.
+ * The complete `faces` array is kept in the original card
+ * so we can later implement face switching.
+ */
+function getDisplayCards(): Card[] {
+  // mockCards already uses the new shape expected by the app
+  return mockCards
+}
+
 export function CatalogPage() {
   const [query, setQuery] = useState('')
   const [setValue, setSetValue] = useState('all')
@@ -22,6 +43,7 @@ export function CatalogPage() {
   const [colorValue, setColorValue] = useState('all')
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
+  const [selectedFaceIndex, setSelectedFaceIndex] = useState<number>(0)
 
   const [expandedOracles, setExpandedOracles] = useState<
     Record<string, boolean>
@@ -36,16 +58,32 @@ export function CatalogPage() {
   const lastScrollY = useRef(0)
   const ignoreScrollRef = useRef(false)
 
+  /*
+   * Convert the new mockCards structure into the structure
+   * currently used by the catalog UI.
+   */
+  const displayCards = useMemo(
+    () => getDisplayCards(),
+    [],
+  )
+
   const filteredCards = useMemo(
     () =>
-      filterCards(mockCards, {
+      filterCards(displayCards, {
         query,
         set: setValue,
         type: typeValue,
         rarity: rarityValue,
         color: colorValue,
       }),
-    [query, setValue, typeValue, rarityValue, colorValue],
+    [
+      displayCards,
+      query,
+      setValue,
+      typeValue,
+      rarityValue,
+      colorValue,
+    ],
   )
 
   // Reset visible cards and expanded state whenever filters change
@@ -78,7 +116,6 @@ export function CatalogPage() {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
 
-      // Ignore scroll events caused by opening/closing the filters
       if (ignoreScrollRef.current) {
         lastScrollY.current = currentScrollY
         return
@@ -87,17 +124,17 @@ export function CatalogPage() {
       if (currentScrollY <= 0) {
         setIsSearchVisible(true)
       } else if (currentScrollY < lastScrollY.current) {
-        // Scrolling up
         setIsSearchVisible(true)
       } else if (currentScrollY > lastScrollY.current) {
-        // Scrolling down
         setIsSearchVisible(false)
       }
 
       lastScrollY.current = currentScrollY
     }
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('scroll', handleScroll, {
+      passive: true,
+    })
 
     return () => {
       window.removeEventListener('scroll', handleScroll)
@@ -113,7 +150,10 @@ export function CatalogPage() {
       ([entry]) => {
         if (entry.isIntersecting) {
           setVisibleCount((prev) =>
-            Math.min(prev + BATCH_SIZE, filteredCards.length),
+            Math.min(
+              prev + BATCH_SIZE,
+              filteredCards.length,
+            ),
           )
         }
       },
@@ -125,17 +165,40 @@ export function CatalogPage() {
     return () => observer.disconnect()
   }, [filteredCards.length])
 
-  const setOptions = useMemo(() => getUniqueSets(mockCards), [])
-  const typeOptions = useMemo(() => getUniqueTypes(mockCards), [])
-  const visibleCards = filteredCards.slice(0, visibleCount)
+  /*
+   * IMPORTANT:
+   * Use displayCards here, not mockCards, because the filters
+   * currently operate on the old Card structure.
+   */
+  const setOptions = useMemo(
+    () => getUniqueSets(displayCards),
+    [displayCards],
+  )
+
+  const typeOptions = useMemo(
+    () => getUniqueTypes(displayCards),
+    [displayCards],
+  )
+
+  const visibleCards = filteredCards.slice(
+    0,
+    visibleCount,
+  )
+
   const modalCards = filteredCards
+
   const selectedCardIndex = selectedCard
-    ? modalCards.findIndex((card) => card.id === selectedCard.id)
+    ? modalCards.findIndex(
+        (card) => card.id === selectedCard.id,
+      )
     : -1
 
   const showPreviousCard = () => {
     if (selectedCardIndex <= 0) return
-    setSelectedCard(modalCards[selectedCardIndex - 1])
+
+    setSelectedCard(
+      modalCards[selectedCardIndex - 1],
+    )
   }
 
   const showNextCard = () => {
@@ -146,13 +209,14 @@ export function CatalogPage() {
       return
     }
 
-    setSelectedCard(modalCards[selectedCardIndex + 1])
+    setSelectedCard(
+      modalCards[selectedCardIndex + 1],
+    )
   }
 
   const handleExpandAllChange = (checked: boolean) => {
     const currentScrollY = window.scrollY
 
-    // Ignore scroll events caused by cards changing their height
     ignoreScrollRef.current = true
 
     setExpandAllCards(checked)
@@ -169,13 +233,8 @@ export function CatalogPage() {
       setExpandedOracles({})
     }
 
-    // The search bar must remain visible
     setIsSearchVisible(true)
 
-    /*
-    * Expanding/collapsing all cards changes the page height.
-    * Restore the scroll position after the layout has been recalculated.
-    */
     requestAnimationFrame(() => {
       window.scrollTo({
         top: currentScrollY,
@@ -184,7 +243,6 @@ export function CatalogPage() {
 
       lastScrollY.current = currentScrollY
 
-      // Wait one more frame so layout changes are completely settled
       requestAnimationFrame(() => {
         ignoreScrollRef.current = false
         lastScrollY.current = window.scrollY
@@ -196,7 +254,6 @@ export function CatalogPage() {
   const handleAdvancedOpenChange = (value: boolean) => {
     const currentScrollY = window.scrollY
 
-    // Ignore the scroll events generated by the layout change
     ignoreScrollRef.current = true
 
     setIsAdvancedOpen(value)
@@ -210,7 +267,6 @@ export function CatalogPage() {
 
       lastScrollY.current = currentScrollY
 
-      // Resume normal scroll handling after the layout has settled
       requestAnimationFrame(() => {
         ignoreScrollRef.current = false
         lastScrollY.current = window.scrollY
@@ -219,10 +275,15 @@ export function CatalogPage() {
   }
 
   return (
-    <section className="catalog-page" aria-label="Catalog Page">
+    <section
+      className="catalog-page"
+      aria-label="Catalog Page"
+    >
       <div
         className={`search-bar-wrapper ${
-          isSearchVisible ? 'search-visible' : 'search-hidden'
+          isSearchVisible
+            ? 'search-visible'
+            : 'search-hidden'
         }`}
       >
         <SearchBar
@@ -235,13 +296,27 @@ export function CatalogPage() {
           typeOptions={typeOptions}
           isAdvancedOpen={isAdvancedOpen}
           expandAllCards={expandAllCards}
-          onAdvancedOpenChange={handleAdvancedOpenChange}
-          onExpandAllChange={handleExpandAllChange}
-          onQueryChange={(value) => setQuery(value)}
-          onSetChange={(value) => setSetValue(value)}
-          onTypeChange={(value) => setTypeValue(value)}
-          onRarityChange={(value) => setRarityValue(value)}
-          onColorChange={(value) => setColorValue(value)}
+          onAdvancedOpenChange={
+            handleAdvancedOpenChange
+          }
+          onExpandAllChange={
+            handleExpandAllChange
+          }
+          onQueryChange={(value) =>
+            setQuery(value)
+          }
+          onSetChange={(value) =>
+            setSetValue(value)
+          }
+          onTypeChange={(value) =>
+            setTypeValue(value)
+          }
+          onRarityChange={(value) =>
+            setRarityValue(value)
+          }
+          onColorChange={(value) =>
+            setColorValue(value)
+          }
         />
       </div>
 
@@ -254,23 +329,47 @@ export function CatalogPage() {
             [cardId]: !prev[cardId],
           }))
         }
-        onOpenDetails={(card) => setSelectedCard(card)}
+        onOpenDetails={(card, faceIndex = 0) => {
+          setSelectedFaceIndex(faceIndex)
+          setSelectedCard(card)
+        }
+        }
       />
 
-      <div ref={sentinelRef} aria-hidden="true" />
+      <div
+        ref={sentinelRef}
+        aria-hidden="true"
+      />
 
       {selectedCard && (
         <CardModal
           card={selectedCard}
-          onClose={() => setSelectedCard(null)}
+          initialFaceIndex={selectedFaceIndex}
+          onClose={() =>
+            setSelectedCard(null)
+          }
           onShowPrevious={showPreviousCard}
           onShowNext={showNextCard}
           hasPrevious={selectedCardIndex > 0}
-          hasNext={selectedCardIndex >= 0 && selectedCardIndex < modalCards.length - 1}
-          previousCard={selectedCardIndex > 0 ? modalCards[selectedCardIndex - 1] : null}
+          hasNext={
+            selectedCardIndex >= 0 &&
+            selectedCardIndex <
+              modalCards.length - 1
+          }
+          previousCard={
+            selectedCardIndex > 0
+              ? modalCards[
+                  selectedCardIndex - 1
+                ]
+              : null
+          }
           nextCard={
-            selectedCardIndex >= 0 && selectedCardIndex < modalCards.length - 1
-              ? modalCards[selectedCardIndex + 1]
+            selectedCardIndex >= 0 &&
+            selectedCardIndex <
+              modalCards.length - 1
+              ? modalCards[
+                  selectedCardIndex + 1
+                ]
               : null
           }
         />

@@ -11,34 +11,35 @@ describe('CatalogPage', () => {
     render(<CatalogPage />)
 
     const firstCard = mockCards[0]
+    const firstName = firstCard.faces?.[0]?.name ?? ''
 
-    expect(screen.getByText(firstCard.name)).toBeInTheDocument()
+    expect(screen.getByText(firstName)).toBeInTheDocument()
 
     const queryInput = screen.getByPlaceholderText(/set:tla/i)
     await user.clear(queryInput)
-    await user.type(queryInput, firstCard.name)
-    expect(screen.getByText(firstCard.name)).toBeInTheDocument()
+    await user.type(queryInput, firstName)
+    expect(screen.getByText(firstName)).toBeInTheDocument()
 
     const oracleToggle = screen.getByRole('button', {
-      name: new RegExp(`toggle oracle text for ${firstCard.name}`, 'i'),
+      name: new RegExp(`toggle oracle text for ${firstName}`, 'i'),
     })
     await user.click(oracleToggle)
     expect(oracleToggle).toHaveAttribute('aria-expanded', 'true')
 
     await user.click(
       screen.getByRole('button', {
-        name: new RegExp(`open details for ${firstCard.name}`, 'i'),
+        name: new RegExp(`open details for ${firstName}`, 'i'),
       }),
     )
     expect(
       screen.getByRole('dialog', {
-        name: new RegExp(`${firstCard.name} details`, 'i'),
+        name: new RegExp(`${firstName} details`, 'i'),
       }),
     ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'X' }))
+    await user.click(screen.getByRole('button', { name: /close/i }))
     expect(
       screen.queryByRole('dialog', {
-        name: new RegExp(`${firstCard.name} details`, 'i'),
+        name: new RegExp(`${firstName} details`, 'i'),
       }),
     ).not.toBeInTheDocument()
   })

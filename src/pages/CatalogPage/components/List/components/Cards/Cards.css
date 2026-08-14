@@ -164,12 +164,32 @@
 .set-rarity {
   margin-left: auto;
 
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-shrink: 0;
 }
 
+.card-face-group {
+  display: block;
+  gap: 0;
+}
+
+/* Make touching card containers have square inner corners; keep outer corners rounded */
+.card-face-group .card-tile {
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+}
+
+.card-face-group .card-tile:first-child {
+  border-radius: 14px 14px 0 0;
+}
+
+.card-face-group .card-tile:last-child {
+  border-radius: 0 0 14px 14px;
+}
+
+/* Single-face card should keep full rounding */
+.card-face-group .card-tile:only-child {
+  border-radius: 14px;
+}
 .set-symbol {
   width: 0.95rem;
   height: 0.95rem;
@@ -249,7 +269,7 @@
   text-overflow: ellipsis;
 
   display: -webkit-box;
-
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
@@ -445,7 +465,7 @@
 
   .oracle.collapsed {
     display: -webkit-box;
-
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
 

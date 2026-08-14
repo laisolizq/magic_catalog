@@ -8,25 +8,50 @@ export interface CardFilters {
   color: string
 }
 
+function cardSearchText(card: Card): string {
+  const faceTexts = (card.faces || []).map((f) =>
+    [f.name, f.typeLine, f.oracleText, f.manaCost].join(' '),
+  )
+
+  return faceTexts.join(' ').toLowerCase()
+}
+
+function cardPrimaryTypeLine(card: Card): string {
+  return card.faces && card.faces[0]
+    ? card.faces[0].typeLine
+    : ''
+}
+
+function cardColors(card: Card): string[] {
+  const colors = new Set<string>()
+
+  ;(card.faces || []).forEach((f) => {
+    ;(f.colors || []).forEach((c) => colors.add(c))
+  })
+
+  return Array.from(colors)
+}
+
 export function filterCards(cards: Card[], filters: CardFilters): Card[] {
   const query = filters.query.trim().toLowerCase()
 
   return cards.filter((card) => {
-    const matchesQuery =
-      query.length === 0 ||
-      [card.name, card.typeLine, card.oracleText, card.manaCost]
-        .join(' ')
-        .toLowerCase()
-        .includes(query)
+    const text = cardSearchText(card)
+
+    const matchesQuery = query.length === 0 || text.includes(query)
 
     const matchesSet = filters.set === 'all' || card.set === filters.set
+
+    const typeLine = cardPrimaryTypeLine(card).toLowerCase()
     const matchesType =
-      filters.type === 'all' ||
-      card.typeLine.toLowerCase().includes(filters.type.toLowerCase())
+      filters.type === 'all' || typeLine.includes(filters.type.toLowerCase())
+
     const matchesRarity =
       filters.rarity === 'all' || card.rarity === filters.rarity
+
+    const colors = cardColors(card)
     const matchesColor =
-      filters.color === 'all' || card.colors.includes(filters.color as Card['colors'][number])
+      filters.color === 'all' || colors.includes(filters.color)
 
     return (
       matchesQuery &&
@@ -43,5 +68,5 @@ export function getUniqueSets(cards: Card[]): string[] {
 }
 
 export function getUniqueTypes(cards: Card[]): string[] {
-  return [...new Set(cards.map((card) => card.typeLine.split(' ')[0]))].sort()
+  return [...new Set(cards.map((card) => cardPrimaryTypeLine(card).split(' ')[0]))].sort()
 }
