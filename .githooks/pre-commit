@@ -1,0 +1,35 @@
+#!/usr/bin/env sh
+
+# Run from repository root for consistent npm behavior.
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -n "$REPO_ROOT" ]; then
+  cd "$REPO_ROOT" || exit 1
+fi
+
+echo "Running pre-commit build check..."
+if npm run build; then
+  echo "Build passed. Continuing commit."
+  exit 0
+fi
+
+echo "Build failed."
+
+# In non-interactive environments, fail closed.
+if [ ! -t 0 ]; then
+  echo "Non-interactive shell detected. Aborting commit."
+  exit 1
+fi
+
+printf "Do you want to commit anyway with a broken build? [y/N]: "
+read -r answer
+
+case "$answer" in
+  y|Y|yes|YES)
+    echo "Continuing commit despite broken build."
+    exit 0
+    ;;
+  *)
+    echo "Aborting commit."
+    exit 1
+    ;;
+esac
