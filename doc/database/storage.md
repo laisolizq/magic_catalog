@@ -2,8 +2,10 @@ We need a very compact offline database to store the information we want to disp
 This database must be updated in patches and not fully downloaded every time there is an update.
 Must have indexes to find cards by name fast and by set/color/rarity.
 
-Allso we want the thumbnails images of the standard legal cards downloaded.
+Allso we want the thumbnails images of the standard legal (most recent) cards downloaded.
 And highres image of the last 1000 queried cards in the cache.
+
+Implement fuzzy search by name, Esteve normally misspells the card names
 
 ----
 
