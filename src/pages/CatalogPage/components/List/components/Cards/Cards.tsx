@@ -101,6 +101,8 @@ export function Cards({
         return (
           <article
             key={`${card.id}-${faceIndex}`}
+            data-card-id={card.id}
+            data-face-index={faceIndex}
             className={`card-tile ${getFrameClass(face.colors)} ${getRarityClass(
               card.rarity,
             )}`}
@@ -186,9 +188,9 @@ export function Cards({
                 {renderOracleText(oracleText)}
               </p>
             </div>
-          </article>
-        )
-      })}
+            </article>
+          )
+        })}
     </div>
   )
 }

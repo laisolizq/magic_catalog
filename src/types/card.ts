@@ -5,6 +5,7 @@ export interface Card {
   set: string
   rarity: 'common' | 'uncommon' | 'rare' | 'mythic'
   faces: Array<CardFace>
+  rullings: Array<Rulling>
 }
 
 export interface CardFace {
@@ -18,3 +19,12 @@ export interface CardFace {
     imageUrl: string
     artCropUrl?: string
 }
+
+export interface Rulling {
+    object: string
+    oracle_id: string
+    source: string
+    published_at: string
+    comment: string
+}
+

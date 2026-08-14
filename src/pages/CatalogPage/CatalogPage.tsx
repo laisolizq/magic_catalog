@@ -214,6 +214,14 @@ export function CatalogPage() {
     )
   }
 
+  const scrollToCard = (cardId?: string, faceIndex?: number) => {
+    if (!cardId) return
+    let selector = `[data-card-id="${cardId}"]`
+    if (typeof faceIndex === 'number') selector += `[data-face-index="${faceIndex}"]`
+    const el = document.querySelector(selector) as HTMLElement | null
+    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }
+
   const handleExpandAllChange = (checked: boolean) => {
     const currentScrollY = window.scrollY
 
@@ -345,8 +353,14 @@ export function CatalogPage() {
         <CardModal
           card={selectedCard}
           initialFaceIndex={selectedFaceIndex}
-          onClose={() =>
+          onClose={() => {
+            const cardId = selectedCard?.id
+            const faceIdx = selectedFaceIndex
             setSelectedCard(null)
+            requestAnimationFrame(() => {
+              scrollToCard(cardId, faceIdx)
+            })
+          }
           }
           onShowPrevious={showPreviousCard}
           onShowNext={showNextCard}
