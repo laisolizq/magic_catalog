@@ -40,35 +40,69 @@ function stripParentheticalText(text: string): string {
     .join('\n')
 }
 
+// Reminder text in parentheses is rendered in a softer, cursive style.
+// Parens can span across mana symbols (e.g. "Equip {2} ({2}: Attach ...)"),
+// so reminder state is tracked across the whole line rather than per chunk.
 function renderOracleText(text: string) {
   const lines = text.split('\n')
 
   return lines.flatMap((line, lineIndex) => {
     const parts = line.split(/(\{[^}]+\})/g).filter(Boolean)
 
-    const renderedLine = parts.map((part, partIndex) => {
+    const renderedLine: React.ReactNode[] = []
+    let inReminder = false
+    let buffer = ''
+    let bufferIsReminder = false
+
+    const flushBuffer = (key: string) => {
+      if (!buffer) return
+      renderedLine.push(
+        bufferIsReminder ? (
+          <em key={key} className="oracle-reminder">
+            {buffer}
+          </em>
+        ) : (
+          <span key={key}>{buffer}</span>
+        ),
+      )
+      buffer = ''
+    }
+
+    parts.forEach((part, partIndex) => {
       const match = part.match(/^\{([^}]+)\}$/)
 
       if (!match) {
-        return (
-          <span key={`text-${lineIndex}-${partIndex}`}>
-            {part}
-          </span>
-        )
+        for (const char of part) {
+          if (char === '(') inReminder = true
+
+          if (inReminder !== bufferIsReminder) {
+            flushBuffer(`text-${lineIndex}-${partIndex}-${renderedLine.length}`)
+            bufferIsReminder = inReminder
+          }
+
+          buffer += char
+
+          if (char === ')') inReminder = false
+        }
+        return
       }
+
+      flushBuffer(`text-${lineIndex}-${partIndex}`)
 
       const symbol = match[1]
 
-      return (
+      renderedLine.push(
         <img
           key={`sym-${lineIndex}-${partIndex}`}
-          className="oracle-symbol"
+          className={inReminder ? 'oracle-symbol oracle-reminder' : 'oracle-symbol'}
           src={symbolUrl(symbol)}
           alt={symbol}
           aria-hidden="true"
-        />
+        />,
       )
     })
+
+    flushBuffer(`text-${lineIndex}-end`)
 
     if (lineIndex === lines.length - 1) {
       return renderedLine

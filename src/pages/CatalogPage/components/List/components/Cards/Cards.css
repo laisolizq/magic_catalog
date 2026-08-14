@@ -286,6 +286,11 @@
   overflow-wrap: anywhere;
 }
 
+.oracle-reminder {
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
 
 /* =========================================================
    MANA SYMBOLS
