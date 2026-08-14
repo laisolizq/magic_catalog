@@ -98,7 +98,7 @@ export function CardModal({
 
   useEffect(() => {
     const urls = [card.imageUrl, previousCard?.imageUrl, nextCard?.imageUrl]
-      .filter(Boolean)
+      .filter((url): url is string => Boolean(url))
 
     urls.forEach((url) => {
       const img = new Image()
