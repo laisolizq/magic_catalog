@@ -128,6 +128,26 @@ export function CatalogPage() {
   const setOptions = useMemo(() => getUniqueSets(mockCards), [])
   const typeOptions = useMemo(() => getUniqueTypes(mockCards), [])
   const visibleCards = filteredCards.slice(0, visibleCount)
+  const modalCards = filteredCards
+  const selectedCardIndex = selectedCard
+    ? modalCards.findIndex((card) => card.id === selectedCard.id)
+    : -1
+
+  const showPreviousCard = () => {
+    if (selectedCardIndex <= 0) return
+    setSelectedCard(modalCards[selectedCardIndex - 1])
+  }
+
+  const showNextCard = () => {
+    if (
+      selectedCardIndex < 0 ||
+      selectedCardIndex >= modalCards.length - 1
+    ) {
+      return
+    }
+
+    setSelectedCard(modalCards[selectedCardIndex + 1])
+  }
 
   const handleExpandAllChange = (checked: boolean) => {
     const currentScrollY = window.scrollY
@@ -243,6 +263,16 @@ export function CatalogPage() {
         <CardModal
           card={selectedCard}
           onClose={() => setSelectedCard(null)}
+          onShowPrevious={showPreviousCard}
+          onShowNext={showNextCard}
+          hasPrevious={selectedCardIndex > 0}
+          hasNext={selectedCardIndex >= 0 && selectedCardIndex < modalCards.length - 1}
+          previousCard={selectedCardIndex > 0 ? modalCards[selectedCardIndex - 1] : null}
+          nextCard={
+            selectedCardIndex >= 0 && selectedCardIndex < modalCards.length - 1
+              ? modalCards[selectedCardIndex + 1]
+              : null
+          }
         />
       )}
     </section>
