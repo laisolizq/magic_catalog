@@ -5,7 +5,8 @@ export interface Card {
   set: string
   rarity: 'common' | 'uncommon' | 'rare' | 'mythic'
   faces: Array<CardFace>
-  rullings: Array<Rulling>
+  // some data sources use the key 'rulings' (correct spelling)
+  rulings?: Array<Ruling>
 }
 
 export interface CardFace {
@@ -20,7 +21,7 @@ export interface CardFace {
     artCropUrl?: string
 }
 
-export interface Rulling {
+export interface Ruling {
     object: string
     oracle_id: string
     source: string

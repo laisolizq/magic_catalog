@@ -10,6 +10,7 @@ import {
   getUniqueSets,
   getUniqueTypes,
 } from '../../utils/cardFilters'
+import { SCROLL_SENSITIVITY } from '../../config/ui'
 import './CatalogPage.css'
 
 const BATCH_SIZE = 12
@@ -121,15 +122,27 @@ export function CatalogPage() {
         return
       }
 
+      // small movements are ignored; we only react when the user scrolls
+      // more than SCROLL_SENSITIVITY pixels in one direction.
+      const delta = currentScrollY - lastScrollY.current
+
       if (currentScrollY <= 0) {
         setIsSearchVisible(true)
-      } else if (currentScrollY < lastScrollY.current) {
-        setIsSearchVisible(true)
-      } else if (currentScrollY > lastScrollY.current) {
-        setIsSearchVisible(false)
+        lastScrollY.current = currentScrollY
+        return
       }
 
-      lastScrollY.current = currentScrollY
+      if (delta < -SCROLL_SENSITIVITY) {
+        // scrolled up sufficiently
+        setIsSearchVisible(true)
+        lastScrollY.current = currentScrollY
+      } else if (delta > SCROLL_SENSITIVITY) {
+        // scrolled down sufficiently
+        setIsSearchVisible(false)
+        lastScrollY.current = currentScrollY
+      }
+      // otherwise, ignore small deltas and don't update lastScrollY to allow
+      // accumulation of small movements into a larger one.
     }
 
     window.addEventListener('scroll', handleScroll, {

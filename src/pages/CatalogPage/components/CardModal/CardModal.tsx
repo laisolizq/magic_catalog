@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { Card } from '../../../../types/card'
 import './CardModal.css'
+import { ControlsBar } from './ControlsBar'
+import { RulingsModal } from './RulingsModal'
 
 interface CardModalProps {
   card: Card
@@ -60,6 +62,7 @@ export function CardModal({
   }, [])
 
   const handleSwipe = (deltaX: number, deltaY: number) => {
+    if (rulingsOpen) return
     const absX = Math.abs(deltaX)
     const absY = Math.abs(deltaY)
 
@@ -97,6 +100,11 @@ export function CardModal({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        if (rulingsOpen) {
+          setRulingsOpen(false)
+          return
+        }
+
         onClose()
         return
       }
@@ -105,6 +113,8 @@ export function CardModal({
         onClose()
         return
       }
+
+      if (rulingsOpen) return
 
       if (event.key === 'ArrowUp') {
         // previous face
@@ -155,6 +165,31 @@ export function CardModal({
   }, [initialFaceIndex, card.faces])
 
   const face = card.faces?.[currentFaceIndex]
+  const [rulingsOpen, setRulingsOpen] = useState(false)
+
+  const hasRulings = (card.rulings ?? []).length > 0
+
+  const toggleRulings = () => {
+    setRulingsOpen((v) => !v)
+  }
+
+  const handlePrev = () => {
+    if (rulingsOpen) return
+    if (currentFaceIndex > 0) {
+      setCurrentFaceIndex((i) => i - 1)
+    } else if (hasPrevious) {
+      onShowPrevious()
+    }
+  }
+
+  const handleNext = () => {
+    if (rulingsOpen) return
+    if (currentFaceIndex < (card.faces || []).length - 1) {
+      setCurrentFaceIndex((i) => i + 1)
+    } else if (hasNext) {
+      onShowNext()
+    }
+  }
 
   return (
     <div className="card-modal-overlay" role="presentation" onClick={onClose}>
@@ -180,11 +215,27 @@ export function CardModal({
         <div className="card-modal-image-wrap">
           <img className="card-modal-image" src={face?.imageUrl} alt={face?.name} />
         </div>
-        <div className="card-modal-actions">
-          <button type="button" onClick={onClose} aria-label="Close">
-            X
-          </button>
-        </div>
+
+        <ControlsBar
+          hasRulings={hasRulings}
+          rulingsOpen={rulingsOpen}
+          onToggleRulings={toggleRulings}
+          onShowPrevious={handlePrev}
+          onShowNext={handleNext}
+          onClose={() => {
+            if (rulingsOpen) return
+            onClose()
+          }}
+          hasPrevious={hasPrevious}
+          hasNext={hasNext}
+        />
+
+        {rulingsOpen && hasRulings && (
+          <RulingsModal
+            rulings={card.rulings ?? []}
+            onClose={toggleRulings}
+          />
+        )}
       </aside>
     </div>
   )

@@ -44,6 +44,83 @@ def get_image_url(data: dict[str, Any], key: str) -> str:
     return safe_string(image_uris.get(key))
 
 
+def fetch_json_with_retries(url: str) -> dict[str, Any]:
+    for attempt in range(1, MAX_RETRIES + 1):
+        request = Request(
+            url,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "application/json",
+            },
+        )
+
+        try:
+            with urlopen(
+                request,
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            ) as response:
+                payload = response.read().decode("utf-8")
+
+            return json.loads(payload)
+
+        except (
+            HTTPError,
+            URLError,
+            TimeoutError,
+            json.JSONDecodeError,
+        ) as error:
+            if attempt == MAX_RETRIES:
+                raise
+
+            print(
+                f"Request failed "
+                f"(attempt {attempt}/{MAX_RETRIES}). "
+                f"Retrying: {error}",
+                file=sys.stderr,
+            )
+
+            time.sleep(1.5)
+
+    raise RuntimeError("Unable to fetch data from Scryfall.")
+
+
+def fetch_rulings(rulings_uri: str) -> list[dict[str, Any]]:
+    """
+    Fetch the rulings associated with a card using its ruling_uri.
+
+    Scryfall returns an object like:
+
+    {
+        "object": "list",
+        "data": [
+            {
+                "object": "ruling",
+                "oracle_id": "...",
+                "source": "wotc",
+                "published_at": "2025-06-13",
+                "comment": "..."
+            }
+        ]
+    }
+    """
+
+    if not rulings_uri:
+        return []
+
+    payload = fetch_json_with_retries(rulings_uri)
+
+    data = payload.get("data")
+
+    if not isinstance(data, list):
+        return []
+
+    return [
+        ruling
+        for ruling in data
+        if isinstance(ruling, dict)
+    ]
+
+
 def build_face_from_data(data: dict[str, Any]) -> dict[str, Any] | None:
     image_url = get_image_url(data, "normal")
 
@@ -119,10 +196,20 @@ def to_mock_card(card: dict[str, Any]) -> dict[str, Any] | None:
     if rarity not in VALID_RARITIES:
         rarity = "common"
 
+    ruling_uri = safe_string(card.get("rulings_uri"))
+
+    print(
+        f"Fetching rulings for {set_code}-{collector_number}...",
+        file=sys.stderr,
+    )
+
+    rulings = fetch_rulings(ruling_uri)
+
     return {
         "id": f"{set_code}-{collector_number}",
         "rarity": rarity,
         "set": set_code,
+        "rulings": rulings,
         "faces": faces,
     }
 
@@ -150,6 +237,26 @@ def quote(value: Any) -> str:
     return json.dumps(value, ensure_ascii=True)
 
 
+def format_ruling(ruling: dict[str, Any]) -> str:
+    """
+    Format one Scryfall ruling as a TypeScript object.
+
+    We keep the ruling object returned by Scryfall instead of
+    reducing it to only the comment, so we don't lose information.
+    """
+
+    lines = ["      {"]
+
+    for key, value in ruling.items():
+        lines.append(
+            f"        {key}: {quote(value)},"
+        )
+
+    lines.append("      },")
+
+    return "\n".join(lines)
+
+
 def format_face(face: dict[str, Any]) -> str:
     lines = [
         "      {",
@@ -165,10 +272,14 @@ def format_face(face: dict[str, Any]) -> str:
     ]
 
     if "power" in face:
-        lines.append(f"        power: {quote(face['power'])},")
+        lines.append(
+            f"        power: {quote(face['power'])},"
+        )
 
     if "toughness" in face:
-        lines.append(f"        toughness: {quote(face['toughness'])},")
+        lines.append(
+            f"        toughness: {quote(face['toughness'])},"
+        )
 
     lines.append("      },")
 
@@ -181,8 +292,18 @@ def format_card(card: dict[str, Any]) -> str:
         f"    id: {quote(card['id'])},",
         f"    rarity: {quote(card['rarity'])},",
         f"    set: {quote(card['set'])},",
-        "    faces: [",
+        "    rulings: [",
     ]
+
+    for ruling in card["rulings"]:
+        lines.append(format_ruling(ruling))
+
+    lines.extend(
+        [
+            "    ],",
+            "    faces: [",
+        ]
+    )
 
     for face in card["faces"]:
         lines.append(format_face(face))
@@ -195,46 +316,6 @@ def format_card(card: dict[str, Any]) -> str:
     )
 
     return "\n".join(lines)
-
-
-def fetch_json_with_retries(url: str) -> dict[str, Any]:
-    for attempt in range(1, MAX_RETRIES + 1):
-        request = Request(
-            url,
-            headers={
-                "User-Agent": USER_AGENT,
-                "Accept": "application/json",
-            },
-        )
-
-        try:
-            with urlopen(
-                request,
-                timeout=REQUEST_TIMEOUT_SECONDS,
-            ) as response:
-                payload = response.read().decode("utf-8")
-
-            return json.loads(payload)
-
-        except (
-            HTTPError,
-            URLError,
-            TimeoutError,
-            json.JSONDecodeError,
-        ) as error:
-            if attempt == MAX_RETRIES:
-                raise
-
-            print(
-                f"Request failed "
-                f"(attempt {attempt}/{MAX_RETRIES}). "
-                f"Retrying: {error}",
-                file=sys.stderr,
-            )
-
-            time.sleep(1.5)
-
-    raise RuntimeError("Unable to fetch cards from Scryfall.")
 
 
 def fetch_all_cards(set_code: str) -> list[dict[str, Any]]:
@@ -304,15 +385,18 @@ def write_mock_cards_file(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Download a set from Scryfall "
+            "Download sets from Scryfall "
             "and generate mockCards.ts"
         )
     )
 
     parser.add_argument(
-        "--set",
-        default="tla",
-        help="Scryfall set code (default: tla)",
+        "--sets",
+        default="tla,hob",
+        help=(
+            "Comma-separated Scryfall set codes "
+            "(default: tla,hob)"
+        ),
     )
 
     parser.add_argument(
@@ -336,9 +420,28 @@ def main() -> int:
         root_dir / args.output
     ).resolve()
 
-    all_cards = fetch_all_cards(
-        args.set.lower()
-    )
+    set_codes = [
+        set_code.strip().lower()
+        for set_code in args.sets.split(",")
+        if set_code.strip()
+    ]
+
+    all_cards: list[dict[str, Any]] = []
+
+    for set_code in set_codes:
+        print(
+            f"Downloading set {set_code}...",
+            file=sys.stderr,
+        )
+
+        cards = fetch_all_cards(set_code)
+
+        print(
+            f"Found {len(cards)} cards in {set_code}.",
+            file=sys.stderr,
+        )
+
+        all_cards.extend(cards)
 
     mock_cards = [
         card
