@@ -121,20 +121,36 @@ def fetch_rulings(rulings_uri: str) -> list[dict[str, Any]]:
     ]
 
 
-def build_face_from_data(data: dict[str, Any]) -> dict[str, Any] | None:
-    image_url = get_image_url(data, "normal")
+def build_face_from_data(
+    data: dict[str, Any],
+    fallback_image_url: str = "",
+    fallback_art_crop_url: str = "",
+    fallback_colors: list[str] | None = None,
+) -> dict[str, Any] | None:
+    image_url = get_image_url(data, "normal") or fallback_image_url
 
     if not image_url:
         return None
+
+    colors = safe_colors(data.get("colors"))
+
+    if not colors and fallback_colors is not None:
+        colors = fallback_colors
+
+    art_crop_url = (
+        get_image_url(data, "art_crop")
+        or fallback_art_crop_url
+        or image_url
+    )
 
     face: dict[str, Any] = {
         "name": safe_string(data.get("name")),
         "manaCost": safe_string(data.get("mana_cost")),
         "typeLine": safe_string(data.get("type_line")),
         "oracleText": safe_string(data.get("oracle_text")),
-        "colors": safe_colors(data.get("colors")),
+        "colors": colors,
         "imageUrl": image_url,
-        "artCropUrl": get_image_url(data, "art_crop") or image_url,
+        "artCropUrl": art_crop_url,
     }
 
     power = safe_string(data.get("power"))
@@ -159,6 +175,12 @@ def build_faces(card: dict[str, Any]) -> list[dict[str, Any]]:
     """
 
     card_faces = card.get("card_faces")
+    card_image_url = get_image_url(card, "normal")
+    card_art_crop_url = (
+        get_image_url(card, "art_crop")
+        or card_image_url
+    )
+    card_colors = safe_colors(card.get("colors"))
 
     if isinstance(card_faces, list) and card_faces:
         faces: list[dict[str, Any]] = []
@@ -167,7 +189,12 @@ def build_faces(card: dict[str, Any]) -> list[dict[str, Any]]:
             if not isinstance(raw_face, dict):
                 continue
 
-            face = build_face_from_data(raw_face)
+            face = build_face_from_data(
+                raw_face,
+                fallback_image_url=card_image_url,
+                fallback_art_crop_url=card_art_crop_url,
+                fallback_colors=card_colors,
+            )
 
             if face is not None:
                 faces.append(face)
