@@ -4,10 +4,10 @@
 }
 
 .install-cta {
-  border: 1px solid var(--ink-soft);
+  border: none;
   border-radius: 999px;
-  background: var(--ink-strong);
-  color: var(--paper);
+  background: var(--surface-2);
+  color: var(--ink-strong);
   padding: 0.35rem 0.8rem;
   cursor: pointer;
 }

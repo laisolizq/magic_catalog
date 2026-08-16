@@ -1,22 +1,63 @@
+import { useState } from 'react'
+
 import { InstallPopup } from '../InstallPopup/InstallPopup'
 import './AppHeader.css'
 
 export function AppHeader() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
   return (
-    <header className="app-header">
-      <div className="app-brand">
-        <img
-          src="logo_cardscade.png"
-          alt=""
-          className="app-logo"
-        />
+    <>
+      <header className="app-header">
+        <div className="app-brand-row">
+          <button
+            type="button"
+            className="menu-toggle"
+            aria-label="Open menu"
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen(true)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" />
+            </svg>
+          </button>
 
-        <span className="app-name">
-          Cardscade
-        </span>
-      </div>
+          <div className="app-brand">
+            <span className="app-name">
+              Cardscade
+            </span>
+          </div>
+        </div>
 
-      <InstallPopup />
-    </header>
+        <InstallPopup />
+      </header>
+
+      {isMenuOpen && (
+        <div className="menu-overlay" onClick={() => setIsMenuOpen(false)}>
+          <aside
+            className="menu-drawer"
+            role="dialog"
+            aria-label="Menu"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="menu-close"
+              onClick={() => setIsMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              ×
+            </button>
+
+            <p className="menu-copy">Made with love by Red &amp; Lua</p>
+          </aside>
+        </div>
+      )}
+    </>
   )
 }

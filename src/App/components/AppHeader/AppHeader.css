@@ -3,26 +3,91 @@
   align-items: center;
   justify-content: space-between;
 
-  height: 64px;
-  padding: 0 16px;
+  min-height: 52px;
+  padding: 0 0.2rem 0.2rem;
+}
 
-  border-bottom: 1px solid var(--border-color);
+.app-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menu-toggle {
+  border: none;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--ink-strong);
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.menu-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .app-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.app-logo {
-  width: 40px;
-  height: 40px;
 }
 
 .app-name {
   font-size: 1.1rem;
   font-weight: 700;
+  color: var(--ink-strong);
+}
+
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgb(25 31 43 / 28%);
+}
+
+.menu-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100svh;
+  width: min(360px, 92vw);
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--surface-2) 92%, white) 0%,
+      var(--surface-2) 55%,
+      var(--surface-3) 100%
+    );
+  padding: 1.1rem;
+  display: grid;
+  align-content: start;
+  gap: 1.2rem;
+  box-shadow: 10px 0 30px rgb(0 0 0 / 16%);
+}
+
+.menu-close {
+  justify-self: end;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--surface-3);
+  color: var(--ink-strong);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.menu-copy {
+  margin: 0;
+  color: var(--ink-strong);
+  font-size: 1.05rem;
+  line-height: 1.45;
+  max-width: 22ch;
 }
 
 .install-cta {

@@ -1,4 +1,15 @@
+import { useState } from 'react'
+
 import './SearchBar.css'
+
+type SortOption =
+  | 'default'
+  | 'name-asc'
+  | 'name-desc'
+  | 'cmc-asc'
+  | 'cmc-desc'
+  | 'set-asc'
+  | 'set-desc'
 
 interface SearchBarProps {
   query: string
@@ -6,12 +17,14 @@ interface SearchBarProps {
   typeValue: string
   rarityValue: string
   colorValue: string
+  sortOption: SortOption
   setOptions: string[]
   typeOptions: string[]
   isAdvancedOpen: boolean
   expandAllCards: boolean
   onAdvancedOpenChange: (value: boolean) => void
   onExpandAllChange: (value: boolean) => void
+  onSortChange: (value: SortOption) => void
   onQueryChange: (value: string) => void
   onSetChange: (value: string) => void
   onTypeChange: (value: string) => void
@@ -25,29 +38,205 @@ export function SearchBar({
   typeValue,
   rarityValue,
   colorValue,
+  sortOption,
   setOptions,
   typeOptions,
   isAdvancedOpen,
   expandAllCards,
   onAdvancedOpenChange,
   onExpandAllChange,
+  onSortChange,
   onQueryChange,
   onSetChange,
   onTypeChange,
   onRarityChange,
   onColorChange,
 }: SearchBarProps) {
+  const [isSortOpen, setIsSortOpen] = useState(false)
+
+  const handleSortSelect = (value: SortOption) => {
+    onSortChange(value)
+    setIsSortOpen(false)
+  }
+
+  const handleOracleToggle = () => {
+    onExpandAllChange(!expandAllCards)
+    if (isAdvancedOpen) {
+      onAdvancedOpenChange(false)
+    }
+  }
+
   return (
     <section className="search-panel" aria-label="Card search">
-      <div className="search-input-row">
-        <input
-          id="card-search-input"
-          className="search-input"
-          aria-label="Search cards"
-          placeholder="set:tla"
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-        />
+      <div className="search-actions-row">
+        <div className="search-input-wrap">
+          <span className="search-input-icon" aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M10 2a8 8 0 1 0 5.29 14.01l4.35 4.34 1.41-1.41-4.34-4.35A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z" />
+            </svg>
+          </span>
+          <input
+            id="card-search-input"
+            className="search-input"
+            aria-label="Search cards"
+            placeholder="set:tla"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+          />
+        </div>
+
+        <button
+          type="button"
+          className={`oracle-eye-toggle ${expandAllCards ? 'is-active' : ''}`}
+          aria-label="Expand oracles"
+          aria-pressed={expandAllCards}
+          onClick={handleOracleToggle}
+          title="Expand oracles"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M12 5c-6 0-10 7-10 7s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z" />
+          </svg>
+        </button>
+
+        <div className="sort-control">
+          <button
+            type="button"
+            className="sort-toggle"
+            aria-haspopup="menu"
+            aria-expanded={isSortOpen}
+            aria-label="Sort cards"
+            onClick={() => setIsSortOpen((v) => !v)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M3 18h6v-2H3v2zm0-5h12v-2H3v2zm0-7v2h18V6H3z" />
+            </svg>
+          </button>
+
+          {isSortOpen && (
+            <div className="sort-menu" role="menu" aria-label="Sort options">
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={sortOption === 'default'}
+                onClick={() => handleSortSelect('default')}
+              >
+                Original
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={sortOption === 'name-asc'}
+                onClick={() => handleSortSelect('name-asc')}
+              >
+                Name↑
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={sortOption === 'name-desc'}
+                onClick={() => handleSortSelect('name-desc')}
+              >
+                Name↓
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={sortOption === 'cmc-asc'}
+                onClick={() => handleSortSelect('cmc-asc')}
+              >
+                CMC↑
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={sortOption === 'cmc-desc'}
+                onClick={() => handleSortSelect('cmc-desc')}
+              >
+                CMC↓
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={sortOption === 'set-asc'}
+                onClick={() => handleSortSelect('set-asc')}
+              >
+                Set↑
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={sortOption === 'set-desc'}
+                onClick={() => handleSortSelect('set-desc')}
+              >
+                Set↓
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="basic-filters-row">
+        <label className="basic-filter">
+          <select
+            value={colorValue}
+            aria-label="color"
+            onChange={(event) => onColorChange(event.target.value)}
+          >
+            <option value="">COLOR</option>
+            <option value="all">all</option>
+            <option value="W">W</option>
+            <option value="U">U</option>
+            <option value="B">B</option>
+            <option value="R">R</option>
+            <option value="G">G</option>
+          </select>
+        </label>
+
+        <label className="basic-filter">
+          <select
+            value={typeValue}
+            aria-label="type"
+            onChange={(event) => onTypeChange(event.target.value)}
+          >
+            <option value="">TYPE</option>
+            <option value="all">all</option>
+
+            {typeOptions.map((typeOption) => (
+              <option key={typeOption} value={typeOption}>
+                {typeOption}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="basic-filter">
+          <select
+            value={rarityValue}
+            aria-label="rarity"
+            onChange={(event) => onRarityChange(event.target.value)}
+          >
+            <option value="">RARITY</option>
+            <option value="all">all</option>
+            <option value="common">common</option>
+            <option value="uncommon">uncommon</option>
+            <option value="rare">rare</option>
+            <option value="mythic">mythic</option>
+          </select>
+        </label>
 
         <button
           type="button"
@@ -61,20 +250,12 @@ export function SearchBar({
           aria-controls="advanced-query-options"
           onClick={() => onAdvancedOpenChange(!isAdvancedOpen)}
         >
-          <svg
-            className={isAdvancedOpen ? 'is-open' : ''}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d="M6 9l6 6 6-6H6z" />
-          </svg>
+          +
         </button>
       </div>
 
       {isAdvancedOpen && (
-        <div id="advanced-query-options">
+        <div id="advanced-query-options" className="advanced-row">
           <p className="advanced-title">advanced query options</p>
 
           <div className="filters-grid">
@@ -82,7 +263,10 @@ export function SearchBar({
               set
               <select
                 value={setValue}
-                onChange={(event) => onSetChange(event.target.value)}
+                onChange={(event) => {
+                  onSetChange(event.target.value)
+                  onAdvancedOpenChange(false)
+                }}
               >
                 <option value="all">all</option>
 
@@ -93,61 +277,7 @@ export function SearchBar({
                 ))}
               </select>
             </label>
-
-            <label>
-              type
-              <select
-                value={typeValue}
-                onChange={(event) => onTypeChange(event.target.value)}
-              >
-                <option value="all">all</option>
-
-                {typeOptions.map((typeOption) => (
-                  <option key={typeOption} value={typeOption}>
-                    {typeOption}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              rarity
-              <select
-                value={rarityValue}
-                onChange={(event) => onRarityChange(event.target.value)}
-              >
-                <option value="all">all</option>
-                <option value="common">common</option>
-                <option value="uncommon">uncommon</option>
-                <option value="rare">rare</option>
-                <option value="mythic">mythic</option>
-              </select>
-            </label>
-
-            <label>
-              color
-              <select
-                value={colorValue}
-                onChange={(event) => onColorChange(event.target.value)}
-              >
-                <option value="all">all</option>
-                <option value="W">W</option>
-                <option value="U">U</option>
-                <option value="B">B</option>
-                <option value="R">R</option>
-                <option value="G">G</option>
-              </select>
-            </label>
           </div>
-
-          <label className="expand-all-option">
-            <input
-              type="checkbox"
-              checked={expandAllCards}
-              onChange={(event) => onExpandAllChange(event.target.checked)}
-            />
-            <span>Expand  oracles</span>
-          </label>
         </div>
       )}
     </section>
