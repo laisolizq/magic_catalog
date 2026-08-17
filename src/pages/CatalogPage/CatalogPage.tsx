@@ -248,6 +248,13 @@ export function CatalogPage() {
         return
       }
 
+      // Keep the search/filters visible while using advanced filters.
+      if (isAdvancedOpen) {
+        setIsSearchVisible(true)
+        lastScrollY.current = currentScrollY
+        return
+      }
+
       const delta = currentScrollY - lastScrollY.current
 
       if (currentScrollY <= 0) {
@@ -496,7 +503,7 @@ export function CatalogPage() {
     >
       <div
         className={`search-bar-wrapper ${
-          isSearchVisible
+          isAdvancedOpen || isSearchVisible
             ? 'search-visible'
             : 'search-hidden'
         }`}
