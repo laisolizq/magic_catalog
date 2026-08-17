@@ -136,7 +136,8 @@
 .sort-menu {
   position: absolute;
   top: calc(100% + 0.3rem);
-  left: 0;
+  right: 0;
+  left: auto;
   z-index: 5;
   display: grid;
   gap: 0.2rem;
@@ -182,6 +183,65 @@
   gap: 0.32rem;
 }
 
+.filter-color,
+.filter-color-all {
+  background: color-mix(in srgb, var(--surface-2) 88%, #d8b84c) !important;
+}
+
+.filter-color-w {
+  background: #f8f6e8 !important;
+  color: #222 !important;
+}
+
+.filter-color-u {
+  background: #3f8fc4 !important;
+  color: white !important;
+}
+
+.filter-color-b {
+  background: #292929 !important;
+  color: white !important;
+}
+
+.filter-color-r {
+  background: #c94b3c !important;
+  color: white !important;
+}
+
+.filter-color-g {
+  background: #4f8a5b !important;
+  color: white !important;
+}
+
+.filter-type {
+  background: color-mix(in srgb, var(--surface-2) 88%, #5b9bb5) !important;
+}
+
+.filter-rarity,
+.filter-rarity-all{
+  background: color-mix(in srgb, var(--surface-2) 88%, #9b70b0) !important;
+}
+
+.filter-rarity-common {
+  background: #777 !important;
+  color: white !important;
+}
+
+.filter-rarity-uncommon {
+  background: #aeb7c2 !important;
+  color: #20252a !important;
+}
+
+.filter-rarity-rare {
+  background: #c9a227 !important;
+  color: #211a05 !important;
+}
+
+.filter-rarity-mythic {
+  background: #c65a32 !important;
+  color: white !important;
+}
+
 @media (max-width: 900px) {
   .search-panel {
     padding: 0.55rem;
@@ -196,8 +256,19 @@
   }
 
   .basic-filter select {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.4rem;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    padding: 0.45rem 0.6rem;
+    font-size: 0.72rem;
+    font-family: var(--font-body);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-transform: uppercase;
+
+    cursor: pointer;
   }
 
   .sort-toggle,

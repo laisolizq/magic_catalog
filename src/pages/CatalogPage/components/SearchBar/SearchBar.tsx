@@ -192,6 +192,9 @@ export function SearchBar({
       <div className="basic-filters-row">
         <label className="basic-filter">
           <select
+            className={`filter-color ${
+              colorValue ? `filter-color-${colorValue.toLowerCase()}` : ''
+            }`}
             value={colorValue}
             aria-label="color"
             onChange={(event) => onColorChange(event.target.value)}
@@ -208,6 +211,7 @@ export function SearchBar({
 
         <label className="basic-filter">
           <select
+            className="filter-type"
             value={typeValue}
             aria-label="type"
             onChange={(event) => onTypeChange(event.target.value)}
@@ -225,6 +229,9 @@ export function SearchBar({
 
         <label className="basic-filter">
           <select
+            className={`filter-rarity ${
+              rarityValue ? `filter-rarity-${rarityValue.toLowerCase()}` : ''
+            }`}
             value={rarityValue}
             aria-label="rarity"
             onChange={(event) => onRarityChange(event.target.value)}
