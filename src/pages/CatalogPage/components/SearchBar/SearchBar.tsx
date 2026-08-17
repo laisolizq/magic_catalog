@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { AdvancedFilters } from './AdvancedFilters'
 import './SearchBar.css'
 
 type SortOption =
@@ -13,23 +14,25 @@ type SortOption =
 
 interface SearchBarProps {
   query: string
-  setValue: string
-  typeValue: string
-  rarityValue: string
-  colorValue: string
+  setValue: string[]
+  typeValue: string[]
+  rarityValue: string[]
+  colorValue: string[]
   sortOption: SortOption
   setOptions: string[]
   typeOptions: string[]
   isAdvancedOpen: boolean
   expandAllCards: boolean
+
   onAdvancedOpenChange: (value: boolean) => void
   onExpandAllChange: (value: boolean) => void
   onSortChange: (value: SortOption) => void
   onQueryChange: (value: string) => void
-  onSetChange: (value: string) => void
-  onTypeChange: (value: string) => void
-  onRarityChange: (value: string) => void
-  onColorChange: (value: string) => void
+
+  onSetChange: (value: string[]) => void
+  onTypeChange: (value: string[]) => void
+  onRarityChange: (value: string[]) => void
+  onColorChange: (value: string[]) => void
 }
 
 export function SearchBar({
@@ -61,9 +64,51 @@ export function SearchBar({
 
   const handleOracleToggle = () => {
     onExpandAllChange(!expandAllCards)
+
     if (isAdvancedOpen) {
       onAdvancedOpenChange(false)
     }
+  }
+
+  /*
+   * The basic filters only allow one value.
+   * The advanced filters allow multiple values.
+   *
+   * When a basic filter is changed, we replace the current
+   * selection with the selected value.
+   */
+  const handleBasicFilterChange = (
+    value: string,
+    onChange: (value: string[]) => void,
+  ) => {
+    if (!value || value === 'all') {
+      onChange([])
+      return
+    }
+
+    onChange([value])
+  }
+
+  /*
+   * If the advanced filters are open, show that view instead
+   * of the normal search bar.
+   */
+  if (isAdvancedOpen) {
+    return (
+      <AdvancedFilters
+        colorValue={colorValue}
+        typeValue={typeValue}
+        rarityValue={rarityValue}
+        setValue={setValue}
+        setOptions={setOptions}
+        typeOptions={typeOptions}
+        onColorChange={onColorChange}
+        onTypeChange={onTypeChange}
+        onRarityChange={onRarityChange}
+        onSetChange={onSetChange}
+        onClose={() => onAdvancedOpenChange(false)}
+      />
+    )
   }
 
   return (
@@ -79,6 +124,7 @@ export function SearchBar({
               <path d="M10 2a8 8 0 1 0 5.29 14.01l4.35 4.34 1.41-1.41-4.34-4.35A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z" />
             </svg>
           </span>
+
           <input
             id="card-search-input"
             className="search-input"
@@ -91,7 +137,9 @@ export function SearchBar({
 
         <button
           type="button"
-          className={`oracle-eye-toggle ${expandAllCards ? 'is-active' : ''}`}
+          className={`oracle-eye-toggle ${
+            expandAllCards ? 'is-active' : ''
+          }`}
           aria-label="Expand oracles"
           aria-pressed={expandAllCards}
           onClick={handleOracleToggle}
@@ -114,7 +162,7 @@ export function SearchBar({
             aria-haspopup="menu"
             aria-expanded={isSortOpen}
             aria-label="Sort cards"
-            onClick={() => setIsSortOpen((v) => !v)}
+            onClick={() => setIsSortOpen((value) => !value)}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -127,7 +175,11 @@ export function SearchBar({
           </button>
 
           {isSortOpen && (
-            <div className="sort-menu" role="menu" aria-label="Sort options">
+            <div
+              className="sort-menu"
+              role="menu"
+              aria-label="Sort options"
+            >
               <button
                 type="button"
                 role="menuitemradio"
@@ -136,6 +188,7 @@ export function SearchBar({
               >
                 Original
               </button>
+
               <button
                 type="button"
                 role="menuitemradio"
@@ -144,6 +197,7 @@ export function SearchBar({
               >
                 Name↑
               </button>
+
               <button
                 type="button"
                 role="menuitemradio"
@@ -152,6 +206,7 @@ export function SearchBar({
               >
                 Name↓
               </button>
+
               <button
                 type="button"
                 role="menuitemradio"
@@ -160,6 +215,7 @@ export function SearchBar({
               >
                 CMC↑
               </button>
+
               <button
                 type="button"
                 role="menuitemradio"
@@ -168,6 +224,7 @@ export function SearchBar({
               >
                 CMC↓
               </button>
+
               <button
                 type="button"
                 role="menuitemradio"
@@ -176,6 +233,7 @@ export function SearchBar({
               >
                 Set↑
               </button>
+
               <button
                 type="button"
                 role="menuitemradio"
@@ -193,11 +251,18 @@ export function SearchBar({
         <label className="basic-filter">
           <select
             className={`filter-color ${
-              colorValue ? `filter-color-${colorValue.toLowerCase()}` : ''
+              colorValue.length === 1
+                ? `filter-color-${colorValue[0].toLowerCase()}`
+                : ''
             }`}
-            value={colorValue}
+            value={colorValue.length === 1 ? colorValue[0] : ''}
             aria-label="color"
-            onChange={(event) => onColorChange(event.target.value)}
+            onChange={(event) =>
+              handleBasicFilterChange(
+                event.target.value,
+                onColorChange,
+              )
+            }
           >
             <option value="">COLOR</option>
             <option value="all">all</option>
@@ -212,9 +277,14 @@ export function SearchBar({
         <label className="basic-filter">
           <select
             className="filter-type"
-            value={typeValue}
+            value={typeValue.length === 1 ? typeValue[0] : ''}
             aria-label="type"
-            onChange={(event) => onTypeChange(event.target.value)}
+            onChange={(event) =>
+              handleBasicFilterChange(
+                event.target.value,
+                onTypeChange,
+              )
+            }
           >
             <option value="">TYPE</option>
             <option value="all">all</option>
@@ -230,11 +300,22 @@ export function SearchBar({
         <label className="basic-filter">
           <select
             className={`filter-rarity ${
-              rarityValue ? `filter-rarity-${rarityValue.toLowerCase()}` : ''
+              rarityValue.length === 1
+                ? `filter-rarity-${rarityValue[0].toLowerCase()}`
+                : ''
             }`}
-            value={rarityValue}
+            value={
+              rarityValue.length === 1
+                ? rarityValue[0]
+                : ''
+            }
             aria-label="rarity"
-            onChange={(event) => onRarityChange(event.target.value)}
+            onChange={(event) =>
+              handleBasicFilterChange(
+                event.target.value,
+                onRarityChange,
+              )
+            }
           >
             <option value="">RARITY</option>
             <option value="all">all</option>
@@ -248,45 +329,14 @@ export function SearchBar({
         <button
           type="button"
           className="advanced-toggle"
-          aria-label={
-            isAdvancedOpen
-              ? 'Hide advanced query options'
-              : 'Show advanced query options'
-          }
-          aria-expanded={isAdvancedOpen}
-          aria-controls="advanced-query-options"
-          onClick={() => onAdvancedOpenChange(!isAdvancedOpen)}
+          aria-label="Show advanced filters"
+          aria-expanded={false}
+          aria-controls="advanced-filters"
+          onClick={() => onAdvancedOpenChange(true)}
         >
           +
         </button>
       </div>
-
-      {isAdvancedOpen && (
-        <div id="advanced-query-options" className="advanced-row">
-          <p className="advanced-title">advanced query options</p>
-
-          <div className="filters-grid">
-            <label>
-              set
-              <select
-                value={setValue}
-                onChange={(event) => {
-                  onSetChange(event.target.value)
-                  onAdvancedOpenChange(false)
-                }}
-              >
-                <option value="all">all</option>
-
-                {setOptions.map((setOption) => (
-                  <option key={setOption} value={setOption}>
-                    {setOption}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </div>
-      )}
     </section>
   )
 }

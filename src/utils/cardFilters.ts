@@ -2,10 +2,10 @@ import type { Card } from '../types/card'
 
 export interface CardFilters {
   query: string
-  set: string
-  type: string
-  rarity: string
-  color: string
+  set: string[]
+  type: string[]
+  rarity: string[]
+  color: string[]
 }
 
 function cardSearchText(card: Card): string {
@@ -32,26 +32,111 @@ function cardColors(card: Card): string[] {
   return Array.from(colors)
 }
 
-export function filterCards(cards: Card[], filters: CardFilters): Card[] {
+export function filterCards(
+  cards: Card[],
+  filters: CardFilters,
+): Card[] {
   const query = filters.query.trim().toLowerCase()
 
   return cards.filter((card) => {
+    /*
+     * =========================
+     * QUERY
+     * =========================
+     */
+
     const text = cardSearchText(card)
 
-    const matchesQuery = query.length === 0 || text.includes(query)
+    const matchesQuery =
+      query.length === 0 || text.includes(query)
 
-    const matchesSet = filters.set === 'all' || card.set === filters.set
+    /*
+     * =========================
+     * SET
+     * =========================
+     *
+     * Multiple sets = OR
+     *
+     * []       -> no set filter
+     * ['all']   -> no set filter
+     * ['tla']   -> TLA
+     * ['tla','fin'] -> TLA OR FIN
+     */
 
-    const typeLine = cardPrimaryTypeLine(card).toLowerCase()
+    const matchesSet =
+      filters.set.length === 0 ||
+      filters.set.includes('all') ||
+      filters.set.includes(card.set)
+
+    /*
+     * =========================
+     * TYPE
+     * =========================
+     *
+     * Multiple types = OR
+     *
+     * ['Creature', 'Artifact']
+     * -> Creature OR Artifact
+     */
+
+    const typeLine =
+      cardPrimaryTypeLine(card).toLowerCase()
+
     const matchesType =
-      filters.type === 'all' || typeLine.includes(filters.type.toLowerCase())
+      filters.type.length === 0 ||
+      filters.type.includes('all') ||
+      filters.type.some((type) =>
+        typeLine.includes(type.toLowerCase()),
+      )
+
+    /*
+     * =========================
+     * RARITY
+     * =========================
+     *
+     * ['rare', 'mythic']
+     * -> rare OR mythic
+     */
 
     const matchesRarity =
-      filters.rarity === 'all' || card.rarity === filters.rarity
+      filters.rarity.length === 0 ||
+      filters.rarity.includes('all') ||
+      filters.rarity.includes(card.rarity)
+
+    /*
+     * =========================
+     * COLOR
+     * =========================
+     *
+     * ['W', 'U']
+     * -> White OR Blue
+     */
 
     const colors = cardColors(card)
+
     const matchesColor =
-      filters.color === 'all' || colors.includes(filters.color)
+      filters.color.length === 0 ||
+      filters.color.includes('all') ||
+      filters.color.some((color) =>
+        colors.includes(color),
+      )
+
+    /*
+     * =========================
+     * FINAL RESULT
+     * =========================
+     *
+     * Different filter categories use AND.
+     *
+     * Example:
+     *
+     * COLOR: W + U
+     * RARITY: rare + mythic
+     *
+     * means:
+     *
+     * (W OR U) AND (rare OR mythic)
+     */
 
     return (
       matchesQuery &&
@@ -63,10 +148,22 @@ export function filterCards(cards: Card[], filters: CardFilters): Card[] {
   })
 }
 
-export function getUniqueSets(cards: Card[]): string[] {
-  return [...new Set(cards.map((card) => card.set))].sort()
+export function getUniqueSets(
+  cards: Card[],
+): string[] {
+  return [
+    ...new Set(cards.map((card) => card.set)),
+  ].sort()
 }
 
-export function getUniqueTypes(cards: Card[]): string[] {
-  return [...new Set(cards.map((card) => cardPrimaryTypeLine(card).split(' ')[0]))].sort()
+export function getUniqueTypes(
+  cards: Card[],
+): string[] {
+  return [
+    ...new Set(
+      cards.map((card) =>
+        cardPrimaryTypeLine(card).split(' ')[0],
+      ),
+    ),
+  ].sort()
 }

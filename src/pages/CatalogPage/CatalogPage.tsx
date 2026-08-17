@@ -32,11 +32,18 @@ function getFaceName(card: Card): string {
 function manaValueFromCost(cost: string): number {
   if (!cost) return 0
 
-  const symbols = Array.from(cost.matchAll(/\{([^}]+)\}/g), (m) => m[1])
+  const symbols = Array.from(
+    cost.matchAll(/\{([^}]+)\}/g),
+    (m) => m[1],
+  )
 
   return symbols.reduce((total, symbol) => {
     if (/^\d+$/.test(symbol)) return total + Number(symbol)
-    if (symbol === 'X' || symbol === 'Y' || symbol === 'Z') return total
+
+    if (symbol === 'X' || symbol === 'Y' || symbol === 'Z') {
+      return total
+    }
+
     if (symbol.includes('/')) {
       if (symbol.startsWith('2/')) return total + 2
       return total + 1
@@ -50,7 +57,10 @@ function manaValueFromCost(cost: string): number {
   }, 0)
 }
 
-function sortCards(cards: Card[], sortOption: SortOption): Card[] {
+function sortCards(
+  cards: Card[],
+  sortOption: SortOption,
+): Card[] {
   if (sortOption === 'default') return cards
 
   const sorted = [...cards]
@@ -58,29 +68,59 @@ function sortCards(cards: Card[], sortOption: SortOption): Card[] {
   sorted.sort((left, right) => {
     switch (sortOption) {
       case 'name-asc':
-        return getFaceName(left).localeCompare(getFaceName(right))
+        return getFaceName(left).localeCompare(
+          getFaceName(right),
+        )
+
       case 'name-desc':
-        return getFaceName(right).localeCompare(getFaceName(left))
+        return getFaceName(right).localeCompare(
+          getFaceName(left),
+        )
+
       case 'cmc-asc': {
-        const delta = manaValueFromCost(left.faces[0]?.manaCost ?? '') - manaValueFromCost(right.faces[0]?.manaCost ?? '')
+        const delta =
+          manaValueFromCost(left.faces[0]?.manaCost ?? '') -
+          manaValueFromCost(right.faces[0]?.manaCost ?? '')
+
         if (delta !== 0) return delta
-        return getFaceName(left).localeCompare(getFaceName(right))
+
+        return getFaceName(left).localeCompare(
+          getFaceName(right),
+        )
       }
+
       case 'cmc-desc': {
-        const delta = manaValueFromCost(right.faces[0]?.manaCost ?? '') - manaValueFromCost(left.faces[0]?.manaCost ?? '')
+        const delta =
+          manaValueFromCost(right.faces[0]?.manaCost ?? '') -
+          manaValueFromCost(left.faces[0]?.manaCost ?? '')
+
         if (delta !== 0) return delta
-        return getFaceName(left).localeCompare(getFaceName(right))
+
+        return getFaceName(left).localeCompare(
+          getFaceName(right),
+        )
       }
+
       case 'set-asc': {
         const delta = left.set.localeCompare(right.set)
+
         if (delta !== 0) return delta
-        return getFaceName(left).localeCompare(getFaceName(right))
+
+        return getFaceName(left).localeCompare(
+          getFaceName(right),
+        )
       }
+
       case 'set-desc': {
         const delta = right.set.localeCompare(left.set)
+
         if (delta !== 0) return delta
-        return getFaceName(left).localeCompare(getFaceName(right))
+
+        return getFaceName(left).localeCompare(
+          getFaceName(right),
+        )
       }
+
       default:
         return 0
     }
@@ -89,68 +129,82 @@ function sortCards(cards: Card[], sortOption: SortOption): Card[] {
   return sorted
 }
 
-/**
- * Converts the new Scryfall structure:
- *
- * {
- *   id,
- *   rarity,
- *   set,
- *   faces: [...]
- * }
- *
- * into the structure currently expected by the UI.
- *
- * For now we display the first face of every card.
- * The complete `faces` array is kept in the original card
- * so we can later implement face switching.
- */
 function getDisplayCards(): Card[] {
-  // mockCards already uses the new shape expected by the app
   return mockCards
 }
 
 export function CatalogPage() {
   const [query, setQuery] = useState('')
-  const [setValue, setSetValue] = useState('all')
-  const [typeValue, setTypeValue] = useState('')
-  const [rarityValue, setRarityValue] = useState('')
-  const [colorValue, setColorValue] = useState('')
-  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE)
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null)
-  const [selectedFaceIndex, setSelectedFaceIndex] = useState<number>(0)
 
-  const [expandedOracles, setExpandedOracles] = useState<
-    Record<string, boolean>
-  >({})
+  /*
+   * All filters are arrays now.
+   *
+   * Empty array = no filter.
+   *
+   * Examples:
+   *
+   * []              -> no color filter
+   * ['W']           -> white
+   * ['W', 'U']      -> white OR blue
+   * ['rare','mythic'] -> rare OR mythic
+   */
+  const [setValue, setSetValue] = useState<string[]>([])
+  const [typeValue, setTypeValue] = useState<string[]>([])
+  const [rarityValue, setRarityValue] = useState<string[]>([])
+  const [colorValue, setColorValue] = useState<string[]>([])
 
-  const [expandAllCards, setExpandAllCards] = useState(false)
+  const [visibleCount, setVisibleCount] =
+    useState(BATCH_SIZE)
 
-  const [isSearchVisible, setIsSearchVisible] = useState(true)
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
-  const [sortOption, setSortOption] = useState<SortOption>('default')
+  const [selectedCard, setSelectedCard] =
+    useState<Card | null>(null)
+
+  const [selectedFaceIndex, setSelectedFaceIndex] =
+    useState<number>(0)
+
+  const [expandedOracles, setExpandedOracles] =
+    useState<Record<string, boolean>>({})
+
+  const [expandAllCards, setExpandAllCards] =
+    useState(false)
+
+  const [isSearchVisible, setIsSearchVisible] =
+    useState(true)
+
+  const [isAdvancedOpen, setIsAdvancedOpen] =
+    useState(false)
+
+  const [sortOption, setSortOption] =
+    useState<SortOption>('default')
 
   const sentinelRef = useRef<HTMLDivElement>(null)
   const lastScrollY = useRef(0)
   const ignoreScrollRef = useRef(false)
 
-  /*
-   * Convert the new mockCards structure into the structure
-   * currently used by the catalog UI.
-   */
   const displayCards = useMemo(
     () => getDisplayCards(),
     [],
   )
 
+  /*
+   * FILTERING
+   *
+   * cardFilters now handles multiple values.
+   *
+   * Different categories are combined with AND:
+   *
+   * (W OR U)
+   * AND
+   * (rare OR mythic)
+   */
   const filteredCards = useMemo(
     () =>
       filterCards(displayCards, {
         query,
         set: setValue,
-        type: typeValue || 'all',
-        rarity: rarityValue || 'all',
-        color: colorValue || 'all',
+        type: typeValue,
+        rarity: rarityValue,
+        color: colorValue,
       }),
     [
       displayCards,
@@ -167,7 +221,24 @@ export function CatalogPage() {
     [filteredCards, sortOption],
   )
 
-  // Show/hide search bar depending on scroll direction
+  /*
+   * Search bar options
+   */
+
+  const setOptions = useMemo(
+    () => getUniqueSets(displayCards),
+    [displayCards],
+  )
+
+  const typeOptions = useMemo(
+    () => getUniqueTypes(displayCards),
+    [displayCards],
+  )
+
+  /*
+   * SCROLL
+   */
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
@@ -177,8 +248,6 @@ export function CatalogPage() {
         return
       }
 
-      // small movements are ignored; we only react when the user scrolls
-      // more than SCROLL_SENSITIVITY pixels in one direction.
       const delta = currentScrollY - lastScrollY.current
 
       if (currentScrollY <= 0) {
@@ -188,28 +257,29 @@ export function CatalogPage() {
       }
 
       if (delta < -SCROLL_SENSITIVITY) {
-        // scrolled up sufficiently
         setIsSearchVisible(true)
         lastScrollY.current = currentScrollY
       } else if (delta > SCROLL_SENSITIVITY) {
-        // scrolled down sufficiently
         setIsSearchVisible(false)
         lastScrollY.current = currentScrollY
       }
-      // otherwise, ignore small deltas and don't update lastScrollY to allow
-      // accumulation of small movements into a larger one.
     }
 
     window.addEventListener('scroll', handleScroll, {
       passive: true,
     })
 
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-    }
+    return () =>
+      window.removeEventListener(
+        'scroll',
+        handleScroll,
+      )
   }, [])
 
-  // Load more cards when the sentinel enters the viewport
+  /*
+   * INFINITE SCROLL
+   */
+
   useEffect(() => {
     const sentinel = sentinelRef.current
     if (!sentinel) return
@@ -234,24 +304,28 @@ export function CatalogPage() {
   }, [sortedFilteredCards.length])
 
   /*
-   * IMPORTANT:
-   * Use displayCards here, not mockCards, because the filters
-   * currently operate on the old Card structure.
+   * Visible cards
    */
-  const setOptions = useMemo(
-    () => getUniqueSets(displayCards),
-    [displayCards],
-  )
 
-  const typeOptions = useMemo(
-    () => getUniqueTypes(displayCards),
-    [displayCards],
-  )
+  const visibleCardsSorted =
+    sortedFilteredCards.slice(0, visibleCount)
 
-  const visibleCardsSorted = sortedFilteredCards.slice(0, visibleCount)
+  /*
+   * EXPAND ORACLES
+   */
+
   const expandedOraclesView = expandAllCards
-    ? Object.fromEntries(sortedFilteredCards.map((card) => [card.id, true]))
+    ? Object.fromEntries(
+        sortedFilteredCards.map((card) => [
+          card.id,
+          true,
+        ]),
+      )
     : expandedOracles
+
+  /*
+   * MODAL
+   */
 
   const modalCards = sortedFilteredCards
 
@@ -282,15 +356,37 @@ export function CatalogPage() {
     )
   }
 
-  const scrollToCard = (cardId?: string, faceIndex?: number) => {
+  const scrollToCard = (
+    cardId?: string,
+    faceIndex?: number,
+  ) => {
     if (!cardId) return
+
     let selector = `[data-card-id="${cardId}"]`
-    if (typeof faceIndex === 'number') selector += `[data-face-index="${faceIndex}"]`
-    const el = document.querySelector(selector) as HTMLElement | null
-    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+
+    if (typeof faceIndex === 'number') {
+      selector += `[data-face-index="${faceIndex}"]`
+    }
+
+    const el = document.querySelector(
+      selector,
+    ) as HTMLElement | null
+
+    if (el) {
+      el.scrollIntoView({
+        block: 'center',
+        behavior: 'smooth',
+      })
+    }
   }
 
-  const handleExpandAllChange = (checked: boolean) => {
+  /*
+   * EXPAND ALL
+   */
+
+  const handleExpandAllChange = (
+    checked: boolean,
+  ) => {
     const currentScrollY = window.scrollY
 
     ignoreScrollRef.current = true
@@ -327,31 +423,50 @@ export function CatalogPage() {
     })
   }
 
-  const handleSortChange = (value: SortOption) => {
+  /*
+   * SORT
+   */
+
+  const handleSortChange = (
+    value: SortOption,
+  ) => {
     setSortOption(value)
     setVisibleCount(BATCH_SIZE)
   }
 
-  const handleFilterStateChange = (
+  /*
+   * FILTER CHANGES
+   *
+   * Whenever a filter changes:
+   *
+   * - reset pagination
+   * - reset expanded oracles
+   *
+   * We keep the current scroll position.
+   */
+
+  const handleFilterChange = (
     callback: () => void,
   ) => {
     callback()
+
     setVisibleCount(BATCH_SIZE)
+
     if (!expandAllCards) {
       setExpandedOracles({})
     }
   }
 
-  const handleBasicFilterChange = (
-    callback: () => void,
-  ) => {
-    handleFilterStateChange(callback)
-    if (isAdvancedOpen) {
-      handleAdvancedOpenChange(false)
-    }
-  }
+  /*
+   * ADVANCED VIEW
+   *
+   * The + button changes the view instead of opening
+   * the old inline advanced row.
+   */
 
-  const handleAdvancedOpenChange = (value: boolean) => {
+  const handleAdvancedOpenChange = (
+    value: boolean,
+  ) => {
     const currentScrollY = window.scrollY
 
     ignoreScrollRef.current = true
@@ -387,6 +502,7 @@ export function CatalogPage() {
         }`}
       >
         <AppHeader />
+
         <SearchBar
           query={query}
           setValue={setValue}
@@ -406,19 +522,29 @@ export function CatalogPage() {
           }
           onSortChange={handleSortChange}
           onQueryChange={(value) =>
-            handleFilterStateChange(() => setQuery(value))
+            handleFilterChange(() =>
+              setQuery(value),
+            )
           }
           onSetChange={(value) =>
-            handleBasicFilterChange(() => setSetValue(value))
+            handleFilterChange(() =>
+              setSetValue(value),
+            )
           }
           onTypeChange={(value) =>
-            handleBasicFilterChange(() => setTypeValue(value))
+            handleFilterChange(() =>
+              setTypeValue(value),
+            )
           }
           onRarityChange={(value) =>
-            handleBasicFilterChange(() => setRarityValue(value))
+            handleFilterChange(() =>
+              setRarityValue(value),
+            )
           }
           onColorChange={(value) =>
-            handleBasicFilterChange(() => setColorValue(value))
+            handleFilterChange(() =>
+              setColorValue(value),
+            )
           }
         />
       </div>
@@ -435,8 +561,7 @@ export function CatalogPage() {
         onOpenDetails={(card, faceIndex = 0) => {
           setSelectedFaceIndex(faceIndex)
           setSelectedCard(card)
-        }
-        }
+        }}
       />
 
       <div
@@ -451,12 +576,13 @@ export function CatalogPage() {
           onClose={() => {
             const cardId = selectedCard?.id
             const faceIdx = selectedFaceIndex
+
             setSelectedCard(null)
+
             requestAnimationFrame(() => {
               scrollToCard(cardId, faceIdx)
             })
-          }
-          }
+          }}
           onShowPrevious={showPreviousCard}
           onShowNext={showNextCard}
           hasPrevious={selectedCardIndex > 0}

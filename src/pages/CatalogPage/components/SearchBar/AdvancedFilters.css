@@ -1,0 +1,309 @@
+.advanced-filters {
+  min-height: 100%;
+  padding: 1rem;
+  background: var(--paper);
+  color: var(--ink-strong);
+}
+
+.advanced-filters-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.advanced-filters-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.advanced-back {
+  width: 2.25rem;
+  height: 2.25rem;
+
+  border: none;
+  border-radius: 9px;
+
+  background: var(--surface-2);
+  color: var(--ink-strong);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 1.25rem;
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.advanced-back:hover {
+  background: var(--surface-3);
+}
+
+.advanced-back:active {
+  transform: scale(0.94);
+}
+
+/* =========================
+   SECTIONS
+   ========================= */
+
+.advanced-filter-section {
+  margin-bottom: 1.5rem;
+}
+
+.advanced-filter-section h3 {
+  margin: 0 0 0.65rem;
+
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+
+  color: var(--ink-soft);
+}
+
+/* =========================
+   OPTIONS
+   ========================= */
+
+.advanced-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.filter-option {
+  min-height: 2.25rem;
+
+  border: 1px solid transparent;
+  border-radius: 9px;
+
+  padding: 0.45rem 0.7rem;
+
+  background: var(--surface-2);
+  color: var(--ink-strong);
+
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease,
+    filter 0.12s ease;
+}
+
+.filter-option:hover {
+  filter: brightness(1.05);
+}
+
+.filter-option:active {
+  transform: scale(0.95);
+}
+
+/*
+ * SELECTED
+ *
+ * The important bit here is the outline + shadow.
+ * It remains visible even on black / dark buttons.
+ */
+
+.filter-option.is-selected {
+  border-color: var(--ink-strong);
+
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 4px var(--ink-strong);
+
+  transform: translateY(-1px);
+}
+
+/* =========================
+   COLORS
+   ========================= */
+
+.filter-color-w {
+  background: #f8f6e8;
+  color: #222;
+}
+
+.filter-color-u {
+  background: #3f8fc4;
+  color: #fff;
+}
+
+.filter-color-b {
+  background: #292929;
+  color: #fff;
+}
+
+.filter-color-r {
+  background: #c94b3c;
+  color: #fff;
+}
+
+.filter-color-g {
+  background: #4f8a5b;
+  color: #fff;
+}
+
+/* =========================
+   RARITIES
+   ========================= */
+
+.filter-rarity-common {
+  background: #777;
+  color: #fff;
+}
+
+.filter-rarity-uncommon {
+  background: #aeb7c2;
+  color: #20252a;
+}
+
+.filter-rarity-rare {
+  background: #c9a227;
+  color: #211a05;
+}
+
+.filter-rarity-mythic {
+  background: #c65a32;
+  color: #fff;
+}
+
+/* =========================
+   ACTIONS
+   ========================= */
+
+.advanced-filters-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+
+  margin-top: 2rem;
+  padding-top: 1rem;
+
+  border-top: 1px solid
+    color-mix(
+      in srgb,
+      var(--ink-soft) 20%,
+      transparent
+    );
+}
+
+.advanced-cancel,
+.advanced-accept,
+.advanced-clear {
+  min-height: 2.5rem;
+
+  border-radius: 9px;
+
+  padding: 0.55rem 1rem;
+
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.12s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.advanced-cancel {
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--ink-soft) 35%,
+      transparent
+    );
+
+  background: transparent;
+  color: var(--ink-soft);
+}
+
+.advanced-cancel:hover {
+  background: var(--surface-2);
+  color: var(--ink-strong);
+}
+
+.advanced-accept {
+  border: none;
+
+  background: var(--ink-strong);
+  color: var(--paper);
+
+  box-shadow: 0 3px 8px rgb(0 0 0 / 12%);
+}
+
+.advanced-accept:hover {
+  box-shadow: 0 4px 12px rgb(0 0 0 / 18%);
+}
+
+.advanced-cancel:active,
+.advanced-accept:active,
+.advanced-clear:active {
+  transform: scale(0.96);
+}
+
+/* =========================
+   CLEAR FILTERS
+   ========================= */
+
+.advanced-clear {
+  margin-left: auto;
+
+  border: none;
+
+  background: transparent;
+  color: var(--ink-soft);
+}
+
+.advanced-clear:hover {
+  background: var(--surface-2);
+  color: var(--ink-strong);
+}
+
+/* =========================
+   MOBILE
+   ========================= */
+
+@media (max-width: 600px) {
+  .advanced-filters {
+    padding: 0.8rem;
+  }
+
+  .advanced-filter-section {
+    margin-bottom: 1.25rem;
+  }
+
+  .filter-option {
+    min-height: 2.15rem;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.78rem;
+  }
+
+  .advanced-filters-actions {
+    gap: 0.45rem;
+  }
+
+  .advanced-cancel,
+  .advanced-accept,
+  .advanced-clear {
+    min-height: 2.4rem;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.76rem;
+  }
+}
