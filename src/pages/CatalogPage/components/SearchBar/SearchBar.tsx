@@ -23,6 +23,7 @@ interface SearchBarProps {
   typeOptions: string[]
   isAdvancedOpen: boolean
   expandAllCards: boolean
+  showAllPrints: boolean
 
   onAdvancedOpenChange: (value: boolean) => void
   onExpandAllChange: (value: boolean) => void
@@ -33,6 +34,7 @@ interface SearchBarProps {
   onTypeChange: (value: string[]) => void
   onRarityChange: (value: string[]) => void
   onColorChange: (value: string[]) => void
+  onShowAllPrintsChange: (value: boolean) => void
 }
 
 export function SearchBar({
@@ -46,6 +48,7 @@ export function SearchBar({
   typeOptions,
   isAdvancedOpen,
   expandAllCards,
+  showAllPrints,
   onAdvancedOpenChange,
   onExpandAllChange,
   onSortChange,
@@ -54,6 +57,7 @@ export function SearchBar({
   onTypeChange,
   onRarityChange,
   onColorChange,
+  onShowAllPrintsChange,
 }: SearchBarProps) {
   const [isSortOpen, setIsSortOpen] = useState(false)
 
@@ -102,10 +106,12 @@ export function SearchBar({
         setValue={setValue}
         setOptions={setOptions}
         typeOptions={typeOptions}
+        showAllPrints={showAllPrints}
         onColorChange={onColorChange}
         onTypeChange={onTypeChange}
         onRarityChange={onRarityChange}
         onSetChange={onSetChange}
+        onShowAllPrintsChange={onShowAllPrintsChange}
         onClose={() => onAdvancedOpenChange(false)}
       />
     )

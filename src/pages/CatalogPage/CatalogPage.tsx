@@ -153,6 +153,9 @@ export function CatalogPage() {
   const [rarityValue, setRarityValue] = useState<string[]>([])
   const [colorValue, setColorValue] = useState<string[]>([])
 
+  // When false, only the first print of each card name is shown.
+  const [showAllPrints, setShowAllPrints] = useState(false)
+
   const [visibleCount, setVisibleCount] =
     useState(BATCH_SIZE)
 
@@ -216,10 +219,22 @@ export function CatalogPage() {
     ],
   )
 
-  const sortedFilteredCards = useMemo(
-    () => sortCards(filteredCards, sortOption),
-    [filteredCards, sortOption],
-  )
+  const sortedFilteredCards = useMemo(() => {
+    const sorted = sortCards(filteredCards, sortOption)
+
+    if (showAllPrints) return sorted
+
+    const seenNames = new Set<string>()
+
+    return sorted.filter((card) => {
+      const name = getFaceName(card)
+
+      if (seenNames.has(name)) return false
+
+      seenNames.add(name)
+      return true
+    })
+  }, [filteredCards, sortOption, showAllPrints])
 
   /*
    * Search bar options
@@ -521,6 +536,7 @@ export function CatalogPage() {
           typeOptions={typeOptions}
           isAdvancedOpen={isAdvancedOpen}
           expandAllCards={expandAllCards}
+          showAllPrints={showAllPrints}
           onAdvancedOpenChange={
             handleAdvancedOpenChange
           }
@@ -551,6 +567,11 @@ export function CatalogPage() {
           onColorChange={(value) =>
             handleFilterChange(() =>
               setColorValue(value),
+            )
+          }
+          onShowAllPrintsChange={(value) =>
+            handleFilterChange(() =>
+              setShowAllPrints(value),
             )
           }
         />

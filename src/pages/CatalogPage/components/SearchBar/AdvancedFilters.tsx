@@ -9,11 +9,13 @@ interface AdvancedFiltersProps {
   setValue: string[]
   setOptions: string[]
   typeOptions: string[]
+  showAllPrints: boolean
 
   onColorChange: (value: string[]) => void
   onTypeChange: (value: string[]) => void
   onRarityChange: (value: string[]) => void
   onSetChange: (value: string[]) => void
+  onShowAllPrintsChange: (value: boolean) => void
 
   onClose: () => void
 }
@@ -34,10 +36,12 @@ export function AdvancedFilters({
   setValue,
   setOptions,
   typeOptions,
+  showAllPrints,
   onColorChange,
   onTypeChange,
   onRarityChange,
   onSetChange,
+  onShowAllPrintsChange,
   onClose,
 }: AdvancedFiltersProps) {
   /*
@@ -59,6 +63,9 @@ export function AdvancedFilters({
 
   const [selectedSets, setSelectedSets] =
     useState<string[]>(setValue)
+
+  const [selectedShowAllPrints, setSelectedShowAllPrints] =
+    useState<boolean>(showAllPrints)
 
   /*
    * Toggle a value in a temporary selection.
@@ -85,6 +92,7 @@ export function AdvancedFilters({
     onTypeChange(selectedTypes)
     onRarityChange(selectedRarities)
     onSetChange(selectedSets)
+    onShowAllPrintsChange(selectedShowAllPrints)
 
     onClose()
   }
@@ -112,11 +120,13 @@ export function AdvancedFilters({
     setSelectedTypes([])
     setSelectedRarities([])
     setSelectedSets([])
+    setSelectedShowAllPrints(false)
 
     onColorChange([])
     onTypeChange([])
     onRarityChange([])
     onSetChange([])
+    onShowAllPrintsChange(false)
 
     onClose()
   }
@@ -273,6 +283,25 @@ export function AdvancedFilters({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* =========================
+          PRINTS
+          ========================= */}
+
+      <div className="advanced-filter-section">
+        <h3>Prints</h3>
+
+        <label className="advanced-checkbox">
+          <input
+            type="checkbox"
+            checked={selectedShowAllPrints}
+            onChange={(event) =>
+              setSelectedShowAllPrints(event.target.checked)
+            }
+          />
+          Show all prints
+        </label>
       </div>
 
       {/* =========================

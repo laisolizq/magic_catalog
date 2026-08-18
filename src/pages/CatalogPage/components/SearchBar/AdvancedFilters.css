@@ -72,6 +72,17 @@
    OPTIONS
    ========================= */
 
+.advanced-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  font-size: 0.9rem;
+  color: var(--ink-strong);
+
+  cursor: pointer;
+}
+
 .advanced-options {
   display: flex;
   flex-wrap: wrap;
