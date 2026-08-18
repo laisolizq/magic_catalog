@@ -156,14 +156,25 @@ export function getUniqueSets(
   ].sort()
 }
 
-export function getUniqueTypes(
-  cards: Card[],
-): string[] {
-  return [
-    ...new Set(
-      cards.map((card) =>
-        cardPrimaryTypeLine(card).split(' ')[0],
-      ),
-    ),
-  ].sort()
+// Supertypes that shouldn't be treated as a selectable card type on their own
+// (e.g. "Legendary Planeswalker" should surface "Planeswalker", not "Legendary").
+const SUPERTYPES = new Set(['Legendary', 'Basic', 'Snow', 'World', 'Ongoing'])
+
+function cardMainTypes(card: Card): string[] {
+  const typeLine = cardPrimaryTypeLine(card)
+  const typesPart = typeLine.split('\u2014')[0].trim()
+
+  return typesPart
+    .split(' ')
+    .filter((word) => word.length > 0 && !SUPERTYPES.has(word))
+}
+
+export function getUniqueTypes(cards: Card[]): string[] {
+  const types = new Set<string>()
+
+  cards.forEach((card) => {
+    cardMainTypes(card).forEach((type) => types.add(type))
+  })
+
+  return [...types].sort()
 }

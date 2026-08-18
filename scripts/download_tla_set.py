@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -161,6 +162,10 @@ def build_face_from_data(
     if toughness:
         face["toughness"] = toughness
 
+    loyalty = safe_string(data.get("loyalty"))
+    if loyalty:
+        face["loyalty"] = loyalty
+
     return face
 
 
@@ -206,7 +211,10 @@ def build_faces(card: dict[str, Any]) -> list[dict[str, Any]]:
     return [face] if face is not None else []
 
 
-def to_mock_card(card: dict[str, Any]) -> dict[str, Any] | None:
+def to_mock_card(
+    card: dict[str, Any],
+    existing_cards: dict[str, dict[str, Any]],
+) -> dict[str, Any] | None:
     set_code = safe_string(card.get("set"))
     collector_number = safe_string(card.get("collector_number"))
 
@@ -223,21 +231,79 @@ def to_mock_card(card: dict[str, Any]) -> dict[str, Any] | None:
     if rarity not in VALID_RARITIES:
         rarity = "common"
 
-    ruling_uri = safe_string(card.get("rulings_uri"))
+    card_id = f"{set_code}-{collector_number}"
+    existing_card = existing_cards.get(card_id)
 
-    print(
-        f"Fetching rulings for {set_code}-{collector_number}...",
-        file=sys.stderr,
-    )
+    if existing_card is not None:
+        print(
+            f"Skipping rulings fetch for {card_id} "
+            "(already in mockCards)...",
+            file=sys.stderr,
+        )
 
-    rulings = fetch_rulings(ruling_uri)
+        rulings = existing_card.get("rulings", [])
+    else:
+        ruling_uri = safe_string(card.get("rulings_uri"))
+
+        print(
+            f"Fetching rulings for {card_id}...",
+            file=sys.stderr,
+        )
+
+        rulings = fetch_rulings(ruling_uri)
 
     return {
-        "id": f"{set_code}-{collector_number}",
+        "id": card_id,
         "rarity": rarity,
         "set": set_code,
         "rulings": rulings,
         "faces": faces,
+    }
+
+
+def load_existing_cards(
+    output_path: Path,
+) -> dict[str, dict[str, Any]]:
+    """
+    Parse the previously generated mockCards.ts file (if any) so we
+    can reuse data already fetched from Scryfall, instead of making
+    redundant API calls (namely rulings) for cards we already have.
+    """
+
+    if not output_path.exists():
+        return {}
+
+    text = output_path.read_text(encoding="utf-8")
+
+    marker = "export const mockCards: Card[] = "
+    marker_index = text.find(marker)
+
+    if marker_index == -1:
+        return {}
+
+    array_text = text[marker_index + len(marker):].strip()
+
+    # Turn the TS object literal array into valid JSON: quote the
+    # unquoted keys and drop trailing commas before closing braces.
+    array_text = re.sub(
+        r'([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)(\s*:)',
+        r'\1"\2"\3',
+        array_text,
+    )
+    array_text = re.sub(r',(\s*[}\]])', r'\1', array_text)
+
+    try:
+        cards = json.loads(array_text)
+    except json.JSONDecodeError:
+        return {}
+
+    if not isinstance(cards, list):
+        return {}
+
+    return {
+        card["id"]: card
+        for card in cards
+        if isinstance(card, dict) and isinstance(card.get("id"), str)
     }
 
 
@@ -306,6 +372,11 @@ def format_face(face: dict[str, Any]) -> str:
     if "toughness" in face:
         lines.append(
             f"        toughness: {quote(face['toughness'])},"
+        )
+
+    if "loyalty" in face:
+        lines.append(
+            f"        loyalty: {quote(face['loyalty'])},"
         )
 
     lines.append("      },")
@@ -419,10 +490,10 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument(
         "--sets",
-        default="tla,hob",
+        default="tla,hob,sos",
         help=(
             "Comma-separated Scryfall set codes "
-            "(default: tla,hob)"
+            "(default: tla,hob,sos)"
         ),
     )
 
@@ -470,10 +541,12 @@ def main() -> int:
 
         all_cards.extend(cards)
 
+    existing_cards = load_existing_cards(output_path)
+
     mock_cards = [
         card
         for card in (
-            to_mock_card(card)
+            to_mock_card(card, existing_cards)
             for card in all_cards
         )
         if card is not None

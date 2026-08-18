@@ -127,6 +127,7 @@ export function Cards({
     <div className="card-face-group">
       {faces.map((face, faceIndex) => {
         const hasPowerAndToughness = Boolean(face.power || face.toughness)
+        const hasLoyalty = Boolean(face.loyalty)
 
         const oracleText = isOracleExpanded
           ? face.oracleText
@@ -170,6 +171,10 @@ export function Cards({
                   <span className="power-line">
                     {face.power ?? '-'} / {face.toughness ?? '-'}
                   </span>
+                )}
+
+                {!hasPowerAndToughness && hasLoyalty && (
+                  <span className="power-line">{face.loyalty}</span>
                 )}
               </div>
             </aside>

@@ -15,6 +15,7 @@ export interface CardFace {
     typeLine: string
     power?: string
     toughness?: string
+    loyalty?: string
     oracleText: string
     colors: CardColor[]
     imageUrl: string

@@ -26,6 +26,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'logo_cardscade.png'],
+      workbox: {
+        // mockCards.ts keeps growing as more sets are added, so raise the
+        // default 2 MiB precache limit to fit the generated bundle.
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
       manifest: {
         name: 'Cardscade',
         short_name: 'Cardscade',
