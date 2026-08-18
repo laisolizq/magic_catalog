@@ -11,6 +11,7 @@ import {
   getUniqueSets,
   getUniqueTypes,
 } from '../../utils/cardFilters'
+import { buildScryfallQuery, parseScryfallQuery } from '../../utils/scryfallQuery'
 import { SCROLL_SENSITIVITY } from '../../config/ui'
 import './CatalogPage.css'
 
@@ -134,9 +135,14 @@ function getDisplayCards(): Card[] {
 }
 
 export function CatalogPage() {
-  const [query, setQuery] = useState('')
+  // Default to the HOB set on first load.
+  const [query, setQuery] = useState('s:hob')
 
   /*
+   * The raw query is the single source of truth for color/type/rarity/set
+   * filters. It follows a Scryfall-like syntax (c:, t:, r:, s:), parsed here
+   * and rebuilt (via buildScryfallQuery) whenever a filter control changes.
+   *
    * All filters are arrays now.
    *
    * Empty array = no filter.
@@ -148,10 +154,15 @@ export function CatalogPage() {
    * ['W', 'U']      -> white OR blue
    * ['rare','mythic'] -> rare OR mythic
    */
-  const [setValue, setSetValue] = useState<string[]>([])
-  const [typeValue, setTypeValue] = useState<string[]>([])
-  const [rarityValue, setRarityValue] = useState<string[]>([])
-  const [colorValue, setColorValue] = useState<string[]>([])
+  const parsedQuery = useMemo(
+    () => parseScryfallQuery(query),
+    [query],
+  )
+
+  const setValue = parsedQuery.sets
+  const typeValue = parsedQuery.types
+  const rarityValue = parsedQuery.rarities
+  const colorValue = parsedQuery.colors
 
   // When false, only the first print of each card name is shown.
   const [showAllPrints, setShowAllPrints] = useState(false)
@@ -203,7 +214,7 @@ export function CatalogPage() {
   const filteredCards = useMemo(
     () =>
       filterCards(displayCards, {
-        query,
+        query: parsedQuery.text,
         set: setValue,
         type: typeValue,
         rarity: rarityValue,
@@ -211,7 +222,7 @@ export function CatalogPage() {
       }),
     [
       displayCards,
-      query,
+      parsedQuery,
       setValue,
       typeValue,
       rarityValue,
@@ -480,6 +491,32 @@ export function CatalogPage() {
   }
 
   /*
+   * Rewrites the query string when a filter control (dropdown/advanced
+   * filters) changes, keeping the current free text and other fields intact.
+   */
+  const updateQueryFilters = (
+    updates: Partial<{
+      colors: string[]
+      types: string[]
+      rarities: string[]
+      sets: string[]
+    }>,
+  ) => {
+    const nextFilters = {
+      text: parsedQuery.text,
+      colors: parsedQuery.colors,
+      types: parsedQuery.types,
+      rarities: parsedQuery.rarities,
+      sets: parsedQuery.sets,
+      ...updates,
+    }
+
+    handleFilterChange(() =>
+      setQuery(buildScryfallQuery(nextFilters)),
+    )
+  }
+
+  /*
    * ADVANCED VIEW
    *
    * The + button changes the view instead of opening
@@ -550,24 +587,16 @@ export function CatalogPage() {
             )
           }
           onSetChange={(value) =>
-            handleFilterChange(() =>
-              setSetValue(value),
-            )
+            updateQueryFilters({ sets: value })
           }
           onTypeChange={(value) =>
-            handleFilterChange(() =>
-              setTypeValue(value),
-            )
+            updateQueryFilters({ types: value })
           }
           onRarityChange={(value) =>
-            handleFilterChange(() =>
-              setRarityValue(value),
-            )
+            updateQueryFilters({ rarities: value })
           }
           onColorChange={(value) =>
-            handleFilterChange(() =>
-              setColorValue(value),
-            )
+            updateQueryFilters({ colors: value })
           }
           onShowAllPrintsChange={(value) =>
             handleFilterChange(() =>

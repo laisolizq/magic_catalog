@@ -50,7 +50,9 @@ describe('CatalogPage', () => {
     const user = userEvent.setup()
     render(<CatalogPage />)
 
-    const expectedFirstByNameAsc = [...mockCards]
+    // The app defaults to the hob set (s:hob) on load.
+    const expectedFirstByNameAsc = mockCards
+      .filter((card) => card.set === 'hob')
       .sort((a, b) => {
         const left = a.faces[0]?.name ?? ''
         const right = b.faces[0]?.name ?? ''
