@@ -167,6 +167,16 @@
   color: #fff;
 }
 
+.filter-color-c {
+  background: #c9c2b4;
+  color: #222;
+}
+
+.filter-color-m {
+  background: linear-gradient(135deg, #c9a227 0%, #3f8fc4 100%);
+  color: #fff;
+}
+
 /* =========================
    RARITIES
    ========================= */

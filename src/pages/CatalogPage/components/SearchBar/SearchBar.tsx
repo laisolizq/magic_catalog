@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { AdvancedFilters } from './AdvancedFilters'
+import { FilterSheet } from './FilterSheet'
 import './SearchBar.css'
 
 type SortOption =
@@ -11,6 +12,23 @@ type SortOption =
   | 'cmc-desc'
   | 'set-asc'
   | 'set-desc'
+
+const COLOR_OPTIONS = [
+  { value: 'W', label: 'White', className: 'filter-color-w' },
+  { value: 'U', label: 'Blue', className: 'filter-color-u' },
+  { value: 'B', label: 'Black', className: 'filter-color-b' },
+  { value: 'R', label: 'Red', className: 'filter-color-r' },
+  { value: 'G', label: 'Green', className: 'filter-color-g' },
+  { value: 'C', label: 'Colorless', className: 'filter-color-c' },
+  { value: 'M', label: 'Multicolor', className: 'filter-color-m' },
+]
+
+const RARITY_OPTIONS = [
+  { value: 'common', label: 'Common', className: 'filter-rarity-common' },
+  { value: 'uncommon', label: 'Uncommon', className: 'filter-rarity-uncommon' },
+  { value: 'rare', label: 'Rare', className: 'filter-rarity-rare' },
+  { value: 'mythic', label: 'Mythic', className: 'filter-rarity-mythic' },
+]
 
 interface SearchBarProps {
   query: string
@@ -60,10 +78,28 @@ export function SearchBar({
   onShowAllPrintsChange,
 }: SearchBarProps) {
   const [isSortOpen, setIsSortOpen] = useState(false)
+  const [isColorOpen, setIsColorOpen] = useState(false)
+  const [isTypeOpen, setIsTypeOpen] = useState(false)
+  const [isRarityOpen, setIsRarityOpen] = useState(false)
 
   const handleSortSelect = (value: SortOption) => {
     onSortChange(value)
     setIsSortOpen(false)
+  }
+
+  const handleColorSelect = (value: string) => {
+    handleBasicFilterChange(value, onColorChange)
+    setIsColorOpen(false)
+  }
+
+  const handleTypeSelect = (value: string) => {
+    handleBasicFilterChange(value, onTypeChange)
+    setIsTypeOpen(false)
+  }
+
+  const handleRaritySelect = (value: string) => {
+    handleBasicFilterChange(value, onRarityChange)
+    setIsRarityOpen(false)
   }
 
   const handleOracleToggle = () => {
@@ -254,83 +290,115 @@ export function SearchBar({
       </div>
 
       <div className="basic-filters-row">
-        <label className="basic-filter">
-          <select
-            className={`filter-color ${
+        <div className="basic-filter">
+          <button
+            type="button"
+            className={`filter-color-toggle ${
               colorValue.length === 1
                 ? `filter-color-${colorValue[0].toLowerCase()}`
                 : ''
             }`}
-            value={colorValue.length === 1 ? colorValue[0] : ''}
+            aria-haspopup="dialog"
+            aria-expanded={isColorOpen}
             aria-label="color"
-            onChange={(event) =>
-              handleBasicFilterChange(
-                event.target.value,
-                onColorChange,
-              )
-            }
+            onClick={() => setIsColorOpen(true)}
           >
-            <option value="">COLOR</option>
-            <option value="all">all</option>
-            <option value="W">W</option>
-            <option value="U">U</option>
-            <option value="B">B</option>
-            <option value="R">R</option>
-            <option value="G">G</option>
-          </select>
-        </label>
+            {colorValue.length === 1
+              ? COLOR_OPTIONS.find((option) => option.value === colorValue[0])
+                  ?.label
+              : colorValue.includes('all')
+                ? 'All colors'
+                : 'Color'}
+          </button>
 
-        <label className="basic-filter">
-          <select
-            className="filter-type"
-            value={typeValue.length === 1 ? typeValue[0] : ''}
+          {isColorOpen && (
+            <FilterSheet
+              title="Select color"
+              options={[{ value: '', label: 'All colors' }, ...COLOR_OPTIONS]}
+              selectedValues={colorValue}
+              onSelect={(value) => {
+                handleColorSelect(value)
+                setIsColorOpen(false)
+              }}
+              onClose={() => setIsColorOpen(false)}
+            />
+          )}
+        </div>
+
+        <div className="basic-filter">
+          <button
+            type="button"
+            className="filter-type-toggle"
+            aria-haspopup="dialog"
+            aria-expanded={isTypeOpen}
             aria-label="type"
-            onChange={(event) =>
-              handleBasicFilterChange(
-                event.target.value,
-                onTypeChange,
-              )
-            }
+            onClick={() => setIsTypeOpen(true)}
           >
-            <option value="">TYPE</option>
-            <option value="all">all</option>
+            {typeValue.length === 1
+              ? typeValue[0]
+              : typeValue.includes('all')
+                ? 'All types'
+                : 'Type'}
+          </button>
 
-            {typeOptions.map((typeOption) => (
-              <option key={typeOption} value={typeOption}>
-                {typeOption}
-              </option>
-            ))}
-          </select>
-        </label>
+          {isTypeOpen && (
+            <FilterSheet
+              title="Select type"
+              options={[
+                { value: '', label: 'All types' },
+                ...typeOptions.map((typeOption) => ({
+                  value: typeOption,
+                  label: typeOption,
+                })),
+              ]}
+              selectedValues={typeValue}
+              onSelect={(value) => {
+                handleTypeSelect(value)
+                setIsTypeOpen(false)
+              }}
+              onClose={() => setIsTypeOpen(false)}
+            />
+          )}
+        </div>
 
-        <label className="basic-filter">
-          <select
-            className={`filter-rarity ${
+        <div className="basic-filter">
+          <button
+            type="button"
+            className={`filter-rarity-toggle ${
               rarityValue.length === 1
                 ? `filter-rarity-${rarityValue[0].toLowerCase()}`
                 : ''
             }`}
-            value={
-              rarityValue.length === 1
-                ? rarityValue[0]
-                : ''
-            }
+            aria-haspopup="dialog"
+            aria-expanded={isRarityOpen}
             aria-label="rarity"
-            onChange={(event) =>
-              handleBasicFilterChange(
-                event.target.value,
-                onRarityChange,
-              )
-            }
+            onClick={() => setIsRarityOpen(true)}
           >
-            <option value="">RARITY</option>
-            <option value="all">all</option>
-            <option value="common">common</option>
-            <option value="uncommon">uncommon</option>
-            <option value="rare">rare</option>
-            <option value="mythic">mythic</option>
-          </select>
-        </label>
+            {rarityValue.length === 1
+              ? RARITY_OPTIONS.find(
+                  (option) => option.value === rarityValue[0],
+                )?.label
+              : rarityValue.includes('all')
+                ? 'All rarities'
+                : 'Rarity'}
+          </button>
+
+          {isRarityOpen && (
+            <FilterSheet
+              title="Select rarity"
+              options={[
+                { value: '', label: 'All rarities' },
+                ...RARITY_OPTIONS,
+              ]}
+              selectedValues={rarityValue}
+              onSelect={(value) => {
+                handleRaritySelect(value)
+                setIsRarityOpen(false)
+              }}
+              onClose={() => setIsRarityOpen(false)}
+            />
+          )}
+        </div>
 
         <button
           type="button"

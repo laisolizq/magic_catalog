@@ -183,13 +183,21 @@
    COLOR FILTER
    ========================= */
 
-.filter-color,
-.filter-color-all {
+.filter-color-toggle {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.45rem;
+  font-size: 0.84rem;
+  font-family: var(--font-body);
+  color: var(--ink-strong);
   background: color-mix(
     in srgb,
     var(--surface-2) 88%,
     #d8b84c
   ) !important;
+  cursor: pointer;
+  text-transform: uppercase;
 }
 
 .filter-color-w {
@@ -217,29 +225,64 @@
   color: white !important;
 }
 
+.filter-color-c {
+  background: #c9c2b4 !important;
+  color: #222 !important;
+}
+
+.filter-color-m {
+  background: linear-gradient(135deg, #c9a227 0%, #3f8fc4 100%) !important;
+  color: white !important;
+}
+
 /* =========================
    TYPE FILTER
    ========================= */
 
-.filter-type {
+.type-filter {
+  position: relative;
+}
+
+.filter-type-toggle {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.45rem;
+  font-size: 0.84rem;
+  font-family: var(--font-body);
+  color: var(--ink-strong);
   background: color-mix(
     in srgb,
     var(--surface-2) 88%,
     #5b9bb5
   ) !important;
+  cursor: pointer;
+  text-transform: uppercase;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* =========================
    RARITY FILTER
    ========================= */
 
-.filter-rarity,
-.filter-rarity-all {
+.filter-rarity-toggle {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.45rem;
+  font-size: 0.84rem;
+  font-family: var(--font-body);
+  color: var(--ink-strong);
   background: color-mix(
     in srgb,
     var(--surface-2) 88%,
     #9b70b0
   ) !important;
+  cursor: pointer;
+  text-transform: uppercase;
 }
 
 .filter-rarity-common {
@@ -279,7 +322,10 @@
     min-width: 84px;
   }
 
-  .basic-filter select {
+  .basic-filter select,
+  .filter-color-toggle,
+  .filter-type-toggle,
+  .filter-rarity-toggle {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;

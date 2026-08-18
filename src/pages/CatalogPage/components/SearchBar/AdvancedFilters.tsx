@@ -20,7 +20,7 @@ interface AdvancedFiltersProps {
   onClose: () => void
 }
 
-const colors = ['W', 'U', 'B', 'R', 'G']
+const colors = ['W', 'U', 'B', 'R', 'G', 'C', 'M']
 
 const rarities = [
   'common',

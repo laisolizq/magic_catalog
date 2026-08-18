@@ -117,9 +117,12 @@ export function filterCards(
     const matchesColor =
       filters.color.length === 0 ||
       filters.color.includes('all') ||
-      filters.color.some((color) =>
-        colors.includes(color),
-      )
+      filters.color.some((color) => {
+        if (color === 'C') return colors.length === 0
+        if (color === 'M') return colors.length > 1
+        // WUBRG filters only match mono-colored cards of that color.
+        return colors.length === 1 && colors.includes(color)
+      })
 
     /*
      * =========================
