@@ -19,6 +19,17 @@ interface CardModalProps {
 
 const SWIPE_THRESHOLD = 60
 
+// Some double-faced cards are missing dedicated back-face art, so the second
+// face's image falls back to the same one as the first face. Treat that as
+// "not a real face" so navigation skips straight past it.
+function isDuplicateFaceImage(card: Card, faceIndex: number): boolean {
+  const faces = card.faces || []
+  if (faceIndex <= 0 || faceIndex >= faces.length) return false
+
+  const image = faces[faceIndex].imageUrl
+  return Boolean(image) && image === faces[0].imageUrl
+}
+
 export function CardModal({
   card,
   initialFaceIndex = 0,
@@ -61,6 +72,37 @@ export function CardModal({
     }
   }, [])
 
+  const goToNextFace = () => {
+    if (rulingsOpen) return
+    const faces = card.faces || []
+
+    let nextIndex = currentFaceIndex + 1
+    while (nextIndex < faces.length && isDuplicateFaceImage(card, nextIndex)) {
+      nextIndex++
+    }
+
+    if (nextIndex < faces.length) {
+      setCurrentFaceIndex(nextIndex)
+    } else if (hasNext) {
+      onShowNext()
+    }
+  }
+
+  const goToPreviousFace = () => {
+    if (rulingsOpen) return
+
+    let prevIndex = currentFaceIndex - 1
+    while (prevIndex > 0 && isDuplicateFaceImage(card, prevIndex)) {
+      prevIndex--
+    }
+
+    if (prevIndex >= 0) {
+      setCurrentFaceIndex(prevIndex)
+    } else if (hasPrevious) {
+      onShowPrevious()
+    }
+  }
+
   const handleSwipe = (deltaX: number, deltaY: number) => {
     if (rulingsOpen) return
     const absX = Math.abs(deltaX)
@@ -78,21 +120,13 @@ export function CardModal({
     if (absY > absX && absY > SWIPE_THRESHOLD) {
       if (deltaY < -SWIPE_THRESHOLD) {
         // swipe up -> next face
-        if ((card.faces || []).length - 1 > currentFaceIndex) {
-          setCurrentFaceIndex((i) => i + 1)
-        } else if (hasNext) {
-          onShowNext()
-        }
+        goToNextFace()
         return
       }
 
       if (deltaY > SWIPE_THRESHOLD) {
         // swipe down -> previous face
-        if (currentFaceIndex > 0) {
-          setCurrentFaceIndex((i) => i - 1)
-        } else if (hasPrevious) {
-          onShowPrevious()
-        }
+        goToPreviousFace()
       }
     }
   }
@@ -118,28 +152,20 @@ export function CardModal({
 
       if (event.key === 'ArrowUp') {
         // previous face
-        if (currentFaceIndex > 0) {
-          setCurrentFaceIndex((i) => i - 1)
-        } else if (hasPrevious) {
-          onShowPrevious()
-        }
+        goToPreviousFace()
         return
       }
 
       if (event.key === 'ArrowDown') {
         // next face
-        if (currentFaceIndex < (card.faces || []).length - 1) {
-          setCurrentFaceIndex((i) => i + 1)
-        } else if (hasNext) {
-          onShowNext()
-        }
+        goToNextFace()
         return
       }
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [currentFaceIndex, hasNext, hasPrevious, onClose, onShowNext, onShowPrevious, card.faces])
+  }, [currentFaceIndex, hasNext, hasPrevious, onClose, onShowNext, onShowPrevious, card])
 
   useEffect(() => {
     // preload current card faces and neighbor cards' primary faces
@@ -173,23 +199,8 @@ export function CardModal({
     setRulingsOpen((v) => !v)
   }
 
-  const handlePrev = () => {
-    if (rulingsOpen) return
-    if (currentFaceIndex > 0) {
-      setCurrentFaceIndex((i) => i - 1)
-    } else if (hasPrevious) {
-      onShowPrevious()
-    }
-  }
-
-  const handleNext = () => {
-    if (rulingsOpen) return
-    if (currentFaceIndex < (card.faces || []).length - 1) {
-      setCurrentFaceIndex((i) => i + 1)
-    } else if (hasNext) {
-      onShowNext()
-    }
-  }
+  const handlePrev = goToPreviousFace
+  const handleNext = goToNextFace
 
   return (
     <div className="card-modal-overlay" role="presentation" onClick={onClose}>
