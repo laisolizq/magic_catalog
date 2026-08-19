@@ -9,6 +9,8 @@
 //   Scryfall's own c= operator), and accepts the word colorless too
 // - c>1 matches multicolor cards (more than one color)
 // - t:/r:/s: accept a single word each (repeat the prefix for more values)
+// - r: accepts Scryfall's rarity abbreviations (c/u/r/m) or full words, and
+//   is always built back out using the abbreviation (e.g. r:u)
 // - quoted phrases ("draw a card") are kept together as free text
 // - negation (e.g. -t:creature) isn't supported; such tokens are treated
 //   as free text so they don't silently do the wrong thing
@@ -40,6 +42,24 @@ const COLOR_LETTERS: Record<string, string> = {
 const COLOR_WORDS: Record<string, string> = {
   c: 'C',
   colorless: 'C',
+}
+
+const RARITY_ALIASES: Record<string, string> = {
+  c: 'common',
+  common: 'common',
+  u: 'uncommon',
+  uncommon: 'uncommon',
+  r: 'rare',
+  rare: 'rare',
+  m: 'mythic',
+  mythic: 'mythic',
+}
+
+const RARITY_ABBREVIATIONS: Record<string, string> = {
+  common: 'c',
+  uncommon: 'u',
+  rare: 'r',
+  mythic: 'm',
 }
 
 const TOKEN_REGEX = /[A-Za-z]+(?:>=|<=|:|=|>|<)"[^"]*"|[A-Za-z]+(?:>=|<=|:|=|>|<)\S+|"[^"]*"|\S+/g
@@ -122,7 +142,8 @@ export function parseScryfallQuery(input: string): ParsedQuery {
       }
 
       if (field === 'rarities') {
-        const rarity = rawValue.toLowerCase()
+        const lowered = rawValue.toLowerCase()
+        const rarity = RARITY_ALIASES[lowered] ?? lowered
         if (!rarities.includes(rarity)) rarities.push(rarity)
         continue
       }
@@ -172,7 +193,10 @@ export function buildScryfallQuery(filters: QueryFilters): string {
 
   parts.push(...buildColorClauses(filters.colors))
   filters.types.forEach((type) => parts.push(`t:${type.toLowerCase()}`))
-  filters.rarities.forEach((rarity) => parts.push(`r:${rarity}`))
+  filters.rarities.forEach((rarity) => {
+    const lowered = rarity.toLowerCase()
+    parts.push(`r:${RARITY_ABBREVIATIONS[lowered] ?? lowered}`)
+  })
   filters.sets.forEach((set) => parts.push(`s:${set}`))
 
   return parts.filter((part) => part.length > 0).join(' ')

@@ -17,7 +17,7 @@ describe('CatalogPage', () => {
 
     expect(screen.getByText(firstName)).toBeInTheDocument()
 
-    const queryInput = screen.getByPlaceholderText(/set:tla/i)
+    const queryInput = screen.getByPlaceholderText(/type a card name/i)
     await user.clear(queryInput)
     await user.type(queryInput, firstName)
     expect(screen.getByText(firstName)).toBeInTheDocument()
@@ -68,7 +68,7 @@ describe('CatalogPage', () => {
 
     await user.click(
       screen.getByRole('menuitemradio', {
-        name: 'Name↑',
+        name: 'Name',
       }),
     )
 
@@ -87,7 +87,7 @@ describe('CatalogPage', () => {
       `Open details for ${expectedFirstByNameAsc}`,
     )
 
-    const queryInput = screen.getByPlaceholderText(/set:tla/i)
+    const queryInput = screen.getByPlaceholderText(/type a card name/i)
     await user.clear(queryInput)
     await user.type(queryInput, 'a')
 
@@ -99,7 +99,7 @@ describe('CatalogPage', () => {
 
     expect(
       screen.getByRole('menuitemradio', {
-        name: 'Name↑',
+        name: 'Name ↑/↓',
       }),
     ).toHaveAttribute('aria-checked', 'true')
   })

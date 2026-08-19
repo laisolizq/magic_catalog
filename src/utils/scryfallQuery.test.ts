@@ -48,6 +48,13 @@ describe('parseScryfallQuery', () => {
     expect(parsed.sets).toEqual(['tla'])
   })
 
+  it('parses rarity abbreviations into full words', () => {
+    expect(parseScryfallQuery('r:c').rarities).toEqual(['common'])
+    expect(parseScryfallQuery('r:u').rarities).toEqual(['uncommon'])
+    expect(parseScryfallQuery('r:r').rarities).toEqual(['rare'])
+    expect(parseScryfallQuery('r:m').rarities).toEqual(['mythic'])
+  })
+
   it('keeps quoted free text phrases together and mixes with operators', () => {
     const parsed = parseScryfallQuery('"draw a card" t:instant')
     expect(parsed.text).toBe('draw a card')
@@ -91,5 +98,15 @@ describe('buildScryfallQuery', () => {
       rarities: [],
       sets: [],
     })).toBe('c>1')
+  })
+
+  it('builds rarities using Scryfall abbreviations', () => {
+    expect(buildScryfallQuery({
+      text: '',
+      colors: [],
+      types: [],
+      rarities: ['uncommon'],
+      sets: [],
+    })).toBe('r:u')
   })
 })

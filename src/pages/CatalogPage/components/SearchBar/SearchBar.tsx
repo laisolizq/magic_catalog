@@ -1,17 +1,24 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { AdvancedFilters } from './AdvancedFilters'
 import { FilterSheet } from './FilterSheet'
 import './SearchBar.css'
 
 type SortOption =
-  | 'default'
+  | 'set-asc'
+  | 'set-desc'
   | 'name-asc'
   | 'name-desc'
   | 'cmc-asc'
   | 'cmc-desc'
-  | 'set-asc'
-  | 'set-desc'
+
+type SortCategory = 'set' | 'name' | 'cmc'
+
+const SORT_CATEGORIES: Array<{ value: SortCategory; label: string }> = [
+  { value: 'set', label: 'Set' },
+  { value: 'name', label: 'Name' },
+  { value: 'cmc', label: 'Mana Value' },
+]
 
 const COLOR_OPTIONS = [
   { value: 'W', label: 'White', className: 'filter-color-w' },
@@ -82,6 +89,23 @@ export function SearchBar({
   const [isTypeOpen, setIsTypeOpen] = useState(false)
   const [isRarityOpen, setIsRarityOpen] = useState(false)
 
+  const sortControlRef = useRef<HTMLDivElement>(null)
+
+  // Closes the sort menu when the user clicks/taps anywhere outside of it.
+  useEffect(() => {
+    if (!isSortOpen) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!sortControlRef.current?.contains(event.target as Node)) {
+        setIsSortOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () =>
+      document.removeEventListener('pointerdown', handlePointerDown)
+  }, [isSortOpen])
+
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Skips the focus-triggered space padding right after a clear, since the
@@ -122,8 +146,18 @@ export function SearchBar({
     searchInputRef.current?.focus()
   }
 
-  const handleSortSelect = (value: SortOption) => {
-    onSortChange(value)
+  const handleSortSelect = (category: SortCategory) => {
+    const [activeCategory, activeDirection] = sortOption.split('-') as [
+      SortCategory,
+      'asc' | 'desc',
+    ]
+
+    const nextDirection =
+      category === activeCategory && activeDirection === 'asc'
+        ? 'desc'
+        : 'asc'
+
+    onSortChange(`${category}-${nextDirection}` as SortOption)
     setIsSortOpen(false)
   }
 
@@ -212,7 +246,7 @@ export function SearchBar({
             ref={searchInputRef}
             className="search-input"
             aria-label="Search cards"
-            placeholder="set:tla"
+            placeholder="Type a card name or use filters"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             onFocus={handleSearchFocus}
@@ -257,7 +291,7 @@ export function SearchBar({
           </svg>
         </button>
 
-        <div className="sort-control">
+        <div className="sort-control" ref={sortControlRef}>
           <button
             type="button"
             className="sort-toggle"
@@ -282,68 +316,44 @@ export function SearchBar({
               role="menu"
               aria-label="Sort options"
             >
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={sortOption === 'default'}
-                onClick={() => handleSortSelect('default')}
-              >
-                Original
-              </button>
+              {SORT_CATEGORIES.map(({ value, label }) => {
+                const [activeCategory, activeDirection] =
+                  sortOption.split('-') as [SortCategory, 'asc' | 'desc']
 
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={sortOption === 'name-asc'}
-                onClick={() => handleSortSelect('name-asc')}
-              >
-                Name↑
-              </button>
+                const isActive = activeCategory === value
 
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={sortOption === 'name-desc'}
-                onClick={() => handleSortSelect('name-desc')}
-              >
-                Name↓
-              </button>
-
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={sortOption === 'cmc-asc'}
-                onClick={() => handleSortSelect('cmc-asc')}
-              >
-                CMC↑
-              </button>
-
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={sortOption === 'cmc-desc'}
-                onClick={() => handleSortSelect('cmc-desc')}
-              >
-                CMC↓
-              </button>
-
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={sortOption === 'set-asc'}
-                onClick={() => handleSortSelect('set-asc')}
-              >
-                Set↑
-              </button>
-
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={sortOption === 'set-desc'}
-                onClick={() => handleSortSelect('set-desc')}
-              >
-                Set↓
-              </button>
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={isActive}
+                    onClick={() => handleSortSelect(value)}
+                  >
+                    <span className="sort-menu-label">{label}</span>
+                    {isActive && ' '}
+                    {isActive && (
+                      <span className="sort-menu-arrows">
+                        <span
+                          className={
+                            activeDirection === 'asc' ? 'is-active' : ''
+                          }
+                        >
+                          ↑
+                        </span>
+                        /
+                        <span
+                          className={
+                            activeDirection === 'desc' ? 'is-active' : ''
+                          }
+                        >
+                          ↓
+                        </span>
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>

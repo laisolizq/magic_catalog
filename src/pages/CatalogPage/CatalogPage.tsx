@@ -18,13 +18,12 @@ import './CatalogPage.css'
 const BATCH_SIZE = 12
 
 type SortOption =
-  | 'default'
+  | 'set-asc'
+  | 'set-desc'
   | 'name-asc'
   | 'name-desc'
   | 'cmc-asc'
   | 'cmc-desc'
-  | 'set-asc'
-  | 'set-desc'
 
 function getFaceName(card: Card): string {
   return card.faces[0]?.name ?? ''
@@ -62,7 +61,10 @@ function sortCards(
   cards: Card[],
   sortOption: SortOption,
 ): Card[] {
-  if (sortOption === 'default') return cards
+  // The mock data is already in set/number order, so ascending set sort is
+  // just the original order and descending is its reverse.
+  if (sortOption === 'set-asc') return cards
+  if (sortOption === 'set-desc') return [...cards].reverse()
 
   const sorted = [...cards]
 
@@ -94,26 +96,6 @@ function sortCards(
         const delta =
           manaValueFromCost(right.faces[0]?.manaCost ?? '') -
           manaValueFromCost(left.faces[0]?.manaCost ?? '')
-
-        if (delta !== 0) return delta
-
-        return getFaceName(left).localeCompare(
-          getFaceName(right),
-        )
-      }
-
-      case 'set-asc': {
-        const delta = left.set.localeCompare(right.set)
-
-        if (delta !== 0) return delta
-
-        return getFaceName(left).localeCompare(
-          getFaceName(right),
-        )
-      }
-
-      case 'set-desc': {
-        const delta = right.set.localeCompare(left.set)
 
         if (delta !== 0) return delta
 
@@ -189,7 +171,7 @@ export function CatalogPage() {
     useState(false)
 
   const [sortOption, setSortOption] =
-    useState<SortOption>('default')
+    useState<SortOption>('set-asc')
 
   const sentinelRef = useRef<HTMLDivElement>(null)
   const lastScrollY = useRef(0)
