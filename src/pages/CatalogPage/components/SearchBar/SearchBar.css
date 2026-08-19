@@ -2,7 +2,10 @@
   background: var(--paper);
   border: none;
   border-radius: 14px;
-  padding: 0.65rem;
+  /* Only pad top/bottom; left/right is 0 so the search input and filter
+     buttons share the same horizontal margin as the cards below (both
+     governed solely by the app-shell gutter). */
+  padding: 0.65rem 0;
   text-align: left;
   display: grid;
   gap: 0.45rem;
@@ -14,9 +17,10 @@
 
 .search-input {
   width: 100%;
+  height: 2.1rem;
   border: none;
   border-radius: 8px;
-  padding: 0.55rem 0.65rem;
+  padding: 0 0.65rem;
   font-size: 0.95rem;
   font-family: var(--font-body);
   color: var(--ink-strong);
@@ -351,11 +355,15 @@
 
 @media (max-width: 900px) {
   .search-panel {
-    padding: 0.55rem;
+    padding: 0.55rem 0;
   }
 
   .search-input-wrap {
     min-width: 210px;
+  }
+
+  .search-input {
+    height: 2rem;
   }
 
   .basic-filter {
