@@ -27,6 +27,11 @@ function setSymbolUrl(setCode: string, rarity: Card['rarity']): string {
   return `https://svgs.scryfall.io/sets/${setCode}.svg?rarity=${rarity}`
 }
 
+// Shortens the "Legendary" supertype so long type lines take up less room.
+function abbreviateTypeLine(typeLine: string): string {
+  return typeLine.replace(/\bLegendary\b/g, 'Lgd.')
+}
+
 function stripParentheticalText(text: string): string {
   return text
     .split('\n')
@@ -186,7 +191,9 @@ export function Cards({
               </header>
 
               <div className="type-line-row">
-                <p className="type-line">{face.typeLine}</p>
+                <p className="type-line" title={face.typeLine}>
+                  {abbreviateTypeLine(face.typeLine)}
+                </p>
 
                 <span
                   className={`set-rarity rarity-${card.rarity}`}
