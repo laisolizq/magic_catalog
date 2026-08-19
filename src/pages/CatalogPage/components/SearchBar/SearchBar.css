@@ -53,10 +53,29 @@
   height: 16px;
 }
 
+.search-input-clear {
+  position: absolute;
+  right: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--ink-soft);
+  border: none;
+  background: none;
+  padding: 0.15rem;
+  cursor: pointer;
+}
+
+.search-input-clear svg {
+  width: 16px;
+  height: 16px;
+}
+
 .search-input {
   min-width: 0;
   width: 100%;
   padding-left: 2rem;
+  padding-right: 2rem;
 }
 
 /* =========================

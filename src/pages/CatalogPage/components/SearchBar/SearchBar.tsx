@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { AdvancedFilters } from './AdvancedFilters'
 import { FilterSheet } from './FilterSheet'
@@ -81,6 +81,46 @@ export function SearchBar({
   const [isColorOpen, setIsColorOpen] = useState(false)
   const [isTypeOpen, setIsTypeOpen] = useState(false)
   const [isRarityOpen, setIsRarityOpen] = useState(false)
+
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // Skips the focus-triggered space padding right after a clear, since the
+  // focus handler would otherwise see the stale (pre-clear) `query` closure
+  // and re-add it.
+  const skipNextFocusAdjustRef = useRef(false)
+
+  /*
+   * Puts the caret at the end of the query and, if it doesn't already end
+   * with a space, adds one first. That way typing right after focusing
+   * starts a new free-text word instead of gluing onto the last token
+   * (e.g. "s:hob" + typed "dragon" becoming "s:hobdragon").
+   */
+  const handleSearchFocus = () => {
+    if (skipNextFocusAdjustRef.current) {
+      skipNextFocusAdjustRef.current = false
+      return
+    }
+
+    const input = searchInputRef.current
+    const nextQuery =
+      query.length > 0 && !query.endsWith(' ') ? `${query} ` : query
+
+    if (nextQuery !== query) onQueryChange(nextQuery)
+
+    requestAnimationFrame(() => {
+      input?.setSelectionRange(nextQuery.length, nextQuery.length)
+    })
+  }
+
+  /*
+   * Clears the query so the user can start typing a fresh search
+   * right away.
+   */
+  const handleClearSearch = () => {
+    skipNextFocusAdjustRef.current = true
+    onQueryChange('')
+    searchInputRef.current?.focus()
+  }
 
   const handleSortSelect = (value: SortOption) => {
     onSortChange(value)
@@ -169,12 +209,32 @@ export function SearchBar({
 
           <input
             id="card-search-input"
+            ref={searchInputRef}
             className="search-input"
             aria-label="Search cards"
             placeholder="set:tla"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
+            onFocus={handleSearchFocus}
           />
+
+          {query.length > 0 && (
+            <button
+              type="button"
+              className="search-input-clear"
+              aria-label="Clear search"
+              title="Clear search"
+              onClick={handleClearSearch}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4l5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6 6.4 5Z" />
+              </svg>
+            </button>
+          )}
         </div>
 
         <button
