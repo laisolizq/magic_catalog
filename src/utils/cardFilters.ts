@@ -108,21 +108,28 @@ export function filterCards(
      * COLOR
      * =========================
      *
-     * ['W', 'U']
-     * -> White OR Blue
+     * C and M are matched independently, but WUBRG letters are matched as
+     * a single group requiring an exact color identity (like Scryfall's
+     * c= operator):
+     *
+     * ['W']      -> exactly White
+     * ['W', 'U'] -> exactly White+Blue (not White OR Blue)
+     * ['C', 'W'] -> Colorless OR exactly White
      */
 
     const colors = cardColors(card)
+    const wubrgSelected = filters.color.filter(
+      (color) => color !== 'C' && color !== 'M',
+    )
 
     const matchesColor =
       filters.color.length === 0 ||
       filters.color.includes('all') ||
-      filters.color.some((color) => {
-        if (color === 'C') return colors.length === 0
-        if (color === 'M') return colors.length > 1
-        // WUBRG filters only match mono-colored cards of that color.
-        return colors.length === 1 && colors.includes(color)
-      })
+      (filters.color.includes('C') && colors.length === 0) ||
+      (filters.color.includes('M') && colors.length > 1) ||
+      (wubrgSelected.length > 0 &&
+        colors.length === wubrgSelected.length &&
+        wubrgSelected.every((color) => colors.includes(color)))
 
     /*
      * =========================

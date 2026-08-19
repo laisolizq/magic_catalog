@@ -1,11 +1,13 @@
 // Parses/builds a Scryfall-like query syntax for the search bar, e.g.:
-//   "dragon c:wu t:creature r:rare s:tla"
+//   "dragon c=wu t:creature r:rare s:tla"
 //
-// Supported prefixes: c:/color:, t:/type:, r:/rarity:, s:/set:
+// Supported prefixes: c=/color=, t:/type:, r:/rarity:, s:/set:
 // Everything else is treated as free text (name/oracle text search).
 //
 // This is a lightweight subset of Scryfall's syntax, not a full clone:
-// - c: accepts letter combos (c:wu) or the words colorless/multicolor
+// - c=/color= matches colors exactly (c=wu means exactly white+blue, like
+//   Scryfall's own c= operator), and accepts the word colorless too
+// - c>1 matches multicolor cards (more than one color)
 // - t:/r:/s: accept a single word each (repeat the prefix for more values)
 // - quoted phrases ("draw a card") are kept together as free text
 // - negation (e.g. -t:creature) isn't supported; such tokens are treated
@@ -38,13 +40,9 @@ const COLOR_LETTERS: Record<string, string> = {
 const COLOR_WORDS: Record<string, string> = {
   c: 'C',
   colorless: 'C',
-  m: 'M',
-  multi: 'M',
-  multicolor: 'M',
-  multicolour: 'M',
 }
 
-const TOKEN_REGEX = /[A-Za-z]+:"[^"]*"|[A-Za-z]+:\S+|"[^"]*"|\S+/g
+const TOKEN_REGEX = /[A-Za-z]+(?:>=|<=|:|=|>|<)"[^"]*"|[A-Za-z]+(?:>=|<=|:|=|>|<)\S+|"[^"]*"|\S+/g
 
 const FIELD_ALIASES: Record<string, 'colors' | 'types' | 'rarities' | 'sets'> = {
   c: 'colors',
@@ -98,13 +96,19 @@ export function parseScryfallQuery(input: string): ParsedQuery {
   const tokens = input.match(TOKEN_REGEX) ?? []
 
   for (const token of tokens) {
-    const match = token.match(/^([A-Za-z]+):(.+)$/)
+    const match = token.match(/^([A-Za-z]+)(>=|<=|:|=|>|<)(.+)$/)
 
     if (match) {
       const field = FIELD_ALIASES[match[1].toLowerCase()]
-      const rawValue = stripQuotes(match[2])
+      const operator = match[2]
+      const rawValue = stripQuotes(match[3])
 
       if (field === 'colors') {
+        if (operator === '>' && rawValue.trim() === '1') {
+          if (!colors.includes('M')) colors.push('M')
+          continue
+        }
+
         parseColorValue(rawValue).forEach((color) => {
           if (!colors.includes(color)) colors.push(color)
         })
@@ -153,11 +157,11 @@ function buildColorClauses(colors: string[]): string[] {
 
   const clauses: string[] = []
 
-  if (letters.length > 0) clauses.push(`c:${letters.join('')}`)
+  if (letters.length > 0) clauses.push(`c=${letters.join('')}`)
 
   words.forEach((color) => {
-    if (color === 'C') clauses.push('c:colorless')
-    if (color === 'M') clauses.push('c:multicolor')
+    if (color === 'C') clauses.push('c=colorless')
+    if (color === 'M') clauses.push('c>1')
   })
 
   return clauses

@@ -24,15 +24,15 @@ describe('parseScryfallQuery', () => {
   })
 
   it('parses single and multiple color letters', () => {
-    expect(parseScryfallQuery('c:w').colors).toEqual(['W'])
-    expect(parseScryfallQuery('c:wu').colors).toEqual(['W', 'U'])
+    expect(parseScryfallQuery('c=w').colors).toEqual(['W'])
+    expect(parseScryfallQuery('c=wu').colors).toEqual(['W', 'U'])
   })
 
-  it('parses colorless and multicolor aliases', () => {
-    expect(parseScryfallQuery('c:colorless').colors).toEqual(['C'])
-    expect(parseScryfallQuery('c:c').colors).toEqual(['C'])
-    expect(parseScryfallQuery('c:multicolor').colors).toEqual(['M'])
-    expect(parseScryfallQuery('color:m').colors).toEqual(['M'])
+  it('parses colorless and multicolor operators', () => {
+    expect(parseScryfallQuery('c=colorless').colors).toEqual(['C'])
+    expect(parseScryfallQuery('c=c').colors).toEqual(['C'])
+    expect(parseScryfallQuery('c>1').colors).toEqual(['M'])
+    expect(parseScryfallQuery('color>1').colors).toEqual(['M'])
   })
 
   it('accumulates multiple t: clauses into an array', () => {
@@ -55,7 +55,7 @@ describe('parseScryfallQuery', () => {
   })
 
   it('parses mixed free text and multiple filter categories', () => {
-    const parsed = parseScryfallQuery('dragon c:wu t:creature r:rare s:tla')
+    const parsed = parseScryfallQuery('dragon c=wu t:creature r:rare s:tla')
 
     expect(parsed).toEqual({
       text: 'dragon',
@@ -81,5 +81,15 @@ describe('buildScryfallQuery', () => {
     const reparsed = parseScryfallQuery(built)
 
     expect(reparsed).toEqual(filters)
+  })
+
+  it('builds c>1 for multicolor', () => {
+    expect(buildScryfallQuery({
+      text: '',
+      colors: ['M'],
+      types: [],
+      rarities: [],
+      sets: [],
+    })).toBe('c>1')
   })
 })

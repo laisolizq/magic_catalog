@@ -493,6 +493,11 @@ export function CatalogPage() {
   /*
    * Rewrites the query string when a filter control (dropdown/advanced
    * filters) changes, keeping the current free text and other fields intact.
+   *
+   * Uses the functional setState form so multiple calls fired back-to-back
+   * (e.g. Advanced Filters applying color/type/rarity/set at once) each
+   * build on the previous update instead of all reading the same stale
+   * `parsedQuery` and clobbering one another.
    */
   const updateQueryFilters = (
     updates: Partial<{
@@ -502,17 +507,19 @@ export function CatalogPage() {
       sets: string[]
     }>,
   ) => {
-    const nextFilters = {
-      text: parsedQuery.text,
-      colors: parsedQuery.colors,
-      types: parsedQuery.types,
-      rarities: parsedQuery.rarities,
-      sets: parsedQuery.sets,
-      ...updates,
-    }
-
     handleFilterChange(() =>
-      setQuery(buildScryfallQuery(nextFilters)),
+      setQuery((prevQuery) => {
+        const prevParsed = parseScryfallQuery(prevQuery)
+
+        return buildScryfallQuery({
+          text: prevParsed.text,
+          colors: prevParsed.colors,
+          types: prevParsed.types,
+          rarities: prevParsed.rarities,
+          sets: prevParsed.sets,
+          ...updates,
+        })
+      }),
     )
   }
 
