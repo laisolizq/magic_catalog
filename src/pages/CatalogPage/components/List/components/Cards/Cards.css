@@ -196,8 +196,10 @@
   border-radius: 14px;
 }
 .set-symbol {
-  width: 1.25rem;
-  height: 1.25rem;
+  /* Matches .mana-symbol's sizing so the set symbol lines up with the
+     mana cost symbols above it. */
+  width: 1.1em;
+  height: 1.1em;
   display: block;
 }
 
@@ -456,16 +458,6 @@
 
   .set-rarity {
     margin-left: auto;
-  }
-
-  .set-symbol {
-    width: 0.95rem;
-    height: 0.95rem;
-  }
-
-  .set-symbol {
-    width: 1.3rem;
-    height: 1.3rem;
   }
 
   .oracle {
