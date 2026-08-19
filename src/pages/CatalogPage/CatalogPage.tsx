@@ -247,6 +247,19 @@ export function CatalogPage() {
    * SCROLL
    */
 
+  // Jump back to the top of the list whenever the query (search text or
+  // filters) or the sort order changes, but not on the initial mount.
+  const isFirstQueryOrSortRenderRef = useRef(true)
+
+  useEffect(() => {
+    if (isFirstQueryOrSortRenderRef.current) {
+      isFirstQueryOrSortRenderRef.current = false
+      return
+    }
+
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [query, sortOption])
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
@@ -457,7 +470,8 @@ export function CatalogPage() {
    * - reset pagination
    * - reset expanded oracles
    *
-   * We keep the current scroll position.
+   * (Scrolling back to the top when the query changes is handled by the
+   * effect watching `query`/`sortOption` above.)
    */
 
   const handleFilterChange = (
