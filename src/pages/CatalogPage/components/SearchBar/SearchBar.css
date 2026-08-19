@@ -250,32 +250,32 @@
 }
 
 .filter-color-u {
-  background: #3f8fc4 !important;
+  background: #6f9fbd !important;
   color: white !important;
 }
 
 .filter-color-b {
-  background: #292929 !important;
+  background: #6b626b !important;
   color: white !important;
 }
 
 .filter-color-r {
-  background: #c94b3c !important;
+  background: #b56b5f !important;
   color: white !important;
 }
 
 .filter-color-g {
-  background: #4f8a5b !important;
+  background: #709878 !important;
   color: white !important;
 }
 
 .filter-color-c {
-  background: #c9c2b4 !important;
+  background: #9a9a94 !important;
   color: #222 !important;
 }
 
 .filter-color-m {
-  background: linear-gradient(135deg, #c9a227 0%, #3f8fc4 100%) !important;
+  background: linear-gradient(135deg, #b5a85f 0%, #6f9fbd 100%) !important;
   color: white !important;
 }
 

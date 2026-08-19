@@ -139,69 +139,6 @@
 }
 
 /* =========================
-   COLORS
-   ========================= */
-
-.filter-color-w {
-  background: #f8f6e8;
-  color: #222;
-}
-
-.filter-color-u {
-  background: #3f8fc4;
-  color: #fff;
-}
-
-.filter-color-b {
-  background: #292929;
-  color: #fff;
-}
-
-.filter-color-r {
-  background: #c94b3c;
-  color: #fff;
-}
-
-.filter-color-g {
-  background: #4f8a5b;
-  color: #fff;
-}
-
-.filter-color-c {
-  background: #c9c2b4;
-  color: #222;
-}
-
-.filter-color-m {
-  background: linear-gradient(135deg, #c9a227 0%, #3f8fc4 100%);
-  color: #fff;
-}
-
-/* =========================
-   RARITIES
-   ========================= */
-
-.filter-rarity-common {
-  background: #777;
-  color: #fff;
-}
-
-.filter-rarity-uncommon {
-  background: #aeb7c2;
-  color: #20252a;
-}
-
-.filter-rarity-rare {
-  background: #c9a227;
-  color: #211a05;
-}
-
-.filter-rarity-mythic {
-  background: #c65a32;
-  color: #fff;
-}
-
-/* =========================
    ACTIONS
    ========================= */
 
