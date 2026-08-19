@@ -17,11 +17,11 @@
 
 .search-input {
   width: 100%;
-  height: 2.1rem;
+  height: 2.36rem;
   border: none;
   border-radius: 8px;
   padding: 0 0.65rem;
-  font-size: 0.95rem;
+  font-size: 1.07rem;
   font-family: var(--font-body);
   color: var(--ink-strong);
   background: var(--surface-2);
@@ -45,7 +45,7 @@
 
 .search-input-icon {
   position: absolute;
-  left: 0.55rem;
+  left: 0.62rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--ink-soft);
@@ -53,33 +53,33 @@
 }
 
 .search-input-icon svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .search-input-clear {
   position: absolute;
-  right: 0.4rem;
+  right: 0.45rem;
   top: 50%;
   transform: translateY(-50%);
   display: inline-flex;
   color: var(--ink-soft);
   border: none;
   background: none;
-  padding: 0.15rem;
+  padding: 0.17rem;
   cursor: pointer;
 }
 
 .search-input-clear svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .search-input {
   min-width: 0;
   width: 100%;
-  padding-left: 2rem;
-  padding-right: 2rem;
+  padding-left: 2.25rem;
+  padding-right: 2.25rem;
 }
 
 /* =========================
@@ -99,8 +99,8 @@
 }
 
 .basic-filter {
-  min-width: 96px;
-  font-size: 0.72rem;
+  min-width: 108px;
+  font-size: 0.81rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--ink-soft);
@@ -112,8 +112,8 @@
   width: 100%;
   border: none;
   border-radius: 8px;
-  padding: 0.45rem 0.45rem;
-  font-size: 0.84rem;
+  padding: 0.5rem 0.5rem;
+  font-size: 0.95rem;
   font-family: var(--font-body);
   color: var(--ink-strong);
   background: var(--surface-2);
@@ -134,8 +134,8 @@
   border-radius: 8px;
   background: var(--surface-2);
   color: var(--ink-strong);
-  width: 2.1rem;
-  height: 2.1rem;
+  width: 2.36rem;
+  height: 2.36rem;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -146,8 +146,8 @@
 
 .sort-toggle svg,
 .oracle-eye-toggle svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .sort-toggle[aria-expanded='true'],
@@ -158,9 +158,9 @@
 }
 
 .advanced-toggle {
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  padding-bottom: 0.1rem;
+  padding-bottom: 0.12rem;
   margin-left: auto;
 }
 
@@ -231,8 +231,8 @@
   width: 100%;
   border: none;
   border-radius: 8px;
-  padding: 0.45rem 0.45rem;
-  font-size: 0.84rem;
+  padding: 0.5rem 0.5rem;
+  font-size: 0.95rem;
   font-family: var(--font-body);
   color: var(--ink-strong);
   background: color-mix(
@@ -291,8 +291,8 @@
   width: 100%;
   border: none;
   border-radius: 8px;
-  padding: 0.45rem 0.45rem;
-  font-size: 0.84rem;
+  padding: 0.5rem 0.5rem;
+  font-size: 0.95rem;
   font-family: var(--font-body);
   color: var(--ink-strong);
   background: color-mix(
@@ -316,8 +316,8 @@
   width: 100%;
   border: none;
   border-radius: 8px;
-  padding: 0.45rem 0.45rem;
-  font-size: 0.84rem;
+  padding: 0.5rem 0.5rem;
+  font-size: 0.95rem;
   font-family: var(--font-body);
   color: var(--ink-strong);
   background: color-mix(
@@ -363,11 +363,11 @@
   }
 
   .search-input {
-    height: 2rem;
+    height: 2.25rem;
   }
 
   .basic-filter {
-    min-width: 84px;
+    min-width: 95px;
   }
 
   .basic-filter select,
@@ -378,9 +378,9 @@
     -webkit-appearance: none;
     -moz-appearance: none;
 
-    padding: 0.45rem 0.6rem;
+    padding: 0.5rem 0.68rem;
 
-    font-size: 0.72rem;
+    font-size: 0.81rem;
     font-family: var(--font-body);
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -394,7 +394,7 @@
   .sort-toggle,
   .oracle-eye-toggle,
   .advanced-toggle {
-    width: 2rem;
-    height: 2rem;
+    width: 2.25rem;
+    height: 2.25rem;
   }
 }
