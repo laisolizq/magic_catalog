@@ -525,7 +525,6 @@ export function SearchBar({
                         src={symbolUrl(typeOption)}
                         alt={typeOption}
                         aria-hidden="true"
-                        width="10"
                         height="10"
                       />{' '}
                       {typeOption}

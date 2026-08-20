@@ -1,40 +1,26 @@
 
-import W from '../assets/symbols/colors/W.svg'
-import U from '../assets/symbols/colors/U.svg'
-import B from '../assets/symbols/colors/B.svg'
-import R from '../assets/symbols/colors/R.svg'
-import G from '../assets/symbols/colors/G.svg'
-import M from '../assets/symbols/colors/M.svg'
-import C from '../assets/symbols/colors/C.svg'
-import Artifact from '../assets/symbols/types/artifact.svg'
-import Creature from '../assets/symbols/types/creature.svg'
-import Enchantment from '../assets/symbols/types/enchantment.svg'
-import Instant from '../assets/symbols/types/instant.svg'
-import Land from '../assets/symbols/types/land.svg'
-import Planeswalker from '../assets/symbols/types/planeswalker.png'
-import Sorcery from '../assets/symbols/types/sorcery.svg'
+const symbolAssets = import.meta.glob<string>(
+  '../assets/symbols/**/*.{svg,png}',
+  { eager: true, import: 'default', query: '?url' },
+)
 
 export function parseSymbols(cost: string): string[] {
   return Array.from(cost.matchAll(/\{([^}]+)\}/g), (m) => m[1])
 }
 
-const symbols: Record<string, string> = {
-  W,
-  U,
-  B,
-  R,
-  G,
-  M,
-  C,
-  Artifact,
-  Creature,
-  Enchantment,
-  Instant,
-  Land,
-  Planeswalker,
-  Sorcery,
+const symbols: Record<string, string> = Object.fromEntries(
+  Object.entries(symbolAssets).map(([path, url]) => [
+    path.split('/').pop()?.replace(/\.(svg|png)$/, ''),
+    url,
+  ]),
+)
+
+const symbolAliases: Record<string, string> = {
+  '½': 'HALF',
+  '∞': 'INFINITY',
 }
 
 export function symbolUrl(sym: string): string {
-  return symbols[sym]
+  const filename = symbolAliases[sym] ?? sym.replace(/\//g, '')
+  return symbols[filename] ?? symbols[filename.toLowerCase()]
 }
