@@ -511,7 +511,6 @@ export function SearchBar({
                     src={symbolUrl(typeValue[0])}
                     alt={typeValue[0]}
                     aria-hidden="true"
-                    height="10"
                   />
                 )
               : typeValue.includes('all')
@@ -533,7 +532,6 @@ export function SearchBar({
                         src={symbolUrl(typeOption)}
                         alt={typeOption}
                         aria-hidden="true"
-                        height="10"
                       />{' '}
                       {typeOption}
                     </>
