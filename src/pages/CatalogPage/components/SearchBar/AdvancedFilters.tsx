@@ -251,7 +251,7 @@ export function AdvancedFilters({
                 )
               }
             >
-              {rarity}
+                  {rarity.charAt(0).toUpperCase() + rarity.slice(1)}
             </button>
           ))}
         </div>
