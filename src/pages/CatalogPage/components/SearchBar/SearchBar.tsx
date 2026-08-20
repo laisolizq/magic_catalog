@@ -32,7 +32,7 @@ const COLOR_OPTIONS = [
           src={symbolUrl('W')}
           alt="W"
           aria-hidden="true"
-        /> {' White'}
+        /> <span className="filter-option-label">White</span>
     </>
   ),
   className: 'filter-color-w'
@@ -44,7 +44,7 @@ const COLOR_OPTIONS = [
           src={symbolUrl('U')}
           alt="U"
           aria-hidden="true"
-        /> {' Blue'}
+        /> <span className="filter-option-label">Blue</span>
     </>
   ), className: 'filter-color-u' },
   { value: 'B', label: (
@@ -54,7 +54,7 @@ const COLOR_OPTIONS = [
           src={symbolUrl('B')}
           alt="B"
           aria-hidden="true"
-        /> {' Black'}
+        /> <span className="filter-option-label">Black</span>
     </>
   ), className: 'filter-color-b' },
   { value: 'R', label: (
@@ -64,7 +64,7 @@ const COLOR_OPTIONS = [
           src={symbolUrl('R')}
           alt="R"
           aria-hidden="true"
-        /> {' Red'}
+        /> <span className="filter-option-label">Red</span>
     </>
   ), className: 'filter-color-r' },
   { value: 'G', label: (
@@ -74,7 +74,7 @@ const COLOR_OPTIONS = [
           src={symbolUrl('G')}
           alt="G"
           aria-hidden="true"
-        /> {' Green'}
+        /> <span className="filter-option-label">Green</span>
     </>
   ), className: 'filter-color-g' },
   { value: 'C', label: (
@@ -84,7 +84,7 @@ const COLOR_OPTIONS = [
           src={symbolUrl('C')}
           alt="C"
           aria-hidden="true"
-        /> {' Colorless'}
+        /> <span className="filter-option-label">Colorless</span>
     </>
   ), className: 'filter-color-c' },
   { value: 'M', label: (
@@ -94,7 +94,7 @@ const COLOR_OPTIONS = [
           src={symbolUrl('M')}
           alt="M"
           aria-hidden="true"
-        /> {' Multicolor'}
+        /> <span className="filter-option-label">Multicolor</span>
     </>
   ), className: 'filter-color-m' },
 ]
@@ -505,7 +505,15 @@ export function SearchBar({
             onClick={() => setIsTypeOpen(true)}
           >
             {typeValue.length === 1
-              ? typeValue[0]
+              ? (
+                  <img
+                    className="type-symbol"
+                    src={symbolUrl(typeValue[0])}
+                    alt={typeValue[0]}
+                    aria-hidden="true"
+                    height="10"
+                  />
+                )
               : typeValue.includes('all')
                 ? 'All types'
                 : 'Type'}

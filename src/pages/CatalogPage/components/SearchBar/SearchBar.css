@@ -244,6 +244,10 @@
   text-transform: uppercase;
 }
 
+.filter-color-toggle .filter-option-label {
+  display: none;
+}
+
 .filter-color-w {
   background: #f8f6d8 !important;
   color: #222 !important;

@@ -248,6 +248,9 @@
   }
 
   .filter-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 2.15rem;
     padding: 0.4rem 0.65rem;
     font-size: 0.78rem;
