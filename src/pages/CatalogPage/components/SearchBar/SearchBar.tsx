@@ -4,6 +4,8 @@ import { AdvancedFilters } from './AdvancedFilters'
 import { FilterSheet } from './FilterSheet'
 import './SearchBar.css'
 
+import { symbolUrl } from '../../../../utils/utils.ts'
+
 type SortOption =
   | 'set-asc'
   | 'set-desc'
@@ -21,13 +23,80 @@ const SORT_CATEGORIES: Array<{ value: SortCategory; label: string }> = [
 ]
 
 const COLOR_OPTIONS = [
-  { value: 'W', label: 'White', className: 'filter-color-w' },
-  { value: 'U', label: 'Blue', className: 'filter-color-u' },
-  { value: 'B', label: 'Black', className: 'filter-color-b' },
-  { value: 'R', label: 'Red', className: 'filter-color-r' },
-  { value: 'G', label: 'Green', className: 'filter-color-g' },
-  { value: 'C', label: 'Colorless', className: 'filter-color-c' },
-  { value: 'M', label: 'Multicolor', className: 'filter-color-m' },
+  {
+  value: 'W',
+  label: (
+    <>
+      <img
+          className="mana-symbol"
+          src={symbolUrl('W')}
+          alt="W"
+          aria-hidden="true"
+        /> {' White'}
+    </>
+  ),
+  className: 'filter-color-w'
+},
+  { value: 'U', label: (
+    <>
+      <img
+          className="mana-symbol"
+          src={symbolUrl('U')}
+          alt="U"
+          aria-hidden="true"
+        /> {' Blue'}
+    </>
+  ), className: 'filter-color-u' },
+  { value: 'B', label: (
+    <>
+      <img
+          className="mana-symbol"
+          src={symbolUrl('B')}
+          alt="B"
+          aria-hidden="true"
+        /> {' Black'}
+    </>
+  ), className: 'filter-color-b' },
+  { value: 'R', label: (
+    <>
+      <img
+          className="mana-symbol"
+          src={symbolUrl('R')}
+          alt="R"
+          aria-hidden="true"
+        /> {' Red'}
+    </>
+  ), className: 'filter-color-r' },
+  { value: 'G', label: (
+    <>
+      <img
+          className="mana-symbol"
+          src={symbolUrl('G')}
+          alt="G"
+          aria-hidden="true"
+        /> {' Green'}
+    </>
+  ), className: 'filter-color-g' },
+  { value: 'C', label: (
+    <>
+      <img
+          className="mana-symbol"
+          src={symbolUrl('C')}
+          alt="C"
+          aria-hidden="true"
+        /> {' Colorless'}
+    </>
+  ), className: 'filter-color-c' },
+  { value: 'M', label: (
+    <>
+      <img
+          className="mana-symbol"
+          src={symbolUrl('M')}
+          alt="M"
+          aria-hidden="true"
+        /> {' Multicolor'}
+    </>
+  ), className: 'filter-color-m' },
 ]
 
 const RARITY_OPTIONS = [
@@ -412,7 +481,10 @@ export function SearchBar({
           {isColorOpen && (
             <FilterSheet
               title="Select color"
-              options={[{ value: '', label: 'All colors' }, ...COLOR_OPTIONS]}
+              options={[
+                { value: '', label: 'All colors' },
+                ...COLOR_OPTIONS,
+              ] as any}
               selectedValues={colorValue}
               onSelect={(value) => {
                 handleColorSelect(value)
@@ -446,9 +518,21 @@ export function SearchBar({
                 { value: '', label: 'All types' },
                 ...typeOptions.map((typeOption) => ({
                   value: typeOption,
-                  label: typeOption,
+                  label: (
+                    <>
+                      <img
+                        className="type-symbol"
+                        src={symbolUrl(typeOption)}
+                        alt={typeOption}
+                        aria-hidden="true"
+                        width="10"
+                        height="10"
+                      />{' '}
+                      {typeOption}
+                    </>
+                  ),
                 })),
-              ]}
+              ] as any}
               selectedValues={typeValue}
               onSelect={(value) => {
                 handleTypeSelect(value)

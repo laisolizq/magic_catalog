@@ -61,6 +61,7 @@ function renderOracleText(text: string) {
 
     const flushBuffer = (key: string) => {
       if (!buffer) return
+
       renderedLine.push(
         bufferIsReminder ? (
           <em key={key} className="oracle-reminder">
@@ -70,6 +71,7 @@ function renderOracleText(text: string) {
           <span key={key}>{buffer}</span>
         ),
       )
+
       buffer = ''
     }
 
@@ -81,7 +83,9 @@ function renderOracleText(text: string) {
           if (char === '(') inReminder = true
 
           if (inReminder !== bufferIsReminder) {
-            flushBuffer(`text-${lineIndex}-${partIndex}-${renderedLine.length}`)
+            flushBuffer(
+              `text-${lineIndex}-${partIndex}-${renderedLine.length}`,
+            )
             bufferIsReminder = inReminder
           }
 
@@ -89,6 +93,7 @@ function renderOracleText(text: string) {
 
           if (char === ')') inReminder = false
         }
+
         return
       }
 
@@ -99,7 +104,11 @@ function renderOracleText(text: string) {
       renderedLine.push(
         <img
           key={`sym-${lineIndex}-${partIndex}`}
-          className={inReminder ? 'oracle-symbol oracle-reminder' : 'oracle-symbol'}
+          className={
+            inReminder
+              ? 'oracle-symbol oracle-reminder'
+              : 'oracle-symbol'
+          }
           src={symbolUrl(symbol)}
           alt={symbol}
           aria-hidden="true"
@@ -128,11 +137,25 @@ export function Cards({
 }: CardsProps) {
   const faces: CardFace[] = card.faces
 
+  const getFaceImage = (face: CardFace) =>
+    face.artCropUrl ?? face.imageUrl
+
   return (
     <div className="card-face-group">
       {faces.map((face, faceIndex) => {
-        const hasPowerAndToughness = Boolean(face.power || face.toughness)
+        const hasPowerAndToughness = Boolean(
+          face.power || face.toughness,
+        )
         const hasLoyalty = Boolean(face.loyalty)
+
+        /*
+         * Adventure cards can have two faces that use the same
+         * physical image. In that case we keep both faces rendered,
+         * but only show the image on the first face.
+         */
+        const hasSharedImage =
+          faceIndex > 0 &&
+          getFaceImage(face) === getFaceImage(faces[0])
 
         const oracleText = isOracleExpanded
           ? face.oracleText
@@ -143,9 +166,9 @@ export function Cards({
             key={`${card.id}-${faceIndex}`}
             data-card-id={card.id}
             data-face-index={faceIndex}
-            className={`card-tile ${getFrameClass(face.colors)} ${getRarityClass(
-              card.rarity,
-            )}`}
+            className={`card-tile ${getFrameClass(
+              face.colors,
+            )} ${getRarityClass(card.rarity)}`}
             onClick={() => onOpenDetails(card, faceIndex)}
             onKeyUp={(event) => {
               if (event.key === 'Enter') {
@@ -156,33 +179,37 @@ export function Cards({
             tabIndex={0}
             aria-label={`Open details for ${face.name}`}
           >
-            <aside
-              className={`card-media rarity-frame-${card.rarity}`}
-              aria-hidden="true"
-            >
-              <div className="card-art-frame">
-                <img
-                  className="card-thumb"
-                  src={face.artCropUrl ?? face.imageUrl}
-                  alt={face.name}
-                  loading="lazy"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onOpenDetails(card, faceIndex)
-                  }}
-                />
+            {!hasSharedImage && (
+              <aside
+                className={`card-media rarity-frame-${card.rarity}`}
+                aria-hidden="true"
+              >
+                <div className="card-art-frame">
+                  <img
+                    className="card-thumb"
+                    src={getFaceImage(face)}
+                    alt={face.name}
+                    loading="lazy"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onOpenDetails(card, faceIndex)
+                    }}
+                  />
 
-                {hasPowerAndToughness && (
-                  <span className="power-line">
-                    {face.power ?? '-'} / {face.toughness ?? '-'}
-                  </span>
-                )}
+                  {hasPowerAndToughness && (
+                    <span className="power-line">
+                      {face.power ?? '-'} / {face.toughness ?? '-'}
+                    </span>
+                  )}
 
-                {!hasPowerAndToughness && hasLoyalty && (
-                  <span className="power-line">{face.loyalty}</span>
-                )}
-              </div>
-            </aside>
+                  {!hasPowerAndToughness && hasLoyalty && (
+                    <span className="power-line">
+                      {face.loyalty}
+                    </span>
+                  )}
+                </div>
+              </aside>
+            )}
 
             <div className="card-main">
               <header className="card-headline">
@@ -191,18 +218,28 @@ export function Cards({
               </header>
 
               <div className="type-line-row">
-                <p className="type-line" title={face.typeLine}>
+                <p
+                  className="type-line"
+                  title={face.typeLine}
+                >
                   {abbreviateTypeLine(face.typeLine)}
                 </p>
 
                 <span
                   className={`set-rarity rarity-${card.rarity}`}
-                  aria-label={`${card.set?.toUpperCase?.() ?? ''} ${card.rarity ?? ''}`}
-                  title={`${card.set?.toUpperCase?.() ?? ''} • ${card.rarity ?? ''}`}
+                  aria-label={`${card.set?.toUpperCase?.() ?? ''} ${
+                    card.rarity ?? ''
+                  }`}
+                  title={`${card.set?.toUpperCase?.() ?? ''} • ${
+                    card.rarity ?? ''
+                  }`}
                 >
                   <img
                     className="set-symbol"
-                    src={setSymbolUrl(card.set, card.rarity)}
+                    src={setSymbolUrl(
+                      card.set,
+                      card.rarity,
+                    )}
                     alt=""
                     aria-hidden="true"
                     loading="lazy"
@@ -221,7 +258,10 @@ export function Cards({
                   onToggleOracle(card.id)
                 }}
                 onKeyUp={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
+                  if (
+                    event.key === 'Enter' ||
+                    event.key === ' '
+                  ) {
                     event.stopPropagation()
                     onToggleOracle(card.id)
                   }
@@ -234,9 +274,9 @@ export function Cards({
                 {renderOracleText(oracleText)}
               </p>
             </div>
-            </article>
-          )
-        })}
+          </article>
+        )
+      })}
     </div>
   )
 }

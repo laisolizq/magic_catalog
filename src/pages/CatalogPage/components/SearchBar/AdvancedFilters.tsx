@@ -1,5 +1,5 @@
 import { useState } from 'react'
-
+import { symbolUrl } from '../../../../utils/utils.ts'
 import './AdvancedFilters.css'
 
 interface AdvancedFiltersProps {
@@ -177,7 +177,13 @@ export function AdvancedFilters({
                 )
               }
             >
-              {color}
+              <img
+                src={symbolUrl(color)}
+                alt={color}
+                aria-hidden="true"
+                width="18"
+                height="18"
+              />
             </button>
           ))}
         </div>
