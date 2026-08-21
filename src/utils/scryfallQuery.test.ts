@@ -7,6 +7,7 @@ describe('parseScryfallQuery', () => {
     expect(parseScryfallQuery('')).toEqual({
       text: '',
       colors: [],
+      colorMode: 'exactly',
       types: [],
       rarities: [],
       sets: [],
@@ -17,6 +18,7 @@ describe('parseScryfallQuery', () => {
     expect(parseScryfallQuery('dragon whelp')).toEqual({
       text: 'dragon whelp',
       colors: [],
+      colorMode: 'exactly',
       types: [],
       rarities: [],
       sets: [],
@@ -67,6 +69,7 @@ describe('parseScryfallQuery', () => {
     expect(parsed).toEqual({
       text: 'dragon',
       colors: ['W', 'U'],
+      colorMode: 'exactly',
       types: ['Creature'],
       rarities: ['rare'],
       sets: ['tla'],
@@ -79,6 +82,7 @@ describe('buildScryfallQuery', () => {
     const filters = {
       text: 'dragon',
       colors: ['W', 'U', 'C'],
+      colorMode: 'exactly' as const,
       types: ['Creature', 'Instant'],
       rarities: ['rare', 'mythic'],
       sets: ['tla', 'hob'],
