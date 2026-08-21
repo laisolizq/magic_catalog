@@ -1,0 +1,36 @@
+name: Publish Card Database
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Generate database artifact
+        run: python3 scripts/generate_card_database.py --output-dir artifacts/card-database
+
+      - name: Publish latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: card-database-latest
+          name: Card database latest
+          prerelease: true
+          make_latest: false
+          files: |
+            artifacts/card-database/catalog.sqlite.gz
+            artifacts/card-database/metadata.json

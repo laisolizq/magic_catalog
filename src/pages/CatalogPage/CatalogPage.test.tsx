@@ -1,11 +1,17 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { CatalogPage } from './CatalogPage'
 import { mockCards } from '../../data/mockCards'
+import { clearCatalogDatabase } from '../../db/sqliteClient'
+import { seedCatalogFixture } from '../../test/catalogFixture'
 
 afterEach(() => cleanup())
+beforeEach(async () => seedCatalogFixture())
+afterEach(async () => {
+  await clearCatalogDatabase()
+})
 
 describe('CatalogPage', () => {
   it('filters, expands oracle, and opens details modal', async () => {
@@ -15,9 +21,9 @@ describe('CatalogPage', () => {
     const firstCard = mockCards[0]
     const firstName = firstCard.faces?.[0]?.name ?? ''
 
-    expect(screen.getByText(firstName)).toBeInTheDocument()
+    expect(await screen.findByText(firstName)).toBeInTheDocument()
 
-    const queryInput = screen.getByPlaceholderText(/type a card name/i)
+    const queryInput = screen.getByPlaceholderText(/search cards or filters/i)
     await user.clear(queryInput)
     await user.type(queryInput, firstName)
     expect(screen.getByText(firstName)).toBeInTheDocument()
@@ -60,6 +66,10 @@ describe('CatalogPage', () => {
       })[0]
       ?.faces[0]?.name
 
+    const firstHobName = mockCards.find((card) => card.set === 'hob')
+      ?.faces[0]?.name ?? ''
+    expect(await screen.findByText(firstHobName)).toBeInTheDocument()
+
     await user.click(
       screen.getByRole('button', {
         name: /sort cards/i,
@@ -78,16 +88,18 @@ describe('CatalogPage', () => {
       }),
     ).not.toBeInTheDocument()
 
-    const firstOpenDetailsButton = screen.getAllByRole('button', {
+    expect(await screen.findByText(expectedFirstByNameAsc)).toBeInTheDocument()
+
+    const firstOpenDetailsButton = (await screen.findAllByRole('button', {
       name: /open details for/i,
-    })[0]
+    }))[0]
 
     expect(firstOpenDetailsButton).toHaveAttribute(
       'aria-label',
       `Open details for ${expectedFirstByNameAsc}`,
     )
 
-    const queryInput = screen.getByPlaceholderText(/type a card name/i)
+    const queryInput = screen.getByPlaceholderText(/search cards or filters/i)
     await user.clear(queryInput)
     await user.type(queryInput, 'a')
 

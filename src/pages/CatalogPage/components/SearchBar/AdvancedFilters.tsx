@@ -6,15 +6,12 @@ interface AdvancedFiltersProps {
   colorValue: string[]
   typeValue: string[]
   rarityValue: string[]
-  setValue: string[]
-  setOptions: string[]
   typeOptions: string[]
   showAllPrints: boolean
 
   onColorChange: (value: string[]) => void
   onTypeChange: (value: string[]) => void
   onRarityChange: (value: string[]) => void
-  onSetChange: (value: string[]) => void
   onShowAllPrintsChange: (value: boolean) => void
 
   onClose: () => void
@@ -33,14 +30,11 @@ export function AdvancedFilters({
   colorValue,
   typeValue,
   rarityValue,
-  setValue,
-  setOptions,
   typeOptions,
   showAllPrints,
   onColorChange,
   onTypeChange,
   onRarityChange,
-  onSetChange,
   onShowAllPrintsChange,
   onClose,
 }: AdvancedFiltersProps) {
@@ -60,9 +54,6 @@ export function AdvancedFilters({
 
   const [selectedRarities, setSelectedRarities] =
     useState<string[]>(rarityValue)
-
-  const [selectedSets, setSelectedSets] =
-    useState<string[]>(setValue)
 
   const [selectedShowAllPrints, setSelectedShowAllPrints] =
     useState<boolean>(showAllPrints)
@@ -91,7 +82,6 @@ export function AdvancedFilters({
     onColorChange(selectedColors)
     onTypeChange(selectedTypes)
     onRarityChange(selectedRarities)
-    onSetChange(selectedSets)
     onShowAllPrintsChange(selectedShowAllPrints)
 
     onClose()
@@ -119,13 +109,11 @@ export function AdvancedFilters({
     setSelectedColors([])
     setSelectedTypes([])
     setSelectedRarities([])
-    setSelectedSets([])
     setSelectedShowAllPrints(false)
 
     onColorChange([])
     onTypeChange([])
     onRarityChange([])
-    onSetChange([])
     onShowAllPrintsChange(false)
 
     onClose()
@@ -252,40 +240,6 @@ export function AdvancedFilters({
               }
             >
                   {rarity.charAt(0).toUpperCase() + rarity.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* =========================
-          SET
-          ========================= */}
-
-      <div className="advanced-filter-section">
-        <h3>Set</h3>
-
-        <div className="advanced-options">
-          {setOptions.map((set) => (
-            <button
-              key={set}
-              type="button"
-              className={`filter-option ${
-                selectedSets.includes(set)
-                  ? 'is-selected'
-                  : ''
-              }`}
-              aria-pressed={selectedSets.includes(
-                set,
-              )}
-              onClick={() =>
-                toggleValue(
-                  selectedSets,
-                  set,
-                  setSelectedSets,
-                )
-              }
-            >
-              {set}
             </button>
           ))}
         </div>

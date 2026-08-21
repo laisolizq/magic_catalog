@@ -119,14 +119,23 @@ This plugin automatically generates:
   - offline caching
   - “Add to Home Screen” installation prompt
 
-## Future Work (WIP)
-### IndexedDB (Dexie)
-Dexie will be used to store card data offline.
+## Offline Catalog (SQLite WASM)
+Card data is stored in a prebuilt SQLite database and loaded by SQLite WASM. The SQLite bytes are persisted in browser IndexedDB for offline use; card images continue to load from Scryfall.
 
-Install:
+The artifact generator is:
 ```
-npm install dexie
+npm run data:database
 ```
+
+It creates a compressed English-only SQLite database and metadata under `artifacts/card-database/`. Non-English records, token layouts, and art-series layouts are excluded. Rulings come from Scryfall's bulk `rulings` file and are indexed by `oracle_id`. The scheduled/manual workflow publishes `catalog.sqlite.gz` and `metadata.json` to the `card-database-latest` GitHub Release. When online, the app checks the release metadata and replaces the local SQLite database only after checksum validation succeeds.
+
+To generate only `hob`, `sos`, `tla`, `mh1`, `mh2`, and `mh3`:
+
+```sh
+python3 scripts/generate_card_database.py --sets hob,sos,tla,mh1,mh2,mh3
+```
+
+See [doc/database/offline-catalog.md](doc/database/offline-catalog.md) for the schema, release, and query details.
 
 ### Service Workers (Workbox)
 Workbox will be used for advanced caching strategies.
@@ -136,13 +145,7 @@ Install:
 npm install workbox-window workbox-build
 ```
 
-Why Dexie?
-
-Dexie provides a clean, fast, type-safe API on top of IndexedDB, ideal for:
-  - storing thousands of Magic cards
-  - filtering by set, color, type, rarity
-  - caching images
-  - offline-first behavior
+SQLite provides prebuilt indexes for set, rarity, face types, face colors, and rulings. SQLite WASM queries the local database directly, avoiding a large JSONL-to-IndexedDB import on every new release.
 
 Why Workbox?
 

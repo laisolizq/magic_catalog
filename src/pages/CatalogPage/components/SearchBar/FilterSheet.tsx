@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 import './FilterSheet.css'
 
 export interface FilterSheetOption {
   value: string
-  label: string
+  label: ReactNode
   className?: string
 }
 

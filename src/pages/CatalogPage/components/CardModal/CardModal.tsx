@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import type { Card } from '../../../../types/card'
+import { getCardRulings } from '../../../../services/rulings'
 import './CardModal.css'
 import { ControlsBar } from './ControlsBar'
 import { RulingsModal } from './RulingsModal'
@@ -45,6 +46,35 @@ export function CardModal({
   const [currentFaceIndex, setCurrentFaceIndex] = useState<number>(
     Math.max(0, Math.min(initialFaceIndex, (card.faces || []).length - 1)),
   )
+  const [rulingsOpen, setRulingsOpen] = useState(false)
+  const [rulings, setRulings] = useState(card.rulings ?? [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!card.oracleId) {
+      const timer = window.setTimeout(() => {
+        if (!cancelled) {
+          setRulings(card.rulings ?? [])
+        }
+      }, 0)
+
+      return () => {
+        cancelled = true
+        window.clearTimeout(timer)
+      }
+
+      return
+    }
+
+    void getCardRulings(card.oracleId).then((nextRulings) => {
+      if (!cancelled) setRulings(nextRulings)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [card])
 
   useEffect(() => {
     const { body } = document
@@ -185,15 +215,20 @@ export function CardModal({
 
   useEffect(() => {
     // Sync when initialFaceIndex changes (opening a different face)
-    setCurrentFaceIndex(
-      Math.max(0, Math.min(initialFaceIndex, (card.faces || []).length - 1)),
-    )
+    const timer = window.setTimeout(() => {
+      setCurrentFaceIndex(
+        Math.max(0, Math.min(initialFaceIndex, (card.faces || []).length - 1)),
+      )
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
   }, [initialFaceIndex, card.faces])
 
   const face = card.faces?.[currentFaceIndex]
-  const [rulingsOpen, setRulingsOpen] = useState(false)
 
-  const hasRulings = (card.rulings ?? []).length > 0
+  const hasRulings = rulings.length > 0
 
   const toggleRulings = () => {
     setRulingsOpen((v) => !v)
@@ -243,7 +278,7 @@ export function CardModal({
 
         {rulingsOpen && hasRulings && (
           <RulingsModal
-            rulings={card.rulings ?? []}
+            rulings={rulings}
             onClose={toggleRulings}
           />
         )}
