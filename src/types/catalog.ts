@@ -1,4 +1,5 @@
 import type { Card, CardColor } from './card'
+import type { ColorFilterMode } from '../utils/scryfallQuery'
 
 export const CATALOG_SCHEMA_VERSION = 1
 export const CATALOG_METADATA_ID = 'catalog'
@@ -61,6 +62,7 @@ export interface CatalogQuery {
   types: string[]
   rarities: string[]
   colors: string[]
+  colorMode: ColorFilterMode
 }
 
 export interface CatalogQueryResult {

@@ -15,6 +15,7 @@ describe('queryCards with SQLite', () => {
       types: [],
       rarities: [],
       colors: [],
+      colorMode: 'exactly',
     })
 
     expect(result.cards.length).toBeGreaterThan(0)
@@ -28,6 +29,7 @@ describe('queryCards with SQLite', () => {
       types: ['Creature'],
       rarities: [],
       colors: ['U'],
+      colorMode: 'exactly',
     })
 
     expect(result.cards.every((card) =>
