@@ -1,0 +1,17 @@
+{
+  "artifactVersion": "1",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-21T08:06:31.497113+00:00",
+  "sourceUpdatedAt": "2026-08-20T21:18:12.489+00:00",
+  "rulingsSourceUpdatedAt": "2026-08-20T21:00:32.893+00:00",
+  "cardCount": 321,
+  "rulingsCount": 555,
+  "sets": [
+    "hob"
+  ],
+  "dbFormat": "sqlite",
+  "databaseAssetName": "catalog.sqlite.gz",
+  "databaseChecksum": "b17d71065da1efb2f8e2acdd074d0875bfec32d134c8932d4f2266b467700cd3",
+  "databaseCompressedBytes": 120101,
+  "databaseUncompressedBytes": 659456
+}

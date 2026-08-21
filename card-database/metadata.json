@@ -1,0 +1,15 @@
+{
+  "artifactVersion": "1",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T23:25:15.742441+00:00",
+  "sourceUpdatedAt": "2026-08-20T21:18:12.489+00:00",
+  "rulingsSourceUpdatedAt": "2026-08-20T21:00:32.893+00:00",
+  "cardCount": 108334,
+  "rulingsCount": 78947,
+  "sets": null,
+  "dbFormat": "sqlite",
+  "databaseAssetName": "catalog.sqlite.gz",
+  "databaseChecksum": "09738bc51b9b7a11ad4941facd1ac50a956d724f7f9fbcbb155dfaa0a9ac398a",
+  "databaseCompressedBytes": 36796022,
+  "databaseUncompressedBytes": 143974400
+}
