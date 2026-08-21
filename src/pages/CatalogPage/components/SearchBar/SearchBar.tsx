@@ -4,6 +4,9 @@ import { AdvancedFilters } from './AdvancedFilters'
 import { FilterSheet } from './FilterSheet'
 import './SearchBar.css'
 
+import {
+  type ColorFilterMode,
+} from '../../../../utils/cardFilters'
 import { symbolUrl } from '../../../../utils/utils.ts'
 
 type SortOption =
@@ -24,79 +27,124 @@ const SORT_CATEGORIES: Array<{ value: SortCategory; label: string }> = [
 
 const COLOR_OPTIONS = [
   {
-  value: 'W',
-  label: (
-    <>
-      <img
+    value: 'W',
+    label: (
+      <>
+        <img
           className="mana-symbol"
           src={symbolUrl('W')}
           alt="W"
           aria-hidden="true"
-        /> <span className="filter-option-label">White</span>
-    </>
-  ),
-  className: 'filter-color-w'
-},
-  { value: 'U', label: (
-    <>
-      <img
+        />{' '}
+        <span className="filter-option-label">
+          White
+        </span>
+      </>
+    ),
+    className: 'filter-color-w',
+  },
+  {
+    value: 'U',
+    label: (
+      <>
+        <img
           className="mana-symbol"
           src={symbolUrl('U')}
           alt="U"
           aria-hidden="true"
-        /> <span className="filter-option-label">Blue</span>
-    </>
-  ), className: 'filter-color-u' },
-  { value: 'B', label: (
-    <>
-      <img
+        />{' '}
+        <span className="filter-option-label">
+          Blue
+        </span>
+      </>
+    ),
+    className: 'filter-color-u',
+  },
+  {
+    value: 'B',
+    label: (
+      <>
+        <img
           className="mana-symbol"
           src={symbolUrl('B')}
           alt="B"
           aria-hidden="true"
-        /> <span className="filter-option-label">Black</span>
-    </>
-  ), className: 'filter-color-b' },
-  { value: 'R', label: (
-    <>
-      <img
+        />{' '}
+        <span className="filter-option-label">
+          Black
+        </span>
+      </>
+    ),
+    className: 'filter-color-b',
+  },
+  {
+    value: 'R',
+    label: (
+      <>
+        <img
           className="mana-symbol"
           src={symbolUrl('R')}
           alt="R"
           aria-hidden="true"
-        /> <span className="filter-option-label">Red</span>
-    </>
-  ), className: 'filter-color-r' },
-  { value: 'G', label: (
-    <>
-      <img
+        />{' '}
+        <span className="filter-option-label">
+          Red
+        </span>
+      </>
+    ),
+    className: 'filter-color-r',
+  },
+  {
+    value: 'G',
+    label: (
+      <>
+        <img
           className="mana-symbol"
           src={symbolUrl('G')}
           alt="G"
           aria-hidden="true"
-        /> <span className="filter-option-label">Green</span>
-    </>
-  ), className: 'filter-color-g' },
-  { value: 'C', label: (
-    <>
-      <img
+        />{' '}
+        <span className="filter-option-label">
+          Green
+        </span>
+      </>
+    ),
+    className: 'filter-color-g',
+  },
+  {
+    value: 'C',
+    label: (
+      <>
+        <img
           className="mana-symbol"
           src={symbolUrl('C')}
           alt="C"
           aria-hidden="true"
-        /> <span className="filter-option-label">Colorless</span>
-    </>
-  ), className: 'filter-color-c' },
-  { value: 'M', label: (
-    <>
-      <img
+        />{' '}
+        <span className="filter-option-label">
+          Colorless
+        </span>
+      </>
+    ),
+    className: 'filter-color-c',
+  },
+  {
+    value: 'M',
+    label: (
+      <>
+        <img
           className="mana-symbol"
           src={symbolUrl('M')}
           alt="M"
           aria-hidden="true"
-        /> <span className="filter-option-label">Multicolor</span>
-    </>
-  ), className: 'filter-color-m' },
+        />{' '}
+        <span className="filter-option-label">
+          Multicolor
+        </span>
+      </>
+    ),
+    className: 'filter-color-m',
+  },
 ]
 
 const RARITY_OPTIONS = [
@@ -112,6 +160,7 @@ interface SearchBarProps {
   typeValue: string[]
   rarityValue: string[]
   colorValue: string[]
+  colorMode: ColorFilterMode
   sortOption: SortOption
   setOptions: string[]
   typeOptions: string[]
@@ -124,11 +173,24 @@ interface SearchBarProps {
   onSortChange: (value: SortOption) => void
   onQueryChange: (value: string) => void
 
-  onSetChange: (value: string[]) => void
-  onTypeChange: (value: string[]) => void
-  onRarityChange: (value: string[]) => void
-  onColorChange: (value: string[]) => void
-  onShowAllPrintsChange: (value: boolean) => void
+  onSetChange: (
+    value: string[],
+  ) => void
+  onTypeChange: (
+    value: string[],
+  ) => void
+  onRarityChange: (
+    value: string[],
+  ) => void
+  onColorChange: (
+    value: string[],
+  ) => void
+  onColorModeChange: (
+    value: ColorFilterMode,
+  ) => void
+  onShowAllPrintsChange: (
+    value: boolean,
+  ) => void
 }
 
 export function SearchBar({
@@ -137,6 +199,7 @@ export function SearchBar({
   typeValue,
   rarityValue,
   colorValue,
+  colorMode,
   sortOption,
   setOptions,
   typeOptions,
@@ -151,6 +214,7 @@ export function SearchBar({
   onTypeChange,
   onRarityChange,
   onColorChange,
+  onColorModeChange,
   onShowAllPrintsChange,
 }: SearchBarProps) {
   const [isSortOpen, setIsSortOpen] = useState(false)
@@ -158,9 +222,9 @@ export function SearchBar({
   const [isTypeOpen, setIsTypeOpen] = useState(false)
   const [isRarityOpen, setIsRarityOpen] = useState(false)
 
-  const sortControlRef = useRef<HTMLDivElement>(null)
+  const sortControlRef =
+    useRef<HTMLDivElement>(null)
 
-  // Closes the sort menu when the user clicks/taps anywhere outside of it.
   useEffect(() => {
     if (!isSortOpen) return
 
@@ -230,7 +294,23 @@ export function SearchBar({
     setIsSortOpen(false)
   }
 
-  const handleColorSelect = (value: string) => {
+  const handleBasicFilterChange = (
+    value: string,
+    onChange: (
+      value: string[],
+    ) => void,
+  ) => {
+    if (!value || value === 'all') {
+      onChange([])
+      return
+    }
+
+    onChange([value])
+  }
+
+  const handleColorSelect = (
+    value: string,
+  ) => {
     handleBasicFilterChange(value, onColorChange)
     setIsColorOpen(false)
   }
@@ -253,33 +333,11 @@ export function SearchBar({
     }
   }
 
-  /*
-   * The basic filters only allow one value.
-   * The advanced filters allow multiple values.
-   *
-   * When a basic filter is changed, we replace the current
-   * selection with the selected value.
-   */
-  const handleBasicFilterChange = (
-    value: string,
-    onChange: (value: string[]) => void,
-  ) => {
-    if (!value || value === 'all') {
-      onChange([])
-      return
-    }
-
-    onChange([value])
-  }
-
-  /*
-   * If the advanced filters are open, show that view instead
-   * of the normal search bar.
-   */
   if (isAdvancedOpen) {
     return (
       <AdvancedFilters
         colorValue={colorValue}
+        colorMode={colorMode}
         typeValue={typeValue}
         rarityValue={rarityValue}
         setValue={setValue}
@@ -287,11 +345,18 @@ export function SearchBar({
         typeOptions={typeOptions}
         showAllPrints={showAllPrints}
         onColorChange={onColorChange}
+        onColorModeChange={
+          onColorModeChange
+        }
         onTypeChange={onTypeChange}
         onRarityChange={onRarityChange}
         onSetChange={onSetChange}
-        onShowAllPrintsChange={onShowAllPrintsChange}
-        onClose={() => onAdvancedOpenChange(false)}
+        onShowAllPrintsChange={
+          onShowAllPrintsChange
+        }
+        onClose={() =>
+          onAdvancedOpenChange(false)
+        }
       />
     )
   }
@@ -362,24 +427,20 @@ export function SearchBar({
           >
             {expandAllCards ? (
               <>
-                {/* Top-right: points inward ↙ */}
                 <path d="M20 4l-6 6" />
                 <path d="M14 10h5" />
                 <path d="M14 10v-5" />
 
-                {/* Bottom-left: points inward ↗ */}
                 <path d="M4 20l6-6" />
                 <path d="M10 14H5" />
                 <path d="M10 14v5" />
               </>
             ) : (
               <>
-                {/* Top-right: points outward ↗ */}
                 <path d="M14 10l6-6" />
                 <path d="M20 4h-5" />
                 <path d="M20 4v5" />
 
-                {/* Bottom-left: points outward ↙ */}
                 <path d="M10 14l-6 6" />
                 <path d="M4 20h5" />
                 <path d="M4 20v-5" />
@@ -403,7 +464,7 @@ export function SearchBar({
               fill="currentColor"
               aria-hidden="true"
             >
-              <path d="M3 18h6v-2H3v2zm0-5h12v-2H3v2zm0-7v2h18V6H3z" />
+              <path d="M3 18h6v-2H3v2zm0-5h12v-2H3v2H3zm0-7v2h18V6H3z" />
             </svg>
           </button>
 
@@ -419,37 +480,37 @@ export function SearchBar({
 
                 const isActive = activeCategory === value
 
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    role="menuitemradio"
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      role="menuitemradio"
                     aria-checked={isActive}
                     onClick={() => handleSortSelect(value)}
-                  >
+                    >
                     <span className="sort-menu-label">{label}</span>
-                    {isActive && ' '}
-                    {isActive && (
-                      <span className="sort-menu-arrows">
-                        <span
-                          className={
+                      {isActive && ' '}
+                      {isActive && (
+                        <span className="sort-menu-arrows">
+                          <span
+                            className={
                             activeDirection === 'asc' ? 'is-active' : ''
-                          }
-                        >
-                          ↑
-                        </span>
-                        /
-                        <span
-                          className={
+                            }
+                          >
+                            ↑
+                          </span>
+                          /
+                          <span
+                            className={
                             activeDirection === 'desc' ? 'is-active' : ''
-                          }
-                        >
-                          ↓
+                            }
+                          >
+                            ↓
+                          </span>
                         </span>
-                      </span>
-                    )}
-                  </button>
-                )
+                      )}
+                    </button>
+                  )
               })}
             </div>
           )}
@@ -506,12 +567,12 @@ export function SearchBar({
           >
             {typeValue.length === 1
               ? (
-                  <img
-                    className="type-symbol"
+              <img
+                className="type-symbol"
                     src={symbolUrl(typeValue[0])}
-                    alt={typeValue[0]}
-                    aria-hidden="true"
-                  />
+                alt={typeValue[0]}
+                aria-hidden="true"
+              />
                 )
               : typeValue.includes('all')
                 ? 'All types'
@@ -525,17 +586,17 @@ export function SearchBar({
                 { value: '', label: 'All types' },
                 ...typeOptions.map((typeOption) => ({
                   value: typeOption,
-                  label: (
-                    <>
-                      <img
-                        className="type-symbol"
+                    label: (
+                      <>
+                        <img
+                          className="type-symbol"
                         src={symbolUrl(typeOption)}
                         alt={typeOption}
-                        aria-hidden="true"
-                      />{' '}
+                          aria-hidden="true"
+                        />{' '}
                       {typeOption}
-                    </>
-                  ),
+                      </>
+                    ),
                 })),
               ] as any}
               selectedValues={typeValue}

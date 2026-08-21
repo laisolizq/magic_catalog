@@ -10,6 +10,7 @@ import {
   filterCards,
   getUniqueSets,
   getUniqueTypes,
+  type ColorFilterMode,
 } from '../../utils/cardFilters'
 import { buildScryfallQuery, parseScryfallQuery } from '../../utils/scryfallQuery'
 import { SCROLL_SENSITIVITY } from '../../config/ui'
@@ -41,19 +42,19 @@ function manaValueFromCost(cost: string): number {
     if (/^\d+$/.test(symbol)) return total + Number(symbol)
 
     if (symbol === 'X' || symbol === 'Y' || symbol === 'Z') {
-      return total
-    }
+        return total
+      }
 
-    if (symbol.includes('/')) {
+      if (symbol.includes('/')) {
       if (symbol.startsWith('2/')) return total + 2
-      return total + 1
-    }
+        return total + 1
+      }
 
     if (symbol === 'H') return total + 1
     if (/^H[WUBRG]$/.test(symbol)) return total + 0.5
     if (/^[WUBRGCSPL]$/.test(symbol)) return total + 1
 
-    return total
+      return total
   }, 0)
 }
 
@@ -117,25 +118,27 @@ function getDisplayCards(): Card[] {
 }
 
 export function CatalogPage() {
-  // Default to the HOB set on first load.
-  const [query, setQuery] = useState('s:hob')
-
   /*
-   * The raw query is the single source of truth for color/type/rarity/set
-   * filters. It follows a Scryfall-like syntax (c:, t:, r:, s:), parsed here
-   * and rebuilt (via buildScryfallQuery) whenever a filter control changes.
+   * The query is the single source of truth for:
    *
-   * All filters are arrays now.
-   *
-   * Empty array = no filter.
+   * - text
+   * - set
+   * - type
+   * - rarity
+   * - selected colors
+   * - color mode
    *
    * Examples:
    *
-   * []              -> no color filter
-   * ['W']           -> white
-   * ['W', 'U']      -> white OR blue
-   * ['rare','mythic'] -> rare OR mythic
+   *   s:hob
+   *   c=w
+   *   c>=wu
+   *   c<=wu
+   *   dragon c>=wu t:creature r:r
    */
+  const [query, setQuery] =
+    useState('s:hob')
+
   const parsedQuery = useMemo(
     () => parseScryfallQuery(query),
     [query],
@@ -143,11 +146,15 @@ export function CatalogPage() {
 
   const setValue = parsedQuery.sets
   const typeValue = parsedQuery.types
-  const rarityValue = parsedQuery.rarities
+  const rarityValue =
+    parsedQuery.rarities
   const colorValue = parsedQuery.colors
+  const colorMode = parsedQuery.colorMode
 
-  // When false, only the first print of each card name is shown.
-  const [showAllPrints, setShowAllPrints] = useState(false)
+  const [
+    showAllPrints,
+    setShowAllPrints,
+  ] = useState(false)
 
   const [visibleCount, setVisibleCount] =
     useState(BATCH_SIZE)
@@ -185,9 +192,12 @@ export function CatalogPage() {
   /*
    * FILTERING
    *
-   * cardFilters now handles multiple values.
+   * Different filter categories are combined
+   * with AND.
    *
-   * Different categories are combined with AND:
+   * Values inside one category are OR.
+   *
+   * Example:
    *
    * (W OR U)
    * AND
@@ -201,6 +211,7 @@ export function CatalogPage() {
         type: typeValue,
         rarity: rarityValue,
         color: colorValue,
+        colorMode,
       }),
     [
       displayCards,
@@ -209,6 +220,7 @@ export function CatalogPage() {
       typeValue,
       rarityValue,
       colorValue,
+      colorMode,
     ],
   )
 
@@ -219,18 +231,18 @@ export function CatalogPage() {
 
     const seenNames = new Set<string>()
 
-    return sorted.filter((card) => {
-      const name = getFaceName(card)
+      return sorted.filter((card) => {
+        const name = getFaceName(card)
 
       if (seenNames.has(name)) return false
 
-      seenNames.add(name)
-      return true
-    })
+        seenNames.add(name)
+        return true
+      })
   }, [filteredCards, sortOption, showAllPrints])
 
   /*
-   * Search bar options
+   * SEARCH BAR OPTIONS
    */
 
   const setOptions = useMemo(
@@ -258,7 +270,7 @@ export function CatalogPage() {
     }
 
     window.scrollTo({ top: 0, behavior: 'instant' })
-  }, [query, sortOption])
+  }, [query, sortOption, colorMode])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -294,7 +306,7 @@ export function CatalogPage() {
     }
 
     window.addEventListener('scroll', handleScroll, {
-      passive: true,
+        passive: true,
     })
 
     return () =>
@@ -302,7 +314,7 @@ export function CatalogPage() {
         'scroll',
         handleScroll,
       )
-  }, [])
+  }, [isAdvancedOpen])
 
   /*
    * INFINITE SCROLL
@@ -313,18 +325,18 @@ export function CatalogPage() {
     if (!sentinel) return
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisibleCount((prev) =>
-            Math.min(
-              prev + BATCH_SIZE,
-              sortedFilteredCards.length,
-            ),
-          )
-        }
-      },
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setVisibleCount((prev) =>
+              Math.min(
+                prev + BATCH_SIZE,
+                sortedFilteredCards.length,
+              ),
+            )
+          }
+        },
       { rootMargin: '300px' },
-    )
+      )
 
     observer.observe(sentinel)
 
@@ -343,25 +355,26 @@ export function CatalogPage() {
    */
 
   const expandedOraclesView = expandAllCards
-    ? Object.fromEntries(
+      ? Object.fromEntries(
         sortedFilteredCards.map((card) => [
-          card.id,
-          true,
+              card.id,
+              true,
         ]),
-      )
-    : expandedOracles
+        )
+      : expandedOracles
 
   /*
    * MODAL
    */
 
-  const modalCards = sortedFilteredCards
+  const modalCards =
+    sortedFilteredCards
 
   const selectedCardIndex = selectedCard
-    ? modalCards.findIndex(
+      ? modalCards.findIndex(
         (card) => card.id === selectedCard.id,
-      )
-    : -1
+        )
+      : -1
 
   const showPreviousCard = () => {
     if (selectedCardIndex <= 0) return
@@ -397,8 +410,8 @@ export function CatalogPage() {
     }
 
     const el = document.querySelector(
-      selector,
-    ) as HTMLElement | null
+        selector,
+      ) as HTMLElement | null
 
     if (el) {
       el.scrollIntoView({
@@ -425,7 +438,7 @@ export function CatalogPage() {
       const expanded: Record<string, boolean> = {}
 
       sortedFilteredCards.forEach((card) => {
-        expanded[card.id] = true
+          expanded[card.id] = true
       })
 
       setExpandedOracles(expanded)
@@ -510,10 +523,48 @@ export function CatalogPage() {
         return buildScryfallQuery({
           text: prevParsed.text,
           colors: prevParsed.colors,
+          colorMode:
+            prevParsed.colorMode,
           types: prevParsed.types,
           rarities: prevParsed.rarities,
           sets: prevParsed.sets,
           ...updates,
+        })
+      }),
+    )
+  }
+
+  /*
+   * COLOR MODE
+   *
+   * The mode is part of the query itself.
+   *
+   * exactly:
+   *   c=wu
+   *
+   * including:
+   *   c>=wu
+   *
+   * atMost:
+   *   c<=wu
+   */
+  const handleColorModeChange = (
+    value: ColorFilterMode,
+  ) => {
+    handleFilterChange(() =>
+      setQuery((prevQuery) => {
+        const parsed =
+          parseScryfallQuery(
+            prevQuery,
+          )
+
+        return buildScryfallQuery({
+          text: parsed.text,
+          colors: parsed.colors,
+          colorMode: value,
+          types: parsed.types,
+          rarities: parsed.rarities,
+          sets: parsed.sets,
         })
       }),
     )
@@ -571,6 +622,7 @@ export function CatalogPage() {
           typeValue={typeValue}
           rarityValue={rarityValue}
           colorValue={colorValue}
+          colorMode={colorMode}
           sortOption={sortOption}
           setOptions={setOptions}
           typeOptions={typeOptions}
@@ -601,6 +653,7 @@ export function CatalogPage() {
           onColorChange={(value) =>
             updateQueryFilters({ colors: value })
           }
+          onColorModeChange={ handleColorModeChange }
           onShowAllPrintsChange={(value) =>
             handleFilterChange(() =>
               setShowAllPrints(value),
@@ -614,7 +667,7 @@ export function CatalogPage() {
         expandedOracles={expandedOraclesView}
         onToggleOracle={(cardId) =>
           setExpandedOracles((prev) => ({
-            ...prev,
+              ...prev,
             [cardId]: !prev[cardId],
           }))
         }

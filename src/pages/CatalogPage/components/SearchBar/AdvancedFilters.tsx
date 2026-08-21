@@ -1,9 +1,14 @@
 import { useState } from 'react'
+import {
+  type ColorFilterMode,
+} from '../../../../utils/cardFilters'
 import { symbolUrl } from '../../../../utils/utils.ts'
 import './AdvancedFilters.css'
 
 interface AdvancedFiltersProps {
   colorValue: string[]
+  colorMode: ColorFilterMode
+
   typeValue: string[]
   rarityValue: string[]
   setValue: string[]
@@ -12,6 +17,10 @@ interface AdvancedFiltersProps {
   showAllPrints: boolean
 
   onColorChange: (value: string[]) => void
+  onColorModeChange: (
+    value: ColorFilterMode,
+  ) => void
+
   onTypeChange: (value: string[]) => void
   onRarityChange: (value: string[]) => void
   onSetChange: (value: string[]) => void
@@ -20,7 +29,15 @@ interface AdvancedFiltersProps {
   onClose: () => void
 }
 
-const colors = ['W', 'U', 'B', 'R', 'G', 'C', 'M']
+const colors = [
+  'W',
+  'U',
+  'B',
+  'R',
+  'G',
+  'C',
+  'M',
+]
 
 const rarities = [
   'common',
@@ -29,8 +46,27 @@ const rarities = [
   'mythic',
 ]
 
+const colorModes: {
+  value: ColorFilterMode
+  label: string
+}[] = [
+  {
+    value: 'exactly',
+    label: 'Exactly',
+  },
+  {
+    value: 'including',
+    label: 'Including',
+  },
+  {
+    value: 'atMost',
+    label: 'At most',
+  },
+]
+
 export function AdvancedFilters({
   colorValue,
+  colorMode,
   typeValue,
   rarityValue,
   setValue,
@@ -38,6 +74,7 @@ export function AdvancedFilters({
   typeOptions,
   showAllPrints,
   onColorChange,
+  onColorModeChange,
   onTypeChange,
   onRarityChange,
   onSetChange,
@@ -52,8 +89,12 @@ export function AdvancedFilters({
    *
    * Clicking options here does NOT trigger a search.
    */
+
   const [selectedColors, setSelectedColors] =
     useState<string[]>(colorValue)
+
+  const [selectedColorMode, setSelectedColorMode] =
+    useState<ColorFilterMode>(colorMode)
 
   const [selectedTypes, setSelectedTypes] =
     useState<string[]>(typeValue)
@@ -64,65 +105,76 @@ export function AdvancedFilters({
   const [selectedSets, setSelectedSets] =
     useState<string[]>(setValue)
 
-  const [selectedShowAllPrints, setSelectedShowAllPrints] =
-    useState<boolean>(showAllPrints)
+  const [
+    selectedShowAllPrints,
+    setSelectedShowAllPrints,
+  ] = useState<boolean>(showAllPrints)
 
   /*
    * Toggle a value in a temporary selection.
    */
+
   const toggleValue = (
     values: string[],
     value: string,
-    setValues: (value: string[]) => void,
+    setValues: (
+      value: string[],
+    ) => void,
   ) => {
     if (values.includes(value)) {
       setValues(
-        values.filter((item) => item !== value),
+        values.filter(
+          (item) => item !== value,
+        ),
       )
     } else {
-      setValues([...values, value])
+      setValues([
+        ...values,
+        value,
+      ])
     }
   }
 
   /*
    * Apply all temporary selections at once.
    */
+
   const handleAccept = () => {
     onColorChange(selectedColors)
+    onColorModeChange(selectedColorMode)
+
     onTypeChange(selectedTypes)
     onRarityChange(selectedRarities)
     onSetChange(selectedSets)
-    onShowAllPrintsChange(selectedShowAllPrints)
+    onShowAllPrintsChange(
+      selectedShowAllPrints,
+    )
 
     onClose()
   }
 
   /*
    * Close without applying anything.
-   *
-   * The parent values haven't changed, so all temporary
-   * changes are discarded.
    */
+
   const handleCancel = () => {
     onClose()
   }
 
   /*
    * Clear all filters immediately.
-   *
-   * Unlike the other options, this is applied immediately:
-   * - remove every filter
-   * - show all cards
-   * - close the advanced filters view
    */
+
   const handleClear = () => {
     setSelectedColors([])
+    setSelectedColorMode('exactly')
     setSelectedTypes([])
     setSelectedRarities([])
     setSelectedSets([])
     setSelectedShowAllPrints(false)
 
     onColorChange([])
+    onColorModeChange('exactly')
     onTypeChange([])
     onRarityChange([])
     onSetChange([])
@@ -178,12 +230,45 @@ export function AdvancedFilters({
               }
             >
               <img
+                className="mana-symbol"
                 src={symbolUrl(color)}
                 alt={color}
                 aria-hidden="true"
                 width="18"
                 height="18"
               />
+            </button>
+          ))}
+        </div>
+
+        {/* =========================
+            COLOR MODE
+            ========================= */}
+
+        <div
+          className="color-filter-modes"
+          role="group"
+          aria-label="Color matching mode"
+        >
+          {colorModes.map((mode) => (
+            <button
+              key={mode.value}
+              type="button"
+              className={`color-filter-mode ${
+                selectedColorMode === mode.value
+                  ? 'is-selected'
+                  : ''
+              }`}
+              aria-pressed={
+                selectedColorMode === mode.value
+              }
+              onClick={() =>
+                setSelectedColorMode(
+                  mode.value,
+                )
+              }
+            >
+              {mode.label}
             </button>
           ))}
         </div>
@@ -301,9 +386,13 @@ export function AdvancedFilters({
         <label className="advanced-checkbox">
           <input
             type="checkbox"
-            checked={selectedShowAllPrints}
+            checked={
+              selectedShowAllPrints
+            }
             onChange={(event) =>
-              setSelectedShowAllPrints(event.target.checked)
+              setSelectedShowAllPrints(
+                event.target.checked,
+              )
             }
           />
           Show all prints
