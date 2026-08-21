@@ -7,9 +7,14 @@ import { cardColorsMatchFace } from '../utils/cardColors'
 
 let cachedDatabaseRef: object | null = null
 let cachedAllCards: Card[] | null = null
-let cachedAllCardsFuse: Fuse<Card> | null = null
+type SearchIndexEntry = {
+  card: Card
+  searchName: string
+}
+
+let cachedAllCardsFuse: Fuse<SearchIndexEntry> | null = null
 const cachedFilterResults = new Map<string, Card[]>()
-const cachedFilterFuse = new Map<string, Fuse<Card>>()
+const cachedFilterFuse = new Map<string, Fuse<SearchIndexEntry>>()
 
 function rowToCard(row: unknown[]): Card {
   return {
@@ -60,12 +65,22 @@ async function getAllCards(database: NonNullable<Awaited<ReturnType<typeof getCa
   return cachedAllCards
 }
 
-function getAllCardsFuse(cards: Card[]): Fuse<Card> {
+function createSearchIndexEntries(cards: Card[]): SearchIndexEntry[] {
+  return cards.map((card) => ({
+    card,
+    searchName: card.faces
+      .map((face) => normalizeSearchText(face.name))
+      .join(' '),
+  }))
+}
+
+function getAllCardsFuse(cards: Card[]): Fuse<SearchIndexEntry> {
   if (cachedAllCardsFuse) return cachedAllCardsFuse
 
   const startedAt = performance.now()
-  cachedAllCardsFuse = new Fuse(cards, {
-    keys: ['faces.name'],
+  cachedAllCardsFuse = new Fuse(createSearchIndexEntries(cards), {
+    keys: ['searchName'],
+    includeScore: true,
     threshold: 0.35,
     ignoreLocation: true,
     minMatchCharLength: 2,
@@ -74,13 +89,14 @@ function getAllCardsFuse(cards: Card[]): Fuse<Card> {
   return cachedAllCardsFuse
 }
 
-function getFilterFuse(filterKey: string, cards: Card[]): Fuse<Card> {
+function getFilterFuse(filterKey: string, cards: Card[]): Fuse<SearchIndexEntry> {
   const cachedFuse = cachedFilterFuse.get(filterKey)
   if (cachedFuse) return cachedFuse
 
   const startedAt = performance.now()
-  const fuse = new Fuse(cards, {
-    keys: ['faces.name'],
+  const fuse = new Fuse(createSearchIndexEntries(cards), {
+    keys: ['searchName'],
+    includeScore: true,
     threshold: 0.35,
     ignoreLocation: true,
     minMatchCharLength: 2,
@@ -88,6 +104,37 @@ function getFilterFuse(filterKey: string, cards: Card[]): Fuse<Card> {
   cachedFilterFuse.set(filterKey, fuse)
   console.log(`[catalog] SQLite Fuse index built for ${cards.length} cards in ${(performance.now() - startedAt).toFixed(0)}ms`)
   return fuse
+}
+
+function normalizeSearchText(value: string): string {
+  return value
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+}
+
+function searchCards(
+  fuse: Fuse<SearchIndexEntry>,
+  cards: Card[],
+  text: string,
+): Card[] {
+  const normalizedQuery = normalizeSearchText(text)
+  if (!normalizedQuery) return cards
+
+  const results = fuse.search(normalizedQuery, { limit: cards.length })
+  return results
+    .sort((left, right) => {
+      const leftStartsWith = left.item.searchName.startsWith(normalizedQuery)
+      const rightStartsWith = right.item.searchName.startsWith(normalizedQuery)
+
+      if (leftStartsWith !== rightStartsWith) {
+        return leftStartsWith ? -1 : 1
+      }
+
+      return (left.score ?? 0) - (right.score ?? 0)
+    })
+    .map((result) => result.item.card)
 }
 
 export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResult> {
@@ -112,7 +159,7 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
     if (!hasText) return { cards, total: cards.length }
 
     const searchStartedAt = performance.now()
-    const searchedCards = fuse.search(text).map((item) => item.item)
+    const searchedCards = searchCards(fuse, cards, text)
     console.log(`[catalog] cached Fuse search completed in ${(performance.now() - searchStartedAt).toFixed(0)}ms`)
     return { cards: searchedCards, total: searchedCards.length }
   }
@@ -164,7 +211,7 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   if (!hasText) return { cards, total: cards.length }
 
   const searchStartedAt = performance.now()
-  const searchedCards = fuse.search(text).map((item) => item.item)
+  const searchedCards = searchCards(fuse, cards, text)
   console.log(`[catalog] SQLite Fuse search completed in ${(performance.now() - searchStartedAt).toFixed(0)}ms`)
   return { cards: searchedCards, total: searchedCards.length }
 }
