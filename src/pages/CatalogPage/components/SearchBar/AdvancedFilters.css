@@ -268,3 +268,54 @@
     font-size: 0.76rem;
   }
 }
+
+.color-filter-modes {
+  display: flex;
+  width: 100%;
+  margin-top: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--paper-dark);
+}
+
+.color-filter-mode {
+  flex: 1;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.65rem;
+
+  border: 0;
+  border-right: 1px solid var(--line);
+
+  background: transparent;
+  color: var(--ink-muted);
+
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.color-filter-mode:last-child {
+  border-right: 0;
+}
+
+.color-filter-mode:hover {
+  background: var(--paper);
+  color: var(--ink-strong);
+}
+
+.color-filter-mode.is-selected {
+  background: var(--ink-strong);
+  color: var(--paper);
+}
+
+.color-filter-mode:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}

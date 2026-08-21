@@ -1,13 +1,26 @@
 // Parses/builds a Scryfall-like query syntax for the search bar, e.g.:
 //   "dragon c=wu t:creature r:rare s:tla"
+//   "dragon c>=wu"
+//   "dragon c<=wu"
 //
 // Supported prefixes: c=/color=, t:/type:, r:/rarity:, s:/set:
+//
+// Color operators:
+//   c=   -> exactly
+//   c>=  -> including
+//   c<=  -> at most
+//
+// Special color values:
+//   colorless / C -> colorless
+//   c>1            -> multicolor
+//
 // Everything else is treated as free text (name/oracle text search).
 //
 // This is a lightweight subset of Scryfall's syntax, not a full clone:
-// - c=/color= matches colors exactly (c=wu means exactly white+blue, like
-//   Scryfall's own c= operator), and accepts the word colorless too
-// - c>1 matches multicolor cards (more than one color)
+// - c= matches colors exactly
+// - c>= matches cards including all selected colors
+// - c<= matches cards whose colors are a subset of the selected colors
+// - c>1 matches multicolor cards
 // - t:/r:/s: accept a single word each (repeat the prefix for more values)
 // - r: accepts Scryfall's rarity abbreviations (c/u/r/m) or full words, and
 //   is always built back out using the abbreviation (e.g. r:u)
@@ -15,9 +28,15 @@
 // - negation (e.g. -t:creature) isn't supported; such tokens are treated
 //   as free text so they don't silently do the wrong thing
 
+export type ColorFilterMode =
+  | 'exactly'
+  | 'including'
+  | 'atMost'
+
 export interface ParsedQuery {
   text: string
   colors: string[]
+  colorMode: ColorFilterMode
   types: string[]
   rarities: string[]
   sets: string[]
@@ -26,6 +45,7 @@ export interface ParsedQuery {
 export interface QueryFilters {
   text: string
   colors: string[]
+  colorMode?: ColorFilterMode
   types: string[]
   rarities: string[]
   sets: string[]
@@ -62,9 +82,13 @@ const RARITY_ABBREVIATIONS: Record<string, string> = {
   mythic: 'm',
 }
 
-const TOKEN_REGEX = /[A-Za-z]+(?:>=|<=|:|=|>|<)"[^"]*"|[A-Za-z]+(?:>=|<=|:|=|>|<)\S+|"[^"]*"|\S+/g
+const TOKEN_REGEX =
+  /[A-Za-z]+(?:>=|<=|:|=|>|<)"[^"]*"|[A-Za-z]+(?:>=|<=|:|=|>|<)\S+|"[^"]*"|\S+/g
 
-const FIELD_ALIASES: Record<string, 'colors' | 'types' | 'rarities' | 'sets'> = {
+const FIELD_ALIASES: Record<
+  string,
+  'colors' | 'types' | 'rarities' | 'sets'
+> = {
   c: 'colors',
   color: 'colors',
   t: 'types',
@@ -111,6 +135,10 @@ export function parseScryfallQuery(input: string): ParsedQuery {
   const types: string[] = []
   const rarities: string[] = []
   const sets: string[] = []
+
+  let colorMode: ColorFilterMode =
+    'exactly'
+
   const textWords: string[] = []
 
   const tokens = input.match(TOKEN_REGEX) ?? []
@@ -124,14 +152,45 @@ export function parseScryfallQuery(input: string): ParsedQuery {
       const rawValue = stripQuotes(match[3])
 
       if (field === 'colors') {
-        if (operator === '>' && rawValue.trim() === '1') {
-          if (!colors.includes('M')) colors.push('M')
+        /*
+         * Multicolor:
+         *
+         * c>1
+         */
+
+        if (
+          operator === '>' &&
+          rawValue.trim() === '1'
+        ) {
+          if (!colors.includes('M')) {
+            colors.push('M')
+          }
+
           continue
         }
 
-        parseColorValue(rawValue).forEach((color) => {
-          if (!colors.includes(color)) colors.push(color)
-        })
+        /*
+         * Color mode.
+         *
+         * c=   -> exactly
+         * c>=  -> including
+         * c<=  -> at most
+         *
+         * The default is exactly.
+         */
+
+        if (operator === '=') {
+          colorMode = 'exactly'
+        } else if (operator === '>=') {
+          colorMode = 'including'
+        } else if (operator === '<=') {
+          colorMode = 'atMost'
+        }
+
+        parseColorValue(rawValue).forEach(
+          (color) => {
+            if (!colors.includes(color)) colors.push(color)
+          })
         continue
       }
 
@@ -161,37 +220,96 @@ export function parseScryfallQuery(input: string): ParsedQuery {
   return {
     text: textWords.join(' '),
     colors,
+    colorMode,
     types,
     rarities,
     sets,
   }
 }
 
-function buildColorClauses(colors: string[]): string[] {
+function buildColorClauses(
+  colors: string[],
+  colorMode: ColorFilterMode = 'exactly',
+): string[] {
   const letters = colors
-    .filter((color) => COLOR_LETTERS[color.toLowerCase()])
-    .map((color) => color.toLowerCase())
+    .filter(
+      (color) =>
+        COLOR_LETTERS[
+          color.toLowerCase()
+        ],
+    )
+    .map((color) =>
+      color.toLowerCase(),
+    )
 
   const words = colors.filter(
-    (color) => !COLOR_LETTERS[color.toLowerCase()],
+    (color) =>
+      !COLOR_LETTERS[
+        color.toLowerCase()
+      ],
   )
 
   const clauses: string[] = []
 
-  if (letters.length > 0) clauses.push(`c=${letters.join('')}`)
+  /*
+   * WUBRG colors
+   *
+   * exactly  -> c=wu
+   * including -> c>=wu
+   * atMost    -> c<=wu
+   */
+
+  if (letters.length > 0) {
+    const operator =
+      colorMode === 'including'
+        ? '>='
+        : colorMode === 'atMost'
+          ? '<='
+          : '='
+
+    clauses.push(
+      `c${operator}${letters.join('')}`,
+    )
+  }
+
+  /*
+   * Special colors:
+   *
+   * C -> colorless
+   * M -> multicolor
+   *
+   * These remain independent clauses, just as
+   * they were before.
+   */
 
   words.forEach((color) => {
-    if (color === 'C') clauses.push('c=colorless')
-    if (color === 'M') clauses.push('c>1')
+    if (color === 'C') {
+      clauses.push('c=colorless')
+    }
+
+    if (color === 'M') {
+      clauses.push('c>1')
+    }
   })
 
   return clauses
 }
 
-export function buildScryfallQuery(filters: QueryFilters): string {
-  const parts = [filters.text.trim()]
+export function buildScryfallQuery(
+  filters: QueryFilters,
+): string {
+  const parts = [
+    filters.text.trim(),
+  ]
 
-  parts.push(...buildColorClauses(filters.colors))
+  parts.push(
+    ...buildColorClauses(
+      filters.colors,
+      filters.colorMode ??
+        'exactly',
+    ),
+  )
+
   filters.types.forEach((type) => parts.push(`t:${type.toLowerCase()}`))
   filters.rarities.forEach((rarity) => {
     const lowered = rarity.toLowerCase()

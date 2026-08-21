@@ -1,11 +1,17 @@
 import type { Card } from '../types/card'
 
+export type ColorFilterMode =
+  | 'exactly'
+  | 'including'
+  | 'atMost'
+
 export interface CardFilters {
   query: string
   set: string[]
   type: string[]
   rarity: string[]
   color: string[]
+  colorMode?: ColorFilterMode
 }
 
 function cardSearchText(card: Card): string {
@@ -32,11 +38,171 @@ function cardColors(card: Card): string[] {
   return Array.from(colors)
 }
 
+/*
+ * =========================
+ * COLOR
+ * =========================
+ *
+ * WUBRG are real colors.
+ *
+ * C = colorless
+ *     -> a card with no colors
+ *
+ * M = multicolor
+ *     -> a card with more than one color
+ *
+ * The three modes reproduce the behavior of Scryfall's
+ * color search:
+ *
+ * exactly:
+ *   selected colors must be exactly the card's colors
+ *
+ * including:
+ *   the card must contain every selected color,
+ *   but may contain additional colors
+ *
+ * atMost:
+ *   every card color must be among the selected colors.
+ *   Colorless cards are therefore included automatically,
+ *   because [] is a subset of every color set.
+ */
+
+function matchesColorFilter(
+  colors: string[],
+  selectedColors: string[],
+  mode: ColorFilterMode,
+): boolean {
+  if (selectedColors.length === 0) {
+    return true
+  }
+
+  const selectedWubrg = selectedColors.filter(
+    (color) => !['C', 'M'].includes(color),
+  )
+
+  const selectedColorless = selectedColors.includes('C')
+  const selectedMulticolor = selectedColors.includes('M')
+
+  const isColorless = colors.length === 0
+  const isMulticolor = colors.length > 1
+
+  /*
+   * C and M are special filters rather than actual colors.
+   *
+   * We first determine whether they independently match.
+   */
+
+  const matchesColorless =
+    selectedColorless && isColorless
+
+  const matchesMulticolor =
+    selectedMulticolor && isMulticolor
+
+  /*
+   * If C or M is selected together with WUBRG,
+   * they behave as additional OR conditions.
+   *
+   * Example:
+   *
+   * W + C
+   * -> white cards OR colorless cards
+   */
+
+  if (mode === 'exactly') {
+    const matchesExactWubrg =
+      selectedWubrg.length > 0 &&
+      colors.length === selectedWubrg.length &&
+      selectedWubrg.every((color) =>
+        colors.includes(color),
+      )
+
+    return (
+      matchesExactWubrg ||
+      matchesColorless ||
+      matchesMulticolor
+    )
+  }
+
+  if (mode === 'including') {
+    const matchesIncludingWubrg =
+      selectedWubrg.length > 0 &&
+      selectedWubrg.every((color) =>
+        colors.includes(color),
+      )
+
+    return (
+      matchesIncludingWubrg ||
+      matchesColorless ||
+      matchesMulticolor
+    )
+  }
+
+  /*
+   * AT MOST
+   *
+   * This is the important special case:
+   *
+   * Colorless cards must match automatically when using
+   * WUBRG colors, because an empty color set is a subset
+   * of the selected colors.
+   *
+   * Example:
+   *
+   * W + U
+   *
+   * matches:
+   *   []
+   *   [W]
+   *   [U]
+   *   [W,U]
+   *
+   * but NOT:
+   *   [B]
+   *   [W,B]
+   *   [W,U,B]
+   */
+
+  if (mode === 'atMost') {
+    if (isColorless) {
+      return (
+        selectedColorless ||
+        selectedWubrg.length > 0
+      )
+    }
+
+    if (
+      selectedMulticolor &&
+      isMulticolor
+    ) {
+      return true
+    }
+
+    if (selectedWubrg.length === 0) {
+      return false
+    }
+
+    return colors.every((color) =>
+      selectedWubrg.includes(color),
+    )
+  }
+
+  return false
+}
+
 export function filterCards(
   cards: Card[],
   filters: CardFilters,
 ): Card[] {
   const query = filters.query.trim().toLowerCase()
+
+  /*
+   * Keep the existing behavior if colorMode isn't provided.
+   *
+   * This also means existing CardFilters objects won't
+   * immediately break while we update the parent component.
+   */
+  const colorMode: ColorFilterMode =
+    filters.colorMode ?? 'exactly'
 
   return cards.filter((card) => {
     /*
@@ -74,9 +240,6 @@ export function filterCards(
      * =========================
      *
      * Multiple types = OR
-     *
-     * ['Creature', 'Artifact']
-     * -> Creature OR Artifact
      */
 
     const typeLine =
@@ -94,8 +257,7 @@ export function filterCards(
      * RARITY
      * =========================
      *
-     * ['rare', 'mythic']
-     * -> rare OR mythic
+     * Multiple rarities = OR
      */
 
     const matchesRarity =
@@ -107,29 +269,18 @@ export function filterCards(
      * =========================
      * COLOR
      * =========================
-     *
-     * C and M are matched independently, but WUBRG letters are matched as
-     * a single group requiring an exact color identity (like Scryfall's
-     * c= operator):
-     *
-     * ['W']      -> exactly White
-     * ['W', 'U'] -> exactly White+Blue (not White OR Blue)
-     * ['C', 'W'] -> Colorless OR exactly White
      */
 
     const colors = cardColors(card)
-    const wubrgSelected = filters.color.filter(
-      (color) => color !== 'C' && color !== 'M',
-    )
 
     const matchesColor =
       filters.color.length === 0 ||
       filters.color.includes('all') ||
-      (filters.color.includes('C') && colors.length === 0) ||
-      (filters.color.includes('M') && colors.length > 1) ||
-      (wubrgSelected.length > 0 &&
-        colors.length === wubrgSelected.length &&
-        wubrgSelected.every((color) => colors.includes(color)))
+      matchesColorFilter(
+        colors,
+        filters.color,
+        colorMode,
+      )
 
     /*
      * =========================
@@ -137,15 +288,6 @@ export function filterCards(
      * =========================
      *
      * Different filter categories use AND.
-     *
-     * Example:
-     *
-     * COLOR: W + U
-     * RARITY: rare + mythic
-     *
-     * means:
-     *
-     * (W OR U) AND (rare OR mythic)
      */
 
     return (
