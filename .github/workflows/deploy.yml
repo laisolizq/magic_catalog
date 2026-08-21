@@ -24,6 +24,17 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Download latest catalog artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p dist/card-database
+          gh release download card-database-latest \
+            --repo laisolizq/magic_catalog \
+            --pattern metadata.json \
+            --pattern catalog.sqlite.gz \
+            --dir dist/card-database
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:

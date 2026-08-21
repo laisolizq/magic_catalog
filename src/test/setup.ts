@@ -1,3 +1,4 @@
+import 'fake-indexeddb/auto'
 import '@testing-library/jest-dom/vitest'
 
 // jsdom does not implement IntersectionObserver; provide a no-op stub

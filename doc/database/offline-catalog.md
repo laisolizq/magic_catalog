@@ -1,0 +1,65 @@
+# Offline Card Catalog
+
+The application stores normalized Scryfall card data in a prebuilt SQLite database loaded by SQLite WASM. The SQLite bytes are persisted in browser IndexedDB under `magic-catalog-sqlite`; card images remain remote Scryfall URLs.
+
+## Generate the artifact
+
+Generate the English-only full-print catalog from Scryfall's `all_cards` bulk data:
+
+```sh
+npm run data:database
+```
+
+The command writes these files to `artifacts/card-database/`:
+
+- `catalog.sqlite.gz`: prebuilt SQLite database with card, face, type, color, and ruling indexes
+- `metadata.json`: artifact version, schema version, timestamps, card count, sizes, and SHA-256 checksum
+
+Only records whose Scryfall `lang` field is `en` are included. Non-English printings, token cards (`token` and `double_faced_token` layouts), and art-series cards (`art_series` layout) are skipped before the artifact is written. Rulings are loaded from Scryfall's bulk rulings file and filtered by the selected cards' `oracle_id` values; no per-card rulings requests are made.
+
+To generate only the requested sets, pass their Scryfall set codes:
+
+```sh
+python3 scripts/generate_card_database.py \
+	--sets hob,sos,tla,mh1,mh2,mh3 \
+	--output-dir artifacts/card-database
+```
+
+The selected set codes are also written to `metadata.json`. If `--sets` is omitted, all English sets are included.
+
+The artifact is intentionally not bundled into the Vite application. The browser verifies its checksum, opens it with SQLite WASM, and persists the SQLite bytes only after validation succeeds.
+
+## Publish a release
+
+The workflow in `.github/workflows/card-database.yml` supports both manual dispatch and a weekly scheduled run. It publishes `catalog.sqlite.gz` and `metadata.json` to the `card-database-latest` GitHub Release.
+
+The browser checks the latest release metadata when online. Queries never require a network connection. After a successful import, the catalog remains available offline.
+
+## Test locally
+
+After generating the artifact, create `.env.local` in the repository root:
+
+```env
+VITE_CATALOG_DATABASE_URL=http://localhost:8080/catalog.sqlite.gz
+VITE_CATALOG_METADATA_URL=http://localhost:8080/metadata.json
+```
+
+Start the artifact server in one terminal:
+
+```sh
+npm run data:serve
+```
+
+Start Vite in another terminal:
+
+```sh
+npm run dev
+```
+
+Open `http://localhost:5173/magic_catalog/`. Vite reads `.env.local` when it starts, so restart the dev server after changing these values. Remove `.env.local` or unset both variables to return to the GitHub Release updater.
+
+## Query behavior
+
+Set and rarity queries use SQLite indexes. Face types, colors, and rulings are stored in normalized indexed tables. Fuse.js performs fuzzy matching over the SQL-filtered candidate cards.
+
+Color matching is evaluated per face. If any face matches the requested color, the complete card and all of its faces are returned. WUBRG selections require an exact face color set; `C` matches colorless faces and `M` matches multicolor faces.

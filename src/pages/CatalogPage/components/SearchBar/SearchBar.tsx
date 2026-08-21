@@ -15,6 +15,7 @@ type SortOption =
   | 'cmc-desc'
 
 type SortCategory = 'set' | 'name' | 'cmc'
+const SEARCH_DEBOUNCE_MS = 300
 
 const SORT_CATEGORIES: Array<{ value: SortCategory; label: string }> = [
   { value: 'set', label: 'Set' },
@@ -108,12 +109,10 @@ const RARITY_OPTIONS = [
 
 interface SearchBarProps {
   query: string
-  setValue: string[]
   typeValue: string[]
   rarityValue: string[]
   colorValue: string[]
   sortOption: SortOption
-  setOptions: string[]
   typeOptions: string[]
   isAdvancedOpen: boolean
   expandAllCards: boolean
@@ -124,7 +123,6 @@ interface SearchBarProps {
   onSortChange: (value: SortOption) => void
   onQueryChange: (value: string) => void
 
-  onSetChange: (value: string[]) => void
   onTypeChange: (value: string[]) => void
   onRarityChange: (value: string[]) => void
   onColorChange: (value: string[]) => void
@@ -133,12 +131,10 @@ interface SearchBarProps {
 
 export function SearchBar({
   query,
-  setValue,
   typeValue,
   rarityValue,
   colorValue,
   sortOption,
-  setOptions,
   typeOptions,
   isAdvancedOpen,
   expandAllCards,
@@ -147,7 +143,6 @@ export function SearchBar({
   onExpandAllChange,
   onSortChange,
   onQueryChange,
-  onSetChange,
   onTypeChange,
   onRarityChange,
   onColorChange,
@@ -157,8 +152,26 @@ export function SearchBar({
   const [isColorOpen, setIsColorOpen] = useState(false)
   const [isTypeOpen, setIsTypeOpen] = useState(false)
   const [isRarityOpen, setIsRarityOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState(query)
 
   const sortControlRef = useRef<HTMLDivElement>(null)
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSearchValue(query)
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [query])
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    }
+  }, [])
 
   // Closes the sort menu when the user clicks/taps anywhere outside of it.
   useEffect(() => {
@@ -196,9 +209,14 @@ export function SearchBar({
 
     const input = searchInputRef.current
     const nextQuery =
-      query.length > 0 && !query.endsWith(' ') ? `${query} ` : query
+      searchValue.length > 0 && !searchValue.endsWith(' ')
+        ? `${searchValue} `
+        : searchValue
 
-    if (nextQuery !== query) onQueryChange(nextQuery)
+    if (nextQuery !== searchValue) {
+      setSearchValue(nextQuery)
+      onQueryChange(nextQuery)
+    }
 
     requestAnimationFrame(() => {
       input?.setSelectionRange(nextQuery.length, nextQuery.length)
@@ -211,8 +229,20 @@ export function SearchBar({
    */
   const handleClearSearch = () => {
     skipNextFocusAdjustRef.current = true
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    setSearchValue('')
     onQueryChange('')
     searchInputRef.current?.focus()
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value)
+
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => {
+      onQueryChange(value)
+      searchDebounceRef.current = null
+    }, SEARCH_DEBOUNCE_MS)
   }
 
   const handleSortSelect = (category: SortCategory) => {
@@ -282,14 +312,11 @@ export function SearchBar({
         colorValue={colorValue}
         typeValue={typeValue}
         rarityValue={rarityValue}
-        setValue={setValue}
-        setOptions={setOptions}
         typeOptions={typeOptions}
         showAllPrints={showAllPrints}
         onColorChange={onColorChange}
         onTypeChange={onTypeChange}
         onRarityChange={onRarityChange}
-        onSetChange={onSetChange}
         onShowAllPrintsChange={onShowAllPrintsChange}
         onClose={() => onAdvancedOpenChange(false)}
       />
@@ -316,8 +343,8 @@ export function SearchBar({
             className="search-input"
             aria-label="Search cards"
             placeholder="Search cards or filters..."
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
+            value={searchValue}
+            onChange={(event) => handleSearchChange(event.target.value)}
             onFocus={handleSearchFocus}
           />
 
@@ -484,7 +511,7 @@ export function SearchBar({
               options={[
                 { value: '', label: 'All colors' },
                 ...COLOR_OPTIONS,
-              ] as any}
+              ]}
               selectedValues={colorValue}
               onSelect={(value) => {
                 handleColorSelect(value)
@@ -537,7 +564,7 @@ export function SearchBar({
                     </>
                   ),
                 })),
-              ] as any}
+              ]}
               selectedValues={typeValue}
               onSelect={(value) => {
                 handleTypeSelect(value)

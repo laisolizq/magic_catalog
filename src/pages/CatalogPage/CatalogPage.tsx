@@ -4,18 +4,29 @@ import { AppHeader } from '../../App/components/AppHeader/AppHeader'
 import { List } from './components/List/List'
 import { SearchBar } from './components/SearchBar/SearchBar'
 import { CardModal } from './components/CardModal/CardModal'
-import { mockCards } from '../../data/mockCards'
 import type { Card } from '../../types/card'
-import {
-  filterCards,
-  getUniqueSets,
-  getUniqueTypes,
-} from '../../utils/cardFilters'
 import { buildScryfallQuery, parseScryfallQuery } from '../../utils/scryfallQuery'
 import { SCROLL_SENSITIVITY } from '../../config/ui'
+import { queryCards, getCatalogTypes } from '../../services/sqliteCardQuery'
+import {
+  bootstrapCatalogFromEmbeddedAssets,
+  updateCatalogFromLatestRelease,
+  type CatalogUpdateStatus,
+} from '../../services/catalogUpdates'
+import { hasLocalCatalog, type CatalogImportProgress } from '../../services/catalogImport'
 import './CatalogPage.css'
 
 const BATCH_SIZE = 12
+const SYMBOL_TYPE_FILTERS = [
+  'artifact',
+  'battle',
+  'creature',
+  'enchantment',
+  'instant',
+  'land',
+  'planeswalker',
+  'sorcery',
+] as const
 
 type SortOption =
   | 'set-asc'
@@ -57,19 +68,39 @@ function manaValueFromCost(cost: string): number {
   }, 0)
 }
 
+function collectorSortKey(value: string | undefined): [number, string] {
+  const match = value?.match(/^(\d+)(.*)$/)
+  if (!match) return [Number.MAX_SAFE_INTEGER, value ?? '']
+  return [Number(match[1]), match[2].toLowerCase()]
+}
+
+function compareSetOrder(left: Card, right: Card): number {
+  const setDelta = left.set.localeCompare(right.set)
+  if (setDelta !== 0) return setDelta
+
+  const [leftNumber, leftSuffix] = collectorSortKey(left.collectorNumber)
+  const [rightNumber, rightSuffix] = collectorSortKey(right.collectorNumber)
+  return (
+    leftNumber - rightNumber ||
+    leftSuffix.localeCompare(rightSuffix) ||
+    left.id.localeCompare(right.id)
+  )
+}
+
 function sortCards(
   cards: Card[],
   sortOption: SortOption,
 ): Card[] {
-  // The mock data is already in set/number order, so ascending set sort is
-  // just the original order and descending is its reverse.
-  if (sortOption === 'set-asc') return cards
-  if (sortOption === 'set-desc') return [...cards].reverse()
-
   const sorted = [...cards]
 
   sorted.sort((left, right) => {
     switch (sortOption) {
+      case 'set-asc':
+        return compareSetOrder(left, right)
+
+      case 'set-desc':
+        return -compareSetOrder(left, right)
+
       case 'name-asc':
         return getFaceName(left).localeCompare(
           getFaceName(right),
@@ -110,10 +141,6 @@ function sortCards(
   })
 
   return sorted
-}
-
-function getDisplayCards(): Card[] {
-  return mockCards
 }
 
 export function CatalogPage() {
@@ -173,47 +200,158 @@ export function CatalogPage() {
   const [sortOption, setSortOption] =
     useState<SortOption>('set-asc')
 
+  const [displayCards, setDisplayCards] = useState<Card[]>([])
+  const [typeOptions, setTypeOptions] = useState<string[]>([])
+  const [isCatalogLoading, setIsCatalogLoading] = useState(true)
+  const [catalogError, setCatalogError] = useState<string | null>(null)
+  const [isCatalogReady, setIsCatalogReady] = useState(false)
+  const [catalogProgress, setCatalogProgress] = useState<CatalogImportProgress>({
+    phase: 'Starting catalog import',
+    percent: 0,
+  })
+  const catalogBootstrapRef = useRef<Promise<CatalogUpdateStatus> | null>(null)
+
   const sentinelRef = useRef<HTMLDivElement>(null)
   const lastScrollY = useRef(0)
   const ignoreScrollRef = useRef(false)
 
-  const displayCards = useMemo(
-    () => getDisplayCards(),
-    [],
-  )
+  useEffect(() => {
+    let cancelled = false
 
-  /*
-   * FILTERING
-   *
-   * cardFilters now handles multiple values.
-   *
-   * Different categories are combined with AND:
-   *
-   * (W OR U)
-   * AND
-   * (rare OR mythic)
-   */
-  const filteredCards = useMemo(
-    () =>
-      filterCards(displayCards, {
-        query: parsedQuery.text,
-        set: setValue,
-        type: typeValue,
-        rarity: rarityValue,
-        color: colorValue,
-      }),
-    [
-      displayCards,
-      parsedQuery,
-      setValue,
-      typeValue,
-      rarityValue,
-      colorValue,
-    ],
-  )
+    async function bootstrapCatalog() {
+      const hasCatalogBeforeUpdate = await hasLocalCatalog()
+
+      if (hasCatalogBeforeUpdate) {
+        if (!cancelled) setIsCatalogReady(true)
+
+        if (!catalogBootstrapRef.current) {
+          catalogBootstrapRef.current = updateCatalogFromLatestRelease(setCatalogProgress)
+        }
+
+        void catalogBootstrapRef.current.catch((error) => {
+          console.error('[catalog] background update failed', error)
+        })
+        return
+      }
+
+      const bootstrapStatus = await bootstrapCatalogFromEmbeddedAssets(setCatalogProgress)
+      const hasCatalogAfterBootstrap = await hasLocalCatalog()
+
+      if (hasCatalogAfterBootstrap) {
+        if (!cancelled) setIsCatalogReady(true)
+
+        if (!catalogBootstrapRef.current) {
+          catalogBootstrapRef.current = updateCatalogFromLatestRelease(setCatalogProgress)
+        }
+
+        void catalogBootstrapRef.current.catch((error) => {
+          console.error('[catalog] background update failed', error)
+        })
+        return
+      }
+
+      if (bootstrapStatus === 'failed') {
+        console.warn('[catalog] starter catalog bootstrap failed')
+      }
+
+      if (!catalogBootstrapRef.current) {
+        catalogBootstrapRef.current = updateCatalogFromLatestRelease(setCatalogProgress)
+      }
+
+      const status = await catalogBootstrapRef.current
+      const hasCatalog = await hasLocalCatalog()
+
+      if (cancelled) return
+
+      if (!hasCatalog && status !== 'updated') {
+        setCatalogError(
+          'The card catalog is not available. Start the local artifact server or check your network connection.',
+        )
+        setIsCatalogLoading(false)
+        return
+      }
+
+      setIsCatalogReady(true)
+    }
+
+    void bootstrapCatalog().catch((error) => {
+      console.error('[catalog] bootstrap failed', error)
+      if (cancelled) return
+      setCatalogError('Unable to initialize the card catalog.')
+      setIsCatalogLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isCatalogReady) return
+
+    let cancelled = false
+
+    async function loadCatalog() {
+      setIsCatalogLoading(true)
+      setCatalogError(null)
+
+      try {
+        const queryStartedAt = performance.now()
+        const result = await queryCards({
+          text: parsedQuery.text,
+          sets: setValue,
+          types: typeValue,
+          rarities: rarityValue,
+          colors: colorValue,
+        })
+        console.log(`[catalog] card query completed in ${(performance.now() - queryStartedAt).toFixed(0)}ms`)
+
+        if (cancelled) return
+        setDisplayCards(result.cards)
+      } catch (error) {
+        if (cancelled) return
+        setCatalogError(
+          error instanceof Error ? error.message : 'Unable to load the card catalog.',
+        )
+        setDisplayCards([])
+      } finally {
+        if (!cancelled) setIsCatalogLoading(false)
+      }
+    }
+
+    void loadCatalog()
+
+    return () => {
+      cancelled = true
+    }
+  }, [parsedQuery, setValue, typeValue, rarityValue, colorValue, isCatalogReady])
+
+  useEffect(() => {
+    if (!isCatalogReady) return
+
+    let cancelled = false
+
+    getCatalogTypes().then((types) => {
+      if (cancelled) return
+      const supportedTypes = new Set(types.map((type) => type.toLowerCase()))
+      setTypeOptions(
+        SYMBOL_TYPE_FILTERS.filter((type) => supportedTypes.has(type)),
+      )
+    }).catch((error) => {
+      console.error('[catalog] filter options failed', error)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isCatalogReady])
+
+  const filteredCards = displayCards
 
   const sortedFilteredCards = useMemo(() => {
-    const sorted = sortCards(filteredCards, sortOption)
+    const sorted = parsedQuery.text.trim()
+      ? filteredCards
+      : sortCards(filteredCards, sortOption)
 
     if (showAllPrints) return sorted
 
@@ -228,20 +366,6 @@ export function CatalogPage() {
       return true
     })
   }, [filteredCards, sortOption, showAllPrints])
-
-  /*
-   * Search bar options
-   */
-
-  const setOptions = useMemo(
-    () => getUniqueSets(displayCards),
-    [displayCards],
-  )
-
-  const typeOptions = useMemo(
-    () => getUniqueTypes(displayCards),
-    [displayCards],
-  )
 
   /*
    * SCROLL
@@ -567,12 +691,10 @@ export function CatalogPage() {
 
         <SearchBar
           query={query}
-          setValue={setValue}
           typeValue={typeValue}
           rarityValue={rarityValue}
           colorValue={colorValue}
           sortOption={sortOption}
-          setOptions={setOptions}
           typeOptions={typeOptions}
           isAdvancedOpen={isAdvancedOpen}
           expandAllCards={expandAllCards}
@@ -588,9 +710,6 @@ export function CatalogPage() {
             handleFilterChange(() =>
               setQuery(value),
             )
-          }
-          onSetChange={(value) =>
-            updateQueryFilters({ sets: value })
           }
           onTypeChange={(value) =>
             updateQueryFilters({ types: value })
@@ -609,20 +728,28 @@ export function CatalogPage() {
         />
       </div>
 
-      <List
-        cards={visibleCardsSorted}
-        expandedOracles={expandedOraclesView}
-        onToggleOracle={(cardId) =>
-          setExpandedOracles((prev) => ({
-            ...prev,
-            [cardId]: !prev[cardId],
-          }))
-        }
-        onOpenDetails={(card, faceIndex = 0) => {
-          setSelectedFaceIndex(faceIndex)
-          setSelectedCard(card)
-        }}
-      />
+      {isCatalogLoading ? (
+        <p role="status">
+          {catalogProgress.phase} ({catalogProgress.percent}%)
+        </p>
+      ) : catalogError ? (
+        <p role="alert">{catalogError}</p>
+      ) : (
+        <List
+          cards={visibleCardsSorted}
+          expandedOracles={expandedOraclesView}
+          onToggleOracle={(cardId) =>
+            setExpandedOracles((prev) => ({
+              ...prev,
+              [cardId]: !prev[cardId],
+            }))
+          }
+          onOpenDetails={(card, faceIndex = 0) => {
+            setSelectedFaceIndex(faceIndex)
+            setSelectedCard(card)
+          }}
+        />
+      )}
 
       <div
         ref={sentinelRef}
