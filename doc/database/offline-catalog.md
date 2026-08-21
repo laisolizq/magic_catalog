@@ -15,7 +15,7 @@ The command writes these files to `artifacts/card-database/`:
 - `catalog.sqlite.gz`: prebuilt SQLite database with card, face, type, color, and ruling indexes
 - `metadata.json`: artifact version, schema version, timestamps, card count, sizes, and SHA-256 checksum
 
-Only records whose Scryfall `lang` field is `en` are included. Non-English printings, token cards (`token` and `double_faced_token` layouts), and art-series cards (`art_series` layout) are skipped before the artifact is written. Rulings are loaded from Scryfall's bulk rulings file and filtered by the selected cards' `oracle_id` values; no per-card rulings requests are made.
+Only records whose Scryfall `lang` field is `en` are included. The database includes `core`, `expansion`, `masters`, `commander`, `draft_innovation`, and `starter` set types. Other set types, including memorabilia and funny products such as beginner-box front cards, are excluded. Token cards (`token` and `double_faced_token` layouts) and art-series cards (`art_series` layout) are also skipped before the artifact is written. Rulings are loaded from Scryfall's bulk rulings file and filtered by the selected cards' `oracle_id` values; no per-card rulings requests are made.
 
 To generate only the requested sets, pass their Scryfall set codes:
 
@@ -63,3 +63,5 @@ Open `http://localhost:5173/magic_catalog/`. Vite reads `.env.local` when it sta
 Set and rarity queries use SQLite indexes. Face types, colors, and rulings are stored in normalized indexed tables. Fuse.js performs fuzzy matching over the SQL-filtered candidate cards.
 
 Color matching is evaluated per face. If any face matches the requested color, the complete card and all of its faces are returned. WUBRG selections require an exact face color set; `C` matches colorless faces and `M` matches multicolor faces.
+
+When duplicate printings are hidden, the UI selects the newest `core` or `expansion` printing for each card name, then chooses the lowest collector number within that set. The full database still retains all supported playable set types, and “Show all prints” displays them all.

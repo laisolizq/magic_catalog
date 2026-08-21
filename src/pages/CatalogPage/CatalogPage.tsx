@@ -91,6 +91,54 @@ function compareSetOrder(left: Card, right: Card): number {
   )
 }
 
+function comparePrintingPreference(left: Card, right: Card): number {
+  const leftIsMajor = left.setType === 'core' || left.setType === 'expansion'
+  const rightIsMajor = right.setType === 'core' || right.setType === 'expansion'
+  if (leftIsMajor !== rightIsMajor) return leftIsMajor ? 1 : -1
+
+  const releaseDelta = (left.releasedAt ?? '').localeCompare(right.releasedAt ?? '')
+  if (releaseDelta !== 0) return releaseDelta
+
+  const setDelta = left.set.localeCompare(right.set)
+  if (setDelta !== 0) return setDelta
+
+  const [leftNumber, leftSuffix] = collectorSortKey(left.collectorNumber)
+  const [rightNumber, rightSuffix] = collectorSortKey(right.collectorNumber)
+  return (
+    rightNumber - leftNumber ||
+    rightSuffix.localeCompare(leftSuffix) ||
+    right.id.localeCompare(left.id)
+  )
+}
+
+function selectLatestPrintings(cards: Card[]): Card[] {
+  const latestByName = new Map<string, Card>()
+  const cardsByName = new Map<string, Card[]>()
+
+  cards.forEach((card) => {
+    const name = getFaceName(card)
+    const printings = cardsByName.get(name) ?? []
+    printings.push(card)
+    cardsByName.set(name, printings)
+  })
+
+  cardsByName.forEach((printings, name) => {
+    const majorPrintings = printings.filter(
+      (card) => card.setType === 'core' || card.setType === 'expansion',
+    )
+    const candidates = majorPrintings.length > 0 ? majorPrintings : printings
+    const preferred = candidates.slice(1).reduce<Card>((current, card) => {
+      return comparePrintingPreference(card, current) > 0
+        ? card
+        : current
+    }, candidates[0])
+
+    latestByName.set(name, preferred)
+  })
+
+  return cards.filter((card) => latestByName.get(getFaceName(card)) === card)
+}
+
 function sortCards(
   cards: Card[],
   sortOption: SortOption,
@@ -364,22 +412,13 @@ export function CatalogPage() {
   const filteredCards = displayCards
 
   const sortedFilteredCards = useMemo(() => {
-    const sorted = parsedQuery.text.trim()
+    const cardsToDisplay = showAllPrints
       ? filteredCards
-      : sortCards(filteredCards, sortOption)
+      : selectLatestPrintings(filteredCards)
 
-    if (showAllPrints) return sorted
-
-    const seenNames = new Set<string>()
-
-      return sorted.filter((card) => {
-        const name = getFaceName(card)
-
-      if (seenNames.has(name)) return false
-
-        seenNames.add(name)
-        return true
-      })
+    return parsedQuery.text.trim()
+      ? cardsToDisplay
+      : sortCards(cardsToDisplay, sortOption)
   }, [filteredCards, sortOption, showAllPrints])
 
   /*

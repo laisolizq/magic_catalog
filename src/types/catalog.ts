@@ -1,7 +1,7 @@
 import type { Card, CardColor } from './card'
 import type { ColorFilterMode } from '../utils/scryfallQuery'
 
-export const CATALOG_SCHEMA_VERSION = 1
+export const CATALOG_SCHEMA_VERSION = 3
 export const CATALOG_METADATA_ID = 'catalog'
 
 export interface StoredCard extends Card {

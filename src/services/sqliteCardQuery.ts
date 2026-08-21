@@ -20,11 +20,21 @@ function rowToCard(row: unknown[]): Card {
   return {
     id: String(row[0]),
     set: String(row[1]),
-    collectorNumber: row[2] ? String(row[2]) : undefined,
-    oracleId: row[3] ? String(row[3]) : undefined,
-    rarity: row[4] as Card['rarity'],
-    faces: JSON.parse(String(row[5])) as Card['faces'],
+    setType: row[2] ? String(row[2]) : undefined,
+    releasedAt: row[3] ? String(row[3]) : undefined,
+    collectorNumber: row[4] ? String(row[4]) : undefined,
+    oracleId: row[5] ? String(row[5]) : undefined,
+    rarity: row[6] as Card['rarity'],
+    faces: JSON.parse(String(row[7])) as Card['faces'],
   }
+}
+
+function cardSelectSql(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): string {
+  const columns = database.exec('PRAGMA table_info(cards)')[0]?.values ?? []
+  const hasSetType = columns.some((column) => column[1] === 'set_type')
+  const hasReleaseDate = columns.some((column) => column[1] === 'released_at')
+  return `SELECT id, set_code, ${hasSetType ? 'set_type' : "''"}, ${hasReleaseDate ? 'released_at' : "''"}, collector_number, oracle_id, rarity, faces_json
+     FROM cards`
 }
 
 function faceMatchesType(card: Card, types: string[]): boolean {
@@ -57,8 +67,7 @@ async function getAllCards(database: NonNullable<Awaited<ReturnType<typeof getCa
 
   const startedAt = performance.now()
   const result = database.exec(
-    `SELECT id, set_code, collector_number, oracle_id, rarity, faces_json
-     FROM cards`,
+    cardSelectSql(database),
   )
   cachedAllCards = (result[0]?.values ?? []).map(rowToCard)
   console.log(`[catalog] cached ${cachedAllCards.length} cards in ${(performance.now() - startedAt).toFixed(0)}ms`)
@@ -190,8 +199,7 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   }
 
   const result = database.exec(
-    `SELECT id, set_code, collector_number, oracle_id, rarity, faces_json
-     FROM cards${conditions.length ? ` WHERE ${conditions.join(' AND ')}` : ''}`,
+    `${cardSelectSql(database)}${conditions.length ? ` WHERE ${conditions.join(' AND ')}` : ''}`,
     parameters,
   )
     cards = (result[0]?.values ?? []).map(rowToCard)

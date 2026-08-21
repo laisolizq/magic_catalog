@@ -127,7 +127,9 @@ The artifact generator is:
 npm run data:database
 ```
 
-It creates a compressed English-only SQLite database and metadata under `artifacts/card-database/`. Non-English records, token layouts, and art-series layouts are excluded. Rulings come from Scryfall's bulk `rulings` file and are indexed by `oracle_id`. The scheduled/manual workflow publishes `catalog.sqlite.gz` and `metadata.json` to the `card-database-latest` GitHub Release. When online, the app checks the release metadata and replaces the local SQLite database only after checksum validation succeeds.
+It creates a compressed English-only SQLite database and metadata under `artifacts/card-database/`. The database includes playable `core`, `expansion`, `masters`, `commander`, `draft_innovation`, and `starter` sets, while supplemental/non-playing set types such as memorabilia and funny sets are excluded. Rulings come from Scryfall's bulk `rulings` file and are indexed by `oracle_id`. The scheduled/manual workflow publishes `catalog.sqlite.gz` and `metadata.json` to the `card-database-latest` GitHub Release. When online, the app checks the release metadata and replaces the local SQLite database only after checksum validation succeeds.
+
+When duplicate printings are collapsed, the UI prefers the newest printing from a `core` or `expansion` set. It then uses the lowest collector number within that set. “Show all prints” bypasses this preference and displays all cards in the database.
 
 To generate only `hob`, `sos`, `tla`, `mh1`, `mh2`, and `mh3`:
 

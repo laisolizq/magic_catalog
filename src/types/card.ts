@@ -3,6 +3,8 @@ export type CardColor = 'W' | 'U' | 'B' | 'R' | 'G' | 'C'
 export interface Card {
   id: string
   set: string
+  setType?: string
+  releasedAt?: string
   collectorNumber?: string
   oracleId?: string
   rarity: 'common' | 'uncommon' | 'rare' | 'mythic'

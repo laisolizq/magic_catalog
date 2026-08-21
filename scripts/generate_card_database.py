@@ -18,11 +18,19 @@ from typing import Any
 
 USER_AGENT = "magic_catalog/1.0 (card database generator)"
 BULK_DATA_URL = "https://api.scryfall.com/bulk-data"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 3
 ARTIFACT_VERSION = "1"
 VALID_RARITIES = {"common", "uncommon", "rare", "mythic"}
 VALID_COLORS = {"W", "U", "B", "R", "G"}
 EXCLUDED_LAYOUTS = {"token", "double_faced_token", "art_series"}
+PLAYABLE_SET_TYPES = {
+    "core",
+    "expansion",
+    "masters",
+    "commander",
+    "draft_innovation",
+    "starter",
+}
 
 
 def fetch_json(url: str) -> dict[str, Any]:
@@ -91,6 +99,10 @@ def normalize_card(
     if data.get("layout") in EXCLUDED_LAYOUTS:
         return None
 
+    set_type = data.get("set_type")
+    if set_type not in PLAYABLE_SET_TYPES:
+        return None
+
     set_code = data.get("set")
     if allowed_sets is not None and (
         not isinstance(set_code, str) or set_code not in allowed_sets
@@ -122,6 +134,8 @@ def normalize_card(
     return {
         "id": card_id,
         "set": set_code,
+        "setType": set_type,
+        "releasedAt": data.get("released_at", ""),
         "collectorNumber": collector_number,
         "oracleId": data.get("oracle_id", ""),
         "rarity": rarity,
@@ -166,6 +180,8 @@ def build_sqlite_database(
         CREATE TABLE cards (
             id TEXT PRIMARY KEY,
             set_code TEXT NOT NULL,
+            set_type TEXT NOT NULL DEFAULT '',
+            released_at TEXT NOT NULL DEFAULT '',
             collector_number TEXT NOT NULL,
             oracle_id TEXT,
             rarity TEXT NOT NULL,
@@ -196,9 +212,11 @@ def build_sqlite_database(
         for line in cards_file:
             card = json.loads(line)
             database.execute(
-                'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?)',
+                'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                 (
-                    card['id'], card['set'], card['collectorNumber'],
+                    card['id'], card['set'], card.get('setType', ''),
+                    card.get('releasedAt', ''),
+                    card['collectorNumber'],
                     card.get('oracleId'), card['rarity'],
                     json.dumps(card['faces'], ensure_ascii=True, separators=(',', ':')),
                 ),

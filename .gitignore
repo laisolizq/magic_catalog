@@ -26,3 +26,5 @@ vite-cache/
 package-lock.json
 scripts/__pycache__/*
 artifacts/*
+artifacts_catalog.sqlite
+bootstrap_catalog.sqlite

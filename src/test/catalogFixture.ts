@@ -10,7 +10,7 @@ export async function seedCatalogFixture(): Promise<void> {
   })
   const database = new SQL.Database()
   database.exec(`
-    CREATE TABLE cards (id TEXT PRIMARY KEY, set_code TEXT NOT NULL, collector_number TEXT, oracle_id TEXT, rarity TEXT NOT NULL, faces_json TEXT NOT NULL);
+    CREATE TABLE cards (id TEXT PRIMARY KEY, set_code TEXT NOT NULL, set_type TEXT NOT NULL DEFAULT '', released_at TEXT NOT NULL DEFAULT '', collector_number TEXT, oracle_id TEXT, rarity TEXT NOT NULL, faces_json TEXT NOT NULL);
     CREATE TABLE face_types (card_id TEXT, face_index INTEGER, type_name TEXT, PRIMARY KEY (card_id, face_index, type_name));
     CREATE TABLE face_colors (card_id TEXT, face_index INTEGER, color TEXT, PRIMARY KEY (card_id, face_index, color));
     CREATE TABLE rulings (oracle_id TEXT, object TEXT, source TEXT, published_at TEXT, comment TEXT);
@@ -21,7 +21,7 @@ export async function seedCatalogFixture(): Promise<void> {
     CREATE INDEX rulings_oracle_idx ON rulings(oracle_id, published_at);
   `)
 
-  const insertCard = database.prepare('INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?)')
+  const insertCard = database.prepare('INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
   const insertType = database.prepare('INSERT OR IGNORE INTO face_types VALUES (?, ?, ?)')
   const insertColor = database.prepare('INSERT OR IGNORE INTO face_colors VALUES (?, ?, ?)')
 
@@ -29,6 +29,8 @@ export async function seedCatalogFixture(): Promise<void> {
     insertCard.run([
       card.id,
       card.set,
+      card.setType ?? '',
+      card.releasedAt ?? '',
       card.collectorNumber ?? '',
       card.oracleId ?? '',
       card.rarity,
@@ -52,7 +54,7 @@ export async function seedCatalogFixture(): Promise<void> {
   await replaceCatalogDatabase(bytes)
   await persistCatalogMetadata({
     id: 'catalog',
-    schemaVersion: 1,
+    schemaVersion: 3,
     artifactVersion: 'test',
     generatedAt: new Date().toISOString(),
     databaseChecksum: 'test',
