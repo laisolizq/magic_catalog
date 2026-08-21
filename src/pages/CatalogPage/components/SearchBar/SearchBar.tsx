@@ -244,9 +244,16 @@ export function SearchBar({
    */
   const handleClearSearch = () => {
     skipNextFocusAdjustRef.current = true
+    isEditingSearchRef.current = true
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+
     setSearchValue('')
-    onQueryChange('')
+
+    searchDebounceRef.current = setTimeout(() => {
+      onQueryChange('')
+      searchDebounceRef.current = null
+    }, SEARCH_DEBOUNCE_MS)
+
     searchInputRef.current?.focus()
   }
 
@@ -370,6 +377,10 @@ export function SearchBar({
               className="search-input-clear"
               aria-label="Clear search"
               title="Clear search"
+              onMouseDown={(event) => {
+                // Prevent input blur so we do not flush a pending query before clearing.
+                event.preventDefault()
+              }}
               onClick={handleClearSearch}
             >
               <svg
