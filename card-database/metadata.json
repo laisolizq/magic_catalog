@@ -1,15 +1,15 @@
 {
   "artifactVersion": "1",
-  "schemaVersion": 1,
-  "generatedAt": "2026-08-20T23:25:15.742441+00:00",
-  "sourceUpdatedAt": "2026-08-20T21:18:12.489+00:00",
-  "rulingsSourceUpdatedAt": "2026-08-20T21:00:32.893+00:00",
-  "cardCount": 108334,
-  "rulingsCount": 78947,
+  "schemaVersion": 3,
+  "generatedAt": "2026-08-21T11:54:07.072048+00:00",
+  "sourceUpdatedAt": "2026-08-21T09:17:46.425+00:00",
+  "rulingsSourceUpdatedAt": "2026-08-21T09:00:34.299+00:00",
+  "cardCount": 79909,
+  "rulingsCount": 75506,
   "sets": null,
   "dbFormat": "sqlite",
   "databaseAssetName": "catalog.sqlite.gz",
-  "databaseChecksum": "09738bc51b9b7a11ad4941facd1ac50a956d724f7f9fbcbb155dfaa0a9ac398a",
-  "databaseCompressedBytes": 36796022,
-  "databaseUncompressedBytes": 143974400
+  "databaseChecksum": "a791b348c899bb29032c494518b30acf504c3f9627b1863a6a5e81f6c298f46f",
+  "databaseCompressedBytes": 29022107,
+  "databaseUncompressedBytes": 113635328
 }
