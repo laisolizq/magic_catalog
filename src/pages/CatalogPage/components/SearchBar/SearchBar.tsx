@@ -159,6 +159,19 @@ export function SearchBar({
   const isEditingSearchRef = useRef(false)
 
   useEffect(() => {
+    if (isEditingSearchRef.current) return
+    if (query === searchValue) return
+
+    const timer = window.setTimeout(() => {
+      setSearchValue(query)
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [query, searchValue])
+
+  useEffect(() => {
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     }
@@ -208,7 +221,6 @@ export function SearchBar({
 
     if (nextQuery !== searchValue) {
       setSearchValue(nextQuery)
-      onQueryChange(nextQuery)
     }
 
     requestAnimationFrame(() => {
@@ -352,7 +364,7 @@ export function SearchBar({
             onBlur={handleSearchBlur}
           />
 
-          {query.length > 0 && (
+          {searchValue.length > 0 && (
             <button
               type="button"
               className="search-input-clear"
