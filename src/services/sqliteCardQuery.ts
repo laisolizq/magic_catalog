@@ -8,6 +8,8 @@ import { cardColorsMatchFace } from '../utils/cardColors'
 let cachedDatabaseRef: object | null = null
 let cachedAllCards: Card[] | null = null
 let cachedAllCardsFuse: Fuse<Card> | null = null
+const cachedFilterResults = new Map<string, Card[]>()
+const cachedFilterFuse = new Map<string, Fuse<Card>>()
 
 function rowToCard(row: unknown[]): Card {
   return {
@@ -37,6 +39,8 @@ function resetCacheIfDatabaseChanged(database: object): void {
   cachedDatabaseRef = database
   cachedAllCards = null
   cachedAllCardsFuse = null
+  cachedFilterResults.clear()
+  cachedFilterFuse.clear()
 }
 
 function hasFilterValues(values: string[]): boolean {
@@ -70,9 +74,28 @@ function getAllCardsFuse(cards: Card[]): Fuse<Card> {
   return cachedAllCardsFuse
 }
 
+function getFilterFuse(filterKey: string, cards: Card[]): Fuse<Card> {
+  const cachedFuse = cachedFilterFuse.get(filterKey)
+  if (cachedFuse) return cachedFuse
+
+  const startedAt = performance.now()
+  const fuse = new Fuse(cards, {
+    keys: ['faces.name'],
+    threshold: 0.35,
+    ignoreLocation: true,
+    minMatchCharLength: 2,
+  })
+  cachedFilterFuse.set(filterKey, fuse)
+  console.log(`[catalog] SQLite Fuse index built for ${cards.length} cards in ${(performance.now() - startedAt).toFixed(0)}ms`)
+  return fuse
+}
+
 export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResult> {
   const database = await getCatalogDatabase()
   if (!database) return { cards: [], total: 0 }
+
+  // Let the browser paint the latest input before synchronous SQLite work.
+  await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
 
   resetCacheIfDatabaseChanged(database as unknown as object)
 
@@ -85,15 +108,25 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
 
   if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter) {
     const cards = await getAllCards(database)
+    const fuse = getAllCardsFuse(cards)
     if (!hasText) return { cards, total: cards.length }
 
     const searchStartedAt = performance.now()
-    const fuse = getAllCardsFuse(cards)
     const searchedCards = fuse.search(text).map((item) => item.item)
     console.log(`[catalog] cached Fuse search completed in ${(performance.now() - searchStartedAt).toFixed(0)}ms`)
     return { cards: searchedCards, total: searchedCards.length }
   }
 
+  const filterKey = JSON.stringify({
+    sets: query.sets,
+    rarities: query.rarities,
+    types: query.types,
+    colors: query.colors,
+    colorMode: query.colorMode,
+  })
+  let cards = cachedFilterResults.get(filterKey)
+
+  if (!cards) {
   const conditions: string[] = []
   const parameters: string[] = []
 
@@ -114,31 +147,26 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
      FROM cards${conditions.length ? ` WHERE ${conditions.join(' AND ')}` : ''}`,
     parameters,
   )
-  let cards = (result[0]?.values ?? []).map(rowToCard)
+    cards = (result[0]?.values ?? []).map(rowToCard)
 
-  if (hasTypeFilter) {
-    cards = cards.filter((card) => faceMatchesType(card, query.types))
+    if (hasTypeFilter) {
+      cards = cards.filter((card) => faceMatchesType(card, query.types))
+    }
+
+    if (hasColorFilter) {
+      cards = cards.filter((card) => faceMatchesColor(card, query.colors))
+    }
+
+    cachedFilterResults.set(filterKey, cards)
   }
 
-  if (hasColorFilter) {
-    cards = cards.filter((card) => faceMatchesColor(card, query.colors))
-  }
+  const fuse = getFilterFuse(filterKey, cards)
+  if (!hasText) return { cards, total: cards.length }
 
-  if (hasText) {
-    const fuseStartedAt = performance.now()
-    const fuse = new Fuse(cards, {
-      keys: ['faces.name'],
-      threshold: 0.35,
-      ignoreLocation: true,
-      minMatchCharLength: 2,
-    })
-    console.log(`[catalog] SQLite Fuse index built for ${cards.length} cards in ${(performance.now() - fuseStartedAt).toFixed(0)}ms`)
-    const searchStartedAt = performance.now()
-    cards = fuse.search(text).map((item) => item.item)
-    console.log(`[catalog] SQLite Fuse search completed in ${(performance.now() - searchStartedAt).toFixed(0)}ms`)
-  }
-
-  return { cards, total: cards.length }
+  const searchStartedAt = performance.now()
+  const searchedCards = fuse.search(text).map((item) => item.item)
+  console.log(`[catalog] SQLite Fuse search completed in ${(performance.now() - searchStartedAt).toFixed(0)}ms`)
+  return { cards: searchedCards, total: searchedCards.length }
 }
 
 export async function getCatalogSets(): Promise<string[]> {
