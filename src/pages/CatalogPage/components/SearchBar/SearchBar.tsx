@@ -289,6 +289,23 @@ export function SearchBar({
     }
   }
 
+  const handleSearchKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key !== 'Enter') return
+
+    event.preventDefault()
+    isEditingSearchRef.current = false
+
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+      searchDebounceRef.current = null
+    }
+
+    onQueryChange(searchValue)
+    searchInputRef.current?.blur()
+  }
+
   /*
    * Clears the query so the user can start typing a fresh search
    * right away.
@@ -413,8 +430,10 @@ export function SearchBar({
             className="search-input"
             aria-label="Search cards"
             placeholder="Search cards or filters..."
+            enterKeyHint="enter"
             value={searchValue}
             onChange={(event) => handleSearchChange(event.target.value)}
+            onKeyDown={handleSearchKeyDown}
             onFocus={handleSearchFocus}
             onBlur={handleSearchBlur}
           />
