@@ -214,6 +214,7 @@ export function CatalogPage() {
   const sentinelRef = useRef<HTMLDivElement>(null)
   const lastScrollY = useRef(0)
   const ignoreScrollRef = useRef(false)
+  const hasLoadedCatalogRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -292,7 +293,9 @@ export function CatalogPage() {
     let cancelled = false
 
     async function loadCatalog() {
-      setIsCatalogLoading(true)
+      if (!hasLoadedCatalogRef.current) {
+        setIsCatalogLoading(true)
+      }
       setCatalogError(null)
 
       try {
@@ -308,6 +311,7 @@ export function CatalogPage() {
 
         if (cancelled) return
         setDisplayCards(result.cards)
+        hasLoadedCatalogRef.current = true
       } catch (error) {
         if (cancelled) return
         setCatalogError(

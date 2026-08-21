@@ -5,6 +5,10 @@ import type { Card, CardColor } from '../types/card'
 import type { CatalogQuery, CatalogQueryResult } from '../types/catalog'
 import { cardColorsMatchFace } from '../utils/cardColors'
 
+let cachedDatabaseRef: object | null = null
+let cachedAllCards: Card[] | null = null
+let cachedAllCardsFuse: Fuse<Card> | null = null
+
 function rowToCard(row: unknown[]): Card {
   return {
     id: String(row[0]),
@@ -28,20 +32,78 @@ function faceMatchesColor(card: Card, colors: string[]): boolean {
   return card.faces.some((face) => cardColorsMatchFace(face.colors as CardColor[], colors))
 }
 
+function resetCacheIfDatabaseChanged(database: object): void {
+  if (cachedDatabaseRef === database) return
+  cachedDatabaseRef = database
+  cachedAllCards = null
+  cachedAllCardsFuse = null
+}
+
+function hasFilterValues(values: string[]): boolean {
+  return values.length > 0 && !values.includes('all')
+}
+
+async function getAllCards(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): Promise<Card[]> {
+  if (cachedAllCards) return cachedAllCards
+
+  const startedAt = performance.now()
+  const result = database.exec(
+    `SELECT id, set_code, collector_number, oracle_id, rarity, faces_json
+     FROM cards`,
+  )
+  cachedAllCards = (result[0]?.values ?? []).map(rowToCard)
+  console.log(`[catalog] cached ${cachedAllCards.length} cards in ${(performance.now() - startedAt).toFixed(0)}ms`)
+  return cachedAllCards
+}
+
+function getAllCardsFuse(cards: Card[]): Fuse<Card> {
+  if (cachedAllCardsFuse) return cachedAllCardsFuse
+
+  const startedAt = performance.now()
+  cachedAllCardsFuse = new Fuse(cards, {
+    keys: ['faces.name'],
+    threshold: 0.35,
+    ignoreLocation: true,
+    minMatchCharLength: 2,
+  })
+  console.log(`[catalog] cached Fuse index built for ${cards.length} cards in ${(performance.now() - startedAt).toFixed(0)}ms`)
+  return cachedAllCardsFuse
+}
+
 export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResult> {
   const database = await getCatalogDatabase()
   if (!database) return { cards: [], total: 0 }
 
+  resetCacheIfDatabaseChanged(database as unknown as object)
+
+  const hasSetFilter = hasFilterValues(query.sets)
+  const hasRarityFilter = hasFilterValues(query.rarities)
+  const hasTypeFilter = hasFilterValues(query.types)
+  const hasColorFilter = hasFilterValues(query.colors)
+  const text = query.text.trim()
+  const hasText = text.length > 0
+
+  if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter) {
+    const cards = await getAllCards(database)
+    if (!hasText) return { cards, total: cards.length }
+
+    const searchStartedAt = performance.now()
+    const fuse = getAllCardsFuse(cards)
+    const searchedCards = fuse.search(text).map((item) => item.item)
+    console.log(`[catalog] cached Fuse search completed in ${(performance.now() - searchStartedAt).toFixed(0)}ms`)
+    return { cards: searchedCards, total: searchedCards.length }
+  }
+
   const conditions: string[] = []
   const parameters: string[] = []
 
-  if (query.sets.length > 0 && !query.sets.includes('all')) {
+  if (hasSetFilter) {
     const names = query.sets.map(() => '?')
     query.sets.forEach((set) => parameters.push(set))
     conditions.push(`set_code IN (${names.join(', ')})`)
   }
 
-  if (query.rarities.length > 0 && !query.rarities.includes('all')) {
+  if (hasRarityFilter) {
     const names = query.rarities.map(() => '?')
     query.rarities.forEach((rarity) => parameters.push(rarity))
     conditions.push(`rarity IN (${names.join(', ')})`)
@@ -54,16 +116,15 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   )
   let cards = (result[0]?.values ?? []).map(rowToCard)
 
-  if (query.types.length > 0 && !query.types.includes('all')) {
+  if (hasTypeFilter) {
     cards = cards.filter((card) => faceMatchesType(card, query.types))
   }
 
-  if (query.colors.length > 0 && !query.colors.includes('all')) {
+  if (hasColorFilter) {
     cards = cards.filter((card) => faceMatchesColor(card, query.colors))
   }
 
-  const text = query.text.trim()
-  if (text) {
+  if (hasText) {
     const fuseStartedAt = performance.now()
     const fuse = new Fuse(cards, {
       keys: ['faces.name'],

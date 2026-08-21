@@ -156,16 +156,7 @@ export function SearchBar({
 
   const sortControlRef = useRef<HTMLDivElement>(null)
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setSearchValue(query)
-    }, 0)
-
-    return () => {
-      window.clearTimeout(timer)
-    }
-  }, [query])
+  const isEditingSearchRef = useRef(false)
 
   useEffect(() => {
     return () => {
@@ -202,6 +193,8 @@ export function SearchBar({
    * (e.g. "s:hob" + typed "dragon" becoming "s:hobdragon").
    */
   const handleSearchFocus = () => {
+    isEditingSearchRef.current = true
+
     if (skipNextFocusAdjustRef.current) {
       skipNextFocusAdjustRef.current = false
       return
@@ -221,6 +214,16 @@ export function SearchBar({
     requestAnimationFrame(() => {
       input?.setSelectionRange(nextQuery.length, nextQuery.length)
     })
+  }
+
+  const handleSearchBlur = () => {
+    isEditingSearchRef.current = false
+
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+      searchDebounceRef.current = null
+      onQueryChange(searchValue)
+    }
   }
 
   /*
@@ -346,6 +349,7 @@ export function SearchBar({
             value={searchValue}
             onChange={(event) => handleSearchChange(event.target.value)}
             onFocus={handleSearchFocus}
+            onBlur={handleSearchBlur}
           />
 
           {query.length > 0 && (
