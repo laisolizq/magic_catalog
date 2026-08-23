@@ -7,5 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: true,
+    // Integration tests run separately via vitest.integration.config.ts (npm run test:integration).
+    exclude: ['**/node_modules/**', '**/*.integration.test.{ts,tsx}'],
   },
 })
