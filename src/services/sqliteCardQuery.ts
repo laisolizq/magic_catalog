@@ -1,9 +1,9 @@
 import Fuse from 'fuse.js'
 
 import { getCatalogDatabase } from '../db/sqliteClient'
-import type { Card, CardColor } from '../types/card'
+import type { Card } from '../types/card'
 import type { CatalogQuery, CatalogQueryResult } from '../types/catalog'
-import { cardColorsMatchFace } from '../utils/cardColors'
+import type { ColorFilterMode } from '../utils/scryfallQuery'
 
 let cachedDatabaseRef: object | null = null
 let cachedAllCards: Card[] | null = null
@@ -37,16 +37,74 @@ function cardSelectSql(database: NonNullable<Awaited<ReturnType<typeof getCatalo
      FROM cards`
 }
 
-function faceMatchesType(card: Card, types: string[]): boolean {
-  const normalizedTypes = types.map((type) => type.toLowerCase())
-  return card.faces.some((face) => {
-    const typeLine = face.typeLine.toLowerCase()
-    return normalizedTypes.some((type) => typeLine.includes(type))
-  })
+interface SqlCondition {
+  sql: string
+  params: string[]
 }
 
-function faceMatchesColor(card: Card, colors: string[]): boolean {
-  return card.faces.some((face) => cardColorsMatchFace(face.colors as CardColor[], colors))
+// face_types stores one row per exact lowercased main-type token per face, and
+// face_subtypes stores subtype tokens (e.g. "Dragon" in "Creature — Dragon"),
+// see generate_card_database.py. Matching either lets t:dragon-style queries work.
+function buildTypeCondition(types: string[]): SqlCondition {
+  const placeholders = types.map(() => '?').join(', ')
+  const params = types.map((type) => type.toLowerCase())
+  return {
+    sql: `id IN (
+      SELECT DISTINCT card_id FROM face_types WHERE type_name IN (${placeholders})
+      UNION
+      SELECT DISTINCT card_id FROM face_subtypes WHERE subtype_name IN (${placeholders})
+    )`,
+    params: [...params, ...params],
+  }
+}
+
+// A colorless face has no rows at all, so compare colored-face count against total faces.
+const COLORLESS_FACE_FRAGMENT =
+  '(SELECT COUNT(DISTINCT face_index) FROM face_colors WHERE card_id = cards.id) < json_array_length(cards.faces_json)'
+
+// Mirrors the previous cardColorsMatchFace semantics (any face matches), but expressed
+// as SQL over face_colors (one row per face/color) instead of decoding faces_json in JS.
+function buildColorCondition(colors: string[], colorMode: ColorFilterMode): SqlCondition | null {
+  const selectedWubrg = colors.filter((color) => color !== 'C' && color !== 'M')
+  const fragments: string[] = []
+  const params: string[] = []
+
+  if (colors.includes('C')) {
+    fragments.push(COLORLESS_FACE_FRAGMENT)
+  }
+
+  if (colors.includes('M')) {
+    fragments.push(
+      'EXISTS (SELECT 1 FROM face_colors WHERE card_id = cards.id GROUP BY face_index HAVING COUNT(*) > 1)',
+    )
+  }
+
+  if (selectedWubrg.length > 0) {
+    const placeholders = selectedWubrg.map(() => '?').join(', ')
+    const matchCount = `SUM(CASE WHEN color IN (${placeholders}) THEN 1 ELSE 0 END)`
+
+    // exactly: face colors === selected. including: face colors ⊇ selected.
+    // atMost: face colors ⊆ selected (colorless faces are a subset of anything,
+    // so they're matched separately below since they have no face_colors rows).
+    const havingClause =
+      colorMode === 'including'
+        ? `${matchCount} = ${selectedWubrg.length}`
+        : colorMode === 'atMost'
+          ? `COUNT(*) = ${matchCount}`
+          : `COUNT(*) = ${selectedWubrg.length} AND ${matchCount} = ${selectedWubrg.length}`
+
+    fragments.push(
+      `EXISTS (SELECT 1 FROM face_colors WHERE card_id = cards.id GROUP BY face_index HAVING ${havingClause})`,
+    )
+    params.push(...selectedWubrg)
+
+    if (colorMode === 'atMost' && !colors.includes('C')) {
+      fragments.push(COLORLESS_FACE_FRAGMENT)
+    }
+  }
+
+  if (fragments.length === 0) return null
+  return { sql: `(${fragments.join(' OR ')})`, params }
 }
 
 function resetCacheIfDatabaseChanged(database: object): void {
@@ -198,19 +256,25 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
     conditions.push(`rarity IN (${names.join(', ')})`)
   }
 
+  if (hasTypeFilter) {
+    const typeCondition = buildTypeCondition(query.types)
+    conditions.push(typeCondition.sql)
+    parameters.push(...typeCondition.params)
+  }
+
+  if (hasColorFilter) {
+    const colorCondition = buildColorCondition(query.colors, query.colorMode ?? 'exactly')
+    if (colorCondition) {
+      conditions.push(colorCondition.sql)
+      parameters.push(...colorCondition.params)
+    }
+  }
+
   const result = database.exec(
     `${cardSelectSql(database)}${conditions.length ? ` WHERE ${conditions.join(' AND ')}` : ''}`,
     parameters,
   )
     cards = (result[0]?.values ?? []).map(rowToCard)
-
-    if (hasTypeFilter) {
-      cards = cards.filter((card) => faceMatchesType(card, query.types))
-    }
-
-    if (hasColorFilter) {
-      cards = cards.filter((card) => faceMatchesColor(card, query.colors))
-    }
 
     cachedFilterResults.set(filterKey, cards)
   }

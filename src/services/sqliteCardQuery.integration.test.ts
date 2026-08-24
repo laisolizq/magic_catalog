@@ -15,6 +15,19 @@ interface TimingRecord {
   count: number
 }
 
+// Independent re-check of buildColorCondition's SQL semantics (any face: exact WUBRG
+// set match, colorless = no colors, multicolor = more than one color).
+function faceMatchesColors(faceColors: string[], selected: string[]): boolean {
+  const selectedWubrg = selected.filter((color) => color !== 'C' && color !== 'M')
+  return (
+    (selected.includes('C') && faceColors.length === 0) ||
+    (selected.includes('M') && faceColors.length > 1) ||
+    (selectedWubrg.length > 0 &&
+      faceColors.length === selectedWubrg.length &&
+      selectedWubrg.every((color) => faceColors.includes(color)))
+  )
+}
+
 const timings: TimingRecord[] = []
 
 describe('queryCards against the real card-database-test catalog', () => {
@@ -56,6 +69,9 @@ describe('queryCards against the real card-database-test catalog', () => {
             ),
           ),
         ).toBe(true)
+      }
+      if (filters.colors.length > 0) {
+        expect(result.cards.every((card) => card.faces.some((face) => faceMatchesColors(face.colors, filters.colors)))).toBe(true)
       }
 
       expect(result.cards.length).toBeGreaterThan(0)
