@@ -12,7 +12,7 @@ function App() {
   return (
     <div className="app-shell">
       <main className="app-main">
-        {!isCatalogPage && <AppHeader isVisible />}
+        {!isCatalogPage && <AppHeader />}
 
         <Routes>
           <Route

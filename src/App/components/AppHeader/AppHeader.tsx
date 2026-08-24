@@ -5,11 +5,7 @@ import { createPortal } from 'react-dom'
 import { InstallPopup } from '../InstallPopup/InstallPopup'
 import './AppHeader.css'
 
-interface AppHeaderProps {
-  isVisible?: boolean
-}
-
-export function AppHeader({ isVisible = true }: AppHeaderProps) {
+export function AppHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const closeMenu = () => {
@@ -18,7 +14,7 @@ export function AppHeader({ isVisible = true }: AppHeaderProps) {
 
   return (
     <>
-      <header className={`app-header ${isVisible ? 'header-visible' : 'header-hidden'}`}>
+      <header className="app-header">
         <div className="app-brand-row">
           <button
             type="button"
