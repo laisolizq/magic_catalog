@@ -145,7 +145,8 @@
 }
 
 .sort-toggle svg,
-.oracle-eye-toggle svg {
+.oracle-eye-toggle svg,
+.advanced-toggle svg {
   width: 20px;
   height: 20px;
 }
@@ -158,9 +159,6 @@
 }
 
 .advanced-toggle {
-  font-size: 1.35rem;
-  font-weight: 700;
-  padding-bottom: 0.12rem;
   margin-left: auto;
 }
 
