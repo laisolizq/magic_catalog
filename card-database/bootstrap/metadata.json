@@ -1,9 +1,9 @@
 {
   "artifactVersion": "1",
-  "schemaVersion": 3,
-  "generatedAt": "2026-08-21T11:51:34.992946+00:00",
-  "sourceUpdatedAt": "2026-08-21T09:17:46.425+00:00",
-  "rulingsSourceUpdatedAt": "2026-08-21T09:00:34.299+00:00",
+  "schemaVersion": 4,
+  "generatedAt": "2026-08-23T21:27:16.771620+00:00",
+  "sourceUpdatedAt": "2026-08-23T21:17:19.360+00:00",
+  "rulingsSourceUpdatedAt": "2026-08-23T21:00:33.163+00:00",
   "cardCount": 321,
   "rulingsCount": 555,
   "sets": [
@@ -11,7 +11,7 @@
   ],
   "dbFormat": "sqlite",
   "databaseAssetName": "catalog.sqlite.gz",
-  "databaseChecksum": "143dd7fcac0840ba8e2979d34d7d0b107c48fc3e76041bf9e155863b861540e8",
-  "databaseCompressedBytes": 120984,
-  "databaseUncompressedBytes": 667648
+  "databaseChecksum": "9c5a6b9c23babe1861ea4d7c824e7da88231cc053bbe573b318279781af5a003",
+  "databaseCompressedBytes": 140615,
+  "databaseUncompressedBytes": 770048
 }
