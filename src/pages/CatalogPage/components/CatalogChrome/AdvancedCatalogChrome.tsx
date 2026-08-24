@@ -12,7 +12,7 @@ export function AdvancedCatalogChrome({
 }: AdvancedCatalogChromeProps) {
   return (
     <div className="catalog-chrome catalog-advanced-chrome">
-      <AppHeader isVisible />
+      <AppHeader />
       {children}
     </div>
   )

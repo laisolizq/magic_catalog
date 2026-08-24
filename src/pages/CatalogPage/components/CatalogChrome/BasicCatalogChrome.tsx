@@ -91,7 +91,7 @@ export function BasicCatalogChrome({ children }: BasicCatalogChromeProps) {
         className="catalog-chrome-inner"
         ref={innerRef}
       >
-        <AppHeader isVisible />
+        <AppHeader />
         {children}
       </div>
     </div>

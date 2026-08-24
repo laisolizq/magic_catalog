@@ -90,8 +90,7 @@ flowchart LR
 - [src/db/sqliteClient.ts](../src/db/sqliteClient.ts) — the only module that
   talks to IndexedDB/sql.js directly.
 - [src/utils/](../src/utils) — pure helpers: query string parsing
-  (`scryfallQuery.ts`), color-matching rules (`cardColors.ts`), symbol/type
-  filter helpers (`cardFilters.ts`, `utils.ts`).
+  (`scryfallQuery.ts`), symbol/type helpers (`utils.ts`).
 - [src/types/](../src/types) — shared `Card`/`Catalog*` type definitions.
 
 ## Testing

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   type ColorFilterMode,
-} from '../../../../utils/cardFilters'
+} from '../../../../utils/scryfallQuery'
 import { symbolUrl } from '../../../../utils/utils.ts'
 import './AdvancedFilters.css'
 

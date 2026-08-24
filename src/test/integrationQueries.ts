@@ -17,8 +17,6 @@ const BASE: CatalogQuery = {
 /**
  * Representative shapes of the most frequent user searches, derived from the
  * SearchBar's basic filters and the query syntax in utils/scryfallQuery.ts.
- * Note: queryCards' SQLite path always matches colors exactly regardless of
- * colorMode (it's only interpreted by the client-side cardFilters.ts path).
  */
 export const INTEGRATION_QUERY_CASES: IntegrationQueryCase[] = [
   {
