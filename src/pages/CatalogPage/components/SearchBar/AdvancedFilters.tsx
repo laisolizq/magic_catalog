@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   type ColorFilterMode,
 } from '../../../../utils/scryfallQuery'
@@ -99,6 +99,24 @@ export function AdvancedFilters({
   const [selectedShowAllPrints, setSelectedShowAllPrints] =
     useState<boolean>(showAllPrints)
 
+  const colorOptionsRef = useRef<HTMLDivElement>(null)
+  const [colorOptionsWidth, setColorOptionsWidth] = useState<number | null>(
+    null,
+  )
+
+  useEffect(() => {
+    const el = colorOptionsRef.current
+    if (!el) return
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (entry) setColorOptionsWidth(entry.contentRect.width)
+    })
+    observer.observe(el)
+
+    return () => observer.disconnect()
+  }, [])
+
   /*
    * Toggle a value in a temporary selection.
    */
@@ -179,7 +197,19 @@ export function AdvancedFilters({
           onClick={handleCancel}
           aria-label="Close advanced filters"
         >
-          ←
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M19 12H5" />
+            <path d="M11 18l-6-6 6-6" />
+          </svg>
         </button>
 
         <h2>Filters</h2>
@@ -192,7 +222,10 @@ export function AdvancedFilters({
       <div className="advanced-filter-section">
         <h3>Color</h3>
 
-        <div className="advanced-options color-options">
+        <div
+          className="advanced-options color-options"
+          ref={colorOptionsRef}
+        >
           {colors.map((color) => (
             <button
               key={color}
@@ -233,6 +266,11 @@ export function AdvancedFilters({
           className="color-filter-modes"
           role="group"
           aria-label="Color matching mode"
+          style={
+            colorOptionsWidth != null
+              ? { width: colorOptionsWidth }
+              : undefined
+          }
         >
           {colorModes.map((mode) => (
             <button
@@ -286,7 +324,7 @@ export function AdvancedFilters({
                 )
               }
             >
-              {type}
+              {type.charAt(0).toUpperCase() + type.slice(1)}
             </button>
           ))}
         </div>
