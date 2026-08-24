@@ -1,0 +1,278 @@
+[
+  {
+    "name": "Activate",
+    "description": "To activate an activated ability is to put it onto the stack and pay its costs, so that it will eventually resolve and have its effect. Only an object’s controller (or its owner, if it doesn’t have a controller) can activate its activated ability unless the object specifically says otherwise. A player may activate an ability if they have priority. See rule 602, “Activating Activated Abilities.”"
+  },
+  {
+    "name": "Attach",
+    "description": "To attach an Aura, Equipment, or Fortification to an object or player means to take it from where it currently is and put it onto that object or player. If something is attached to a permanent on the battlefield, it’s customary to place it so that it’s physically touching the permanent. An Aura, Equipment, or Fortification can’t be attached to an object or player it couldn’t enchant, equip, or fortify, respectively."
+  },
+  {
+    "name": "Behold",
+    "description": "“Behold a [quality]” means “Reveal a [quality] card from your hand or choose a [quality] permanent you control on the battlefield.”"
+  },
+  {
+    "name": "Cast",
+    "description": "To cast a spell is to take it from the zone it’s in (usually the hand), put it on the stack, and pay its costs, so that it will eventually resolve and have its effect. A player may cast a spell if they have priority. See rule 601, “Casting Spells.”"
+  },
+  {
+    "name": "Counter",
+    "description": "To counter a spell or ability means to cancel it, removing it from the stack. It doesn’t resolve and none of its effects occur. A countered spell is put into its owner’s graveyard."
+  },
+  {
+    "name": "Create",
+    "description": "To create one or more tokens with certain characteristics, put the specified number of tokens with the specified characteristics onto the battlefield."
+  },
+  {
+    "name": "Destroy",
+    "description": "To destroy a permanent, move it from the battlefield to its owner’s graveyard."
+  },
+  {
+    "name": "Discard",
+    "description": "To discard a card, move it from its owner’s hand to that player’s graveyard."
+  },
+  {
+    "name": "Double",
+    "description": "Doubling a creature’s power and/or toughness creates a continuous effect. This effect modifies that creature’s power and/or toughness but doesn’t set those characteristics to a specific value. See rule 613.4c."
+  },
+  {
+    "name": "Triple",
+    "description": "Tripling a creature’s power and/or toughness creates a continuous effect. This effect modifies that creature’s power and/or toughness but doesn’t set those characteristics to a specific value. See rule 613.4c."
+  },
+  {
+    "name": "Exchange",
+    "description": "A spell or ability may instruct players to exchange something (for example, life totals or control of two permanents) as part of its resolution. When such a spell or ability resolves, if the entire exchange can’t be completed, no part of the exchange occurs. Example: If a spell attempts to exchange control of two target creatures but one of those creatures is destroyed before the spell resolves, the spell does nothing to the other creature."
+  },
+  {
+    "name": "Exile",
+    "description": "To exile an object, move it to the exile zone from wherever it is. See rule 406, “Exile.”"
+  },
+  {
+    "name": "Fight",
+    "description": "A spell or ability may instruct a creature to fight another creature or it may instruct two creatures to fight each other. Each of those creatures deals damage equal to its power to the other creature."
+  },
+  {
+    "name": "Goad",
+    "description": "Certain spells and abilities can goad a creature. Until the next turn of the controller of that spell or ability, that creature is goaded."
+  },
+  {
+    "name": "Investigate",
+    "description": "“Investigate” means “Create a Clue token.” See rule 111.10f."
+  },
+  {
+    "name": "Mill",
+    "description": "For a player to mill a number of cards, that player puts that many cards from the top of their library into their graveyard."
+  },
+  {
+    "name": "Play",
+    "description": "To play a land means to put it onto the battlefield from the zone it’s in (usually the hand). A player may play a land if they have priority, it’s the main phase of their turn, the stack is empty, and they haven’t played a land this turn. Playing a land is a special action (see rule 116), so it doesn’t use the stack; it simply happens. Putting a land onto the battlefield as the result of a spell or ability isn’t the same as playing a land. See rule 305, “Lands.”"
+  },
+  {
+    "name": "Regenerate",
+    "description": "If the effect of a resolving spell or ability regenerates a permanent, it creates a replacement effect that protects the permanent the next time it would be destroyed this turn. In this case, “Regenerate [permanent]” means “The next time [permanent] would be destroyed this turn, instead remove all damage marked on it and its controller taps it. If it’s an attacking or blocking creature, remove it from combat.”"
+  },
+  {
+    "name": "Reveal",
+    "description": "To reveal a card, show that card to all players for a brief time. If an effect causes a card to be revealed, it remains revealed for as long as necessary to complete the parts of the effect that card is relevant to. If the cost to cast a spell or activate an ability includes revealing a card, or if a card is revealed because an ability is activated from a hidden zone (see rule 602.2a), the card remains revealed from the time the spell or ability is announced until the time it leaves the stack. If revealing a card causes a triggered ability to trigger, the card remains revealed until that triggered ability leaves the stack. If that ability isn’t put onto the stack the next time a player would receive priority, the card ceases to be revealed. Example: Telepathy is an enchantment card that reads “Your opponents play with their hands revealed.” Silvergill Adept is a creature card that reads, in part, “As an additional cost to cast this spell, reveal a Merfolk card from your hand or pay {3}.” A player may reveal a Merfolk card from their hand to pay the additional cost of Silvergill Adept even if that card is already revealed due to Telepathy’s effect."
+  },
+  {
+    "name": "Sacrifice",
+    "description": "To sacrifice a permanent, its controller moves it from the battlefield directly to its owner’s graveyard. A player can’t sacrifice something that isn’t a permanent, or something that’s a permanent they don’t control. Sacrificing a permanent doesn’t destroy it, so regeneration or other effects that replace destruction can’t affect this action."
+  },
+  {
+    "name": "Scry",
+    "description": "To “scry N” means to look at the top N cards of your library, then put any number of them on the bottom of your library in any order and the rest on top of your library in any order."
+  },
+  {
+    "name": "Search",
+    "description": "To search for a card in a zone, look at all cards in that zone (even if it’s a hidden zone) and find a card that matches the given description. Example: Splinter says “Exile target artifact. Search its controller’s graveyard, hand, and library for all cards with the same name as that artifact and exile them. Then that player shuffles their library.” A player casts Splinter targeting Howling Mine (an artifact). Howling Mine’s controller has another Howling Mine in her graveyard and two more in her library. Splinter’s controller must find the Howling Mine in the graveyard, but may choose to find zero, one, or two of the Howling Mines in the library. Example: Lobotomy says “Target player reveals their hand, then you choose a card other than a basic land card from it. Search that player’s graveyard, hand, and library for all cards with the same name as the chosen card and exile them. Then that player shuffles their library.” If the target player has no cards in their hand when Lobotomy resolves, the player who cast Lobotomy searches the specified zones but doesn’t exile any cards. Example: Aven Mindcensor says, in part, “If an opponent would search a library, that player searches the top four cards of that library instead.” Veteran Explorer says “When this creature dies, each player may search their library for up to two basic land cards, put them onto the battlefield, then shuffle.” An opponent who searched the top four cards of their library because of Veteran Explorer’s ability would shuffle the entire library."
+  },
+  {
+    "name": "Shuffle",
+    "description": "To shuffle a library or a face-down pile of cards, randomize the cards within it so that no player knows their order. Example: Guile says, in part, “When Guile is put into a graveyard from anywhere, shuffle it into its owner’s library.” It’s put into a graveyard and its ability triggers, then a player exiles it from that graveyard in response. When the ability resolves, the library is shuffled. Example: Black Sun’s Zenith says, in part, “Shuffle Black Sun’s Zenith into its owner’s library.” Black Sun’s Zenith is in a graveyard, has gained flashback (due to Recoup, perhaps), and is cast from that graveyard. Black Sun’s Zenith will be exiled, and its owner’s library will be shuffled. Example: Loaming Shaman says “When this creature enters, target player shuffles any number of target cards from their graveyard into their library.” It enters the battlefield, its ability triggers, and no cards are targeted. When the ability resolves, the targeted player will still have to shuffle their library. Example: Darksteel Colossus and Gravebane Zombie are put into a player’s graveyard from the battlefield at the same time. Darksteel Colossus says in part “If Darksteel Colossus would be put into a graveyard from anywhere, reveal Darksteel Colossus and shuffle it into its owner’s library instead.” Gravebane Zombie says “If this creature would die, put it on top of its owner’s library instead.” The player shuffles Darksteel Colossus into their library and puts Gravebane Zombie on top of that library."
+  },
+  {
+    "name": "Surveil",
+    "description": "To “surveil N” means to look at the top N cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order."
+  },
+  {
+    "name": "Tap and Untap",
+    "description": "To tap a permanent, turn it sideways from an upright position. Only untapped permanents can be tapped."
+  },
+  {
+    "name": "Transform",
+    "description": "To transform a permanent, turn it over so that its other face is up. Only permanents represented by double-faced tokens and double-faced cards can transform. (See rule 712, “Double-Faced Cards.”)"
+  },
+  {
+    "name": "Convert",
+    "description": "To convert a permanent, turn it so that its other face is up. This follows rules 701.27a–f, 712.9–10, and 712.18. Those rules apply to converting a permanent just as they apply to transforming a permanent."
+  },
+  {
+    "name": "Fateseal",
+    "description": "To “fateseal N” means to look at the top N cards of an opponent’s library, then put any number of them on the bottom of that library in any order and the rest on top of that library in any order."
+  },
+  {
+    "name": "Clash",
+    "description": "To clash, a player reveals the top card of their library. That player may then put that card on the bottom of their library."
+  },
+  {
+    "name": "Planeswalk",
+    "description": "A player may planeswalk only during a Planechase game. Only the planar controller may planeswalk. See rule 901, “Planechase.”"
+  },
+  {
+    "name": "Set in Motion",
+    "description": "Only a scheme card may be set in motion, and only during an Archenemy game. Only the archenemy may set a scheme card in motion. See rule 314, “Schemes,” and rule 904, “Archenemy.”"
+  },
+  {
+    "name": "Abandon",
+    "description": "Only a face-up ongoing scheme card may be abandoned, and only during an Archenemy game. See rule 314, “Schemes,” and rule 904, “Archenemy.”"
+  },
+  {
+    "name": "Proliferate",
+    "description": "To proliferate means to choose any number of permanents and/or players that have a counter, then give each one additional counter of each kind that permanent or player already has."
+  },
+  {
+    "name": "Detain",
+    "description": "Certain spells and abilities can detain a permanent. Until the next turn of the controller of that spell or ability, that permanent can’t attack or block and its activated abilities can’t be activated."
+  },
+  {
+    "name": "Populate",
+    "description": "To populate means to choose a creature token you control and create a token that’s a copy of that creature token."
+  },
+  {
+    "name": "Monstrosity",
+    "description": "“Monstrosity N” means “If this permanent isn’t monstrous, put N +1/+1 counters on it and it becomes monstrous.”"
+  },
+  {
+    "name": "Vote",
+    "description": "Some spells and abilities instruct players to vote for one choice from a list of options to determine some aspect of the effect of that spell or ability. To vote, each player, starting with a specified player and proceeding in turn order, chooses one of those choices."
+  },
+  {
+    "name": "Bolster",
+    "description": "“Bolster N” means “Choose a creature you control with the least toughness or tied for least toughness among creatures you control. Put N +1/+1 counters on that creature.”"
+  },
+  {
+    "name": "Manifest",
+    "description": "To manifest a card, turn it face down. It becomes a 2/2 face-down creature card with no text, no name, no subtypes, and no mana cost. Put that card onto the battlefield face down. That permanent is a manifested permanent for as long as it remains face down. The effect defining its characteristics works while the card is face down and ends when it’s turned face up."
+  },
+  {
+    "name": "Support",
+    "description": "“Support N” on a permanent means “Put a +1/+1 counter on each of up to N other target creatures.” “Support N” on an instant or sorcery spell means “Put a +1/+1 counter on each of up to N target creatures.”"
+  },
+  {
+    "name": "Meld",
+    "description": "Meld is a keyword action that appears in an ability on one card in a meld pair. To meld the two cards in a meld pair, put them onto the battlefield with their back faces up and combined. The resulting permanent is a single object represented by two cards. See rule 712, “Double-Faced Cards.” Example: A player owns and controls Midnight Scavengers and a token that’s a copy of Graf Rats. At the beginning of combat, both are exiled but can’t be melded. Midnight Scavengers remains exiled and the exiled token ceases to exist."
+  },
+  {
+    "name": "Exert",
+    "description": "To exert a permanent, you choose to have it not untap during your next untap step."
+  },
+  {
+    "name": "Explore",
+    "description": "Certain spells and abilities instruct a permanent to explore. To do so, that permanent’s controller reveals the top card of their library. If a land card is revealed this way, that player puts that card into their hand. Otherwise, that player puts a +1/+1 counter on the exploring permanent and may put the revealed card into their graveyard."
+  },
+  {
+    "name": "Assemble",
+    "description": "Assemble is a keyword action in the Unstable set that puts Contraptions onto the battlefield. Outside of silver-bordered cards, only one card (Steamflogger Boss) refers to assembling a Contraption. Cards and mechanics from the Unstable set aren’t included in these rules. See the Unstable FAQ for more information."
+  },
+  {
+    "name": "Adapt",
+    "description": "“Adapt N” means “If this permanent has no +1/+1 counters on it, put N +1/+1 counters on it.”"
+  },
+  {
+    "name": "Amass",
+    "description": "To amass [subtype] N means “If you don’t control an Army creature, create a 0/0 black [subtype] Army creature token. Choose an Army creature you control. Put N +1/+1 counters on that creature. If it isn’t a [subtype], it becomes a [subtype] in addition to its other types.”"
+  },
+  {
+    "name": "Learn",
+    "description": "“Learn” means “You may discard a card. If you do, draw a card. If you didn’t discard a card, you may reveal a Lesson card you own from outside the game and put it into your hand.”"
+  },
+  {
+    "name": "Venture into the Dungeon",
+    "description": "If a player is instructed to venture into the dungeon while they don’t own a dungeon card in the command zone, they choose a dungeon card they own from outside the game and put it into the command zone. They put their venture marker on the topmost room. See rule 309, “Dungeons.”"
+  },
+  {
+    "name": "Connive",
+    "description": "Certain spells and abilities instruct a permanent to connive. To do so, that permanent’s controller draws a card, then discards a card. If a nonland card is discarded this way, that player puts a +1/+1 counter on the conniving permanent."
+  },
+  {
+    "name": "Open an Attraction",
+    "description": "A player may open an Attraction only during a game in which that player is playing with an Attraction deck (see rule 717, “Attraction Cards”)."
+  },
+  {
+    "name": "Roll to Visit Your Attractions",
+    "description": "To roll to visit your Attractions, roll a six-sided die. Then if you control one or more Attractions with a number lit up that is equal to that result, each of those Attractions has been “visited” and its visit ability triggers. See rule 717, “Attraction Cards,” and rule 702.159, “Visit.”"
+  },
+  {
+    "name": "Incubate",
+    "description": "To incubate N, create an Incubator token that enters the battlefield with N +1/+1 counters on it. See rule 111.10i."
+  },
+  {
+    "name": "The Ring Tempts You",
+    "description": "Certain spells and abilities have the text “the Ring tempts you.” Each time the Ring tempts you, choose a creature you control. That creature becomes your Ring-bearer until another creature becomes your Ring-bearer or another player gains control of it."
+  },
+  {
+    "name": "Face a Villainous Choice",
+    "description": "“[A player] faces a villainous choice — [option A], or [option B]” means “[A player] chooses [option A] or [option B]. Then all actions in the chosen option are performed.”"
+  },
+  {
+    "name": "Time Travel",
+    "description": "To time travel means to choose any number of permanents you control with one or more time counters on them and/or suspended cards you own in exile with one or more time counters on them and, for each of those objects, put a time counter on it or remove a time counter from it. See rule 702.62, “Suspend.”"
+  },
+  {
+    "name": "Discover",
+    "description": "“Discover N” means “Exile cards from the top of your library until you exile a nonland card with mana value N or less. You may cast that card without paying its mana cost if the resulting spell’s mana value is less than or equal to N. If you don’t cast it, put that card into your hand. Put the remaining exiled cards on the bottom of your library in a random order.”"
+  },
+  {
+    "name": "Cloak",
+    "description": "To cloak a card, turn it face down. It becomes a 2/2 face-down creature card with ward {2}, no name, no subtypes, and no mana cost. Put that card onto the battlefield face down. That permanent is a cloaked permanent for as long as it remains face down. The effect defining its characteristics works while the card is face down and ends when it’s turned face up."
+  },
+  {
+    "name": "Collect Evidence",
+    "description": "To “collect evidence N” means to exile any number of cards from your graveyard with total mana value N or greater."
+  },
+  {
+    "name": "Suspect",
+    "description": "Certain spells and abilities instruct a player to suspect a creature. That creature becomes suspected until it leaves the battlefield or until a spell or ability causes it to no longer be suspected."
+  },
+  {
+    "name": "Forage",
+    "description": "To forage means “Exile three cards from your graveyard or sacrifice a Food.”"
+  },
+  {
+    "name": "Manifest Dread",
+    "description": "“Manifest dread” means “Look at the top two cards of your library. Manifest one of them, then put the cards you looked at that were not manifested this way into your graveyard.” See rule 701.40, “Manifest.”"
+  },
+  {
+    "name": "Endure",
+    "description": "Certain abilities instruct a permanent to endure N. To do so, that permanent’s controller creates an N/N white Spirit creature token unless they put N +1/+1 counters on that permanent."
+  },
+  {
+    "name": "Harness",
+    "description": "“Harness [this permanent]” means “If this permanent isn’t harnessed, it becomes harnessed.”"
+  },
+  {
+    "name": "Airbend",
+    "description": "Certain spells and abilities instruct a player to airbend one or more permanents and/or spells. To do so, that player exiles those objects. For each card exiled this way, for as long as it remains exiled, its owner may cast it by paying {2} rather than paying its mana cost."
+  },
+  {
+    "name": "Earthbend",
+    "description": "“Earthbend N” means “Target land you control becomes a 0/0 land creature with haste in addition to its other types. Put N +1/+1 counters on it. When that land dies or is put into exile, return it to the battlefield tapped under your control.”"
+  },
+  {
+    "name": "Waterbend",
+    "description": "“Waterbend [cost]” means “Pay [cost]. For each generic mana in that cost, you may tap an untapped artifact or creature you control rather than pay that mana.” Example: Spirit Water Revival is a spell that costs {1}{U}{U} and says, in part, “As an additional cost to cast this spell, waterbend {6}.” As you cast it, you may tap up to six artifacts and/or creatures you control to pay the for the {6} in its waterbend cost, but you can’t tap any artifacts or creatures to pay for any part of the {1}{U}{U} mana cost."
+  },
+  {
+    "name": "Blight",
+    "description": "To “blight N” means to put N -1/-1 counters on a creature you control."
+  },
+  {
+    "name": "Heal",
+    "description": "To heal damage already dealt to a permanent, remove that marked damage from that permanent. If an effect states that damage already dealt to a permanent “is healed,” that permanent’s controller removes all marked damage from that permanent."
+  },
+  {
+    "name": "Recruit",
+    "description": "“Recruit” means “Draw a card, then discard a card. If you discarded a nonland card this way, create a 1/1 white Human Soldier creature token.”"
+  }
+]

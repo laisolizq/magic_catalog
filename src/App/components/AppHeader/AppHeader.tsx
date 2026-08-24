@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router-dom'
 import { useState } from 'react'
 
 import { InstallPopup } from '../InstallPopup/InstallPopup'
@@ -5,6 +6,10 @@ import './AppHeader.css'
 
 export function AppHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  const closeMenu = () => {
+    setIsMenuOpen(false)
+  }
 
   return (
     <>
@@ -38,7 +43,10 @@ export function AppHeader() {
       </header>
 
       {isMenuOpen && (
-        <div className="menu-overlay" onClick={() => setIsMenuOpen(false)}>
+        <div
+          className="menu-overlay"
+          onClick={closeMenu}
+        >
           <aside
             className="menu-drawer"
             role="dialog"
@@ -48,13 +56,41 @@ export function AppHeader() {
             <button
               type="button"
               className="menu-close"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={closeMenu}
               aria-label="Close menu"
             >
               ×
             </button>
 
-            <p className="menu-copy">Made with love by Red &amp; Lua</p>
+            <nav className="menu-navigation" aria-label="Main navigation">
+              <NavLink
+                to="/catalog"
+                className={({ isActive }) =>
+                  isActive
+                    ? 'menu-item is-active'
+                    : 'menu-item'
+                }
+                onClick={closeMenu}
+              >
+                Catalog
+              </NavLink>
+
+              <NavLink
+                to="/magic-guide"
+                className={({ isActive }) =>
+                  isActive
+                    ? 'menu-item is-active'
+                    : 'menu-item'
+                }
+                onClick={closeMenu}
+              >
+                Magic Guide
+              </NavLink>
+            </nav>
+
+            <p className="menu-copy">
+              Made with love by Red &amp; Lua
+            </p>
           </aside>
         </div>
       )}

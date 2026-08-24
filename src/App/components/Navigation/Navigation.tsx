@@ -2,7 +2,16 @@ import { Link, NavLink } from 'react-router-dom'
 
 import './Navigation.css'
 
-const routes = [{ label: 'Catalog', path: '/catalog' }]
+const routes = [
+  {
+    label: 'Catalog',
+    path: '/catalog',
+  },
+  {
+    label: 'Keywords',
+    path: '/keywords',
+  },
+]
 
 export function Navigation() {
   return (

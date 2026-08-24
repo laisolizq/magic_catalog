@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { AppHeader } from '../../App/components/AppHeader/AppHeader'
 import { List } from './components/List/List'
 import { SearchBar } from './components/SearchBar/SearchBar'
 import { CardModal } from './components/CardModal/CardModal'
@@ -780,8 +779,6 @@ export function CatalogPage() {
             : 'search-hidden'
         }`}
       >
-        <AppHeader />
-
         <SearchBar
           query={query}
           typeValue={typeValue}

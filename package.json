@@ -18,7 +18,10 @@
     "data:serve": "python3 scripts/serve_card_database.py",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "generate:keyword-abilities": "python3 scripts/generate_keywords.py abilities",
+    "generate:keyword-actions": "python3 scripts/generate_keywords.py actions",
+    "generate:keywords": "npm run generate:keyword-abilities && npm run generate:keyword-actions"
   },
   "dependencies": {
     "fuse.js": "^7.5.0",
