@@ -1,15 +1,15 @@
 import { Link } from 'react-router-dom'
 
-import './MagicGuidePage.css'
+import './RulesPage.css'
 
-export function MagicGuidePage() {
+export function RulesPage() {
   return (
-    <section className="magic-guide-page">
-      <header className="magic-guide-header">
-          <span className="magic-guide-eyebrow">
+    <section className="rules-page">
+      <header className="rules-header">
+          <span className="rules-eyebrow">
             MAGIC: THE GATHERING
           </span>
-        <h1>Magic Guide</h1>
+        <h1>Rules</h1>
 
         <p>
           Learn the rules, mechanics and concepts of
@@ -17,12 +17,12 @@ export function MagicGuidePage() {
         </p>
       </header>
 
-      <div className="magic-guide-grid">
+      <div className="rules-grid">
         <Link
-          to="/magic-guide/keywords-abilities"
-          className="magic-guide-card"
+          to="/rules/keywords-abilities"
+          className="rules-card"
         >
-          <div className="magic-guide-card-content">
+          <div className="rules-card-content">
             <h2>Keyword Abilities</h2>
 
             <p>
@@ -31,16 +31,16 @@ export function MagicGuidePage() {
             </p>
           </div>
 
-          <span className="magic-guide-card-arrow">
+          <span className="rules-card-arrow">
             →
           </span>
         </Link>
 
         <Link
-          to="/magic-guide/keywords-actions"
-          className="magic-guide-card"
+          to="/rules/keywords-actions"
+          className="rules-card"
         >
-          <div className="magic-guide-card-content">
+          <div className="rules-card-content">
             <h2>Keyword Actions</h2>
 
             <p>
@@ -49,7 +49,7 @@ export function MagicGuidePage() {
             </p>
           </div>
 
-          <span className="magic-guide-card-arrow">
+          <span className="rules-card-arrow">
             →
           </span>
         </Link>

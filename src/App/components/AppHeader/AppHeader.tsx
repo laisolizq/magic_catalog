@@ -76,7 +76,7 @@ export function AppHeader() {
               </NavLink>
 
               <NavLink
-                to="/magic-guide"
+                to="/rules"
                 className={({ isActive }) =>
                   isActive
                     ? 'menu-item is-active'
@@ -84,7 +84,7 @@ export function AppHeader() {
                 }
                 onClick={closeMenu}
               >
-                Magic Guide
+                Rules
               </NavLink>
             </nav>
 

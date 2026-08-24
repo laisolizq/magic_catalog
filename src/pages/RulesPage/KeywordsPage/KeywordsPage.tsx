@@ -73,7 +73,7 @@ export function KeywordsPage({
   return (
     <section className="keywords-page">
       <Link
-        to="/magic-guide"
+        to="/rules"
         className="keywords-back"
       >
         <span
@@ -83,7 +83,7 @@ export function KeywordsPage({
           ←
         </span>
 
-        <span>Magic Guide</span>
+        <span>Rules</span>
       </Link>
 
       <header className="keywords-header">

@@ -1,28 +1,28 @@
-.magic-guide-page {
+.rules-page {
   min-height: 100%;
   padding: 1.5rem;
   background: var(--paper);
   color: var(--ink-strong);
 }
 
-.magic-guide-header {
+.rules-header {
   margin-bottom: 1.5rem;
 }
 
-.magic-guide-header h1 {
+.rules-header h1 {
   margin: 0 0 0.5rem;
   font-size: 1.75rem;
   line-height: 1.2;
 }
 
-.magic-guide-header p {
+.rules-header p {
   margin: 0;
   max-width: 42rem;
   color: var(--ink);
   line-height: 1.5;
 }
 
-.magic-guide-grid {
+.rules-grid {
   display: grid;
   grid-template-columns: repeat(
     auto-fill,
@@ -31,7 +31,7 @@
   gap: 1rem;
 }
 
-.magic-guide-card {
+.rules-card {
   position: relative;
 
   display: flex;
@@ -54,29 +54,29 @@
     box-shadow 0.15s ease;
 }
 
-.magic-guide-card:hover {
+.rules-card:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
 }
 
-.magic-guide-card:focus-visible {
+.rules-card:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.magic-guide-card-content {
+.rules-card-content {
   min-width: 0;
   flex: 1;
 }
 
-.magic-guide-card-content h2 {
+.rules-card-content h2 {
   margin: 0 0 0.35rem;
 
   font-size: 1.1rem;
 }
 
-.magic-guide-card-content p {
+.rules-card-content p {
   margin: 0;
 
   color: var(--ink);
@@ -84,7 +84,7 @@
   line-height: 1.45;
 }
 
-.magic-guide-card-arrow {
+.rules-card-arrow {
   flex: 0 0 auto;
 
   font-size: 1.25rem;
@@ -95,13 +95,13 @@
     opacity 0.15s ease;
 }
 
-.magic-guide-card:hover .magic-guide-card-arrow {
+.rules-card:hover .rules-card-arrow {
   transform: translateX(0.2rem);
   opacity: 1;
 }
 
 
-.magic-guide-eyebrow {
+.rules-eyebrow {
   display: block;
 
   margin-bottom: 0.6rem;
@@ -117,15 +117,15 @@
 }
 
 @media (max-width: 600px) {
-  .magic-guide-page {
+  .rules-page {
     padding: 1rem;
   }
 
-  .magic-guide-header h1 {
+  .rules-header h1 {
     font-size: 1.5rem;
   }
 
-  .magic-guide-card {
+  .rules-card {
     padding: 1rem;
   }
 }
