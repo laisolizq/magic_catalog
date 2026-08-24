@@ -59,6 +59,10 @@ export const INTEGRATION_QUERY_CASES: IntegrationQueryCase[] = [
     filters: { ...BASE, colors: ['M'] },
   },
   {
+    name: 'colorless filter',
+    filters: { ...BASE, colors: ['C'] },
+  },
+  {
     name: 'combined text + type + color + rarity',
     filters: {
       ...BASE,

@@ -18,7 +18,7 @@ from typing import Any
 
 USER_AGENT = "magic_catalog/1.0 (card database generator)"
 BULK_DATA_URL = "https://api.scryfall.com/bulk-data"
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 ARTIFACT_VERSION = "1"
 VALID_RARITIES = {"common", "uncommon", "rare", "mythic"}
 VALID_COLORS = {"W", "U", "B", "R", "G"}
@@ -71,12 +71,15 @@ def build_face(data: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]
         or get_image_url(fallback, "art_crop")
         or image_url
     )
+    # Flip-layout faces (e.g. Kamigawa flip cards) omit "colors" entirely since
+    # the whole card shares one mana cost; fall back to the card-level colors.
+    colors = data["colors"] if "colors" in data else fallback.get("colors")
     face: dict[str, Any] = {
         "name": data.get("name", ""),
         "manaCost": data.get("mana_cost", ""),
         "typeLine": data.get("type_line", ""),
         "oracleText": data.get("oracle_text", ""),
-        "colors": safe_colors(data.get("colors")),
+        "colors": safe_colors(colors),
         "imageUrl": image_url,
         "artCropUrl": art_crop_url,
     }
@@ -193,6 +196,12 @@ def build_sqlite_database(
             type_name TEXT NOT NULL,
             PRIMARY KEY (card_id, face_index, type_name)
         );
+        CREATE TABLE face_subtypes (
+            card_id TEXT NOT NULL,
+            face_index INTEGER NOT NULL,
+            subtype_name TEXT NOT NULL,
+            PRIMARY KEY (card_id, face_index, subtype_name)
+        );
         CREATE TABLE face_colors (
             card_id TEXT NOT NULL,
             face_index INTEGER NOT NULL,
@@ -223,13 +232,19 @@ def build_sqlite_database(
             )
             for face_index, face in enumerate(card['faces']):
                 type_line = face.get('typeLine', '')
-                main_types = type_line.split('\u2014', 1)[0].strip().lower().split()
+                main_part, _, subtype_part = type_line.partition('\u2014')
+                main_types = main_part.strip().lower().split()
                 for type_name in main_types:
                     if type_name not in {'legendary', 'basic', 'snow', 'world', 'ongoing'}:
                         database.execute(
                             'INSERT OR IGNORE INTO face_types VALUES (?, ?, ?)',
                             (card['id'], face_index, type_name),
                         )
+                for subtype_name in subtype_part.strip().lower().split():
+                    database.execute(
+                        'INSERT OR IGNORE INTO face_subtypes VALUES (?, ?, ?)',
+                        (card['id'], face_index, subtype_name),
+                    )
                 for color in face.get('colors', []):
                     database.execute(
                         'INSERT OR IGNORE INTO face_colors VALUES (?, ?, ?)',
@@ -253,6 +268,8 @@ def build_sqlite_database(
         CREATE INDEX cards_rarity_idx ON cards(rarity);
         CREATE INDEX face_types_name_idx ON face_types(type_name);
         CREATE INDEX face_types_card_idx ON face_types(card_id);
+        CREATE INDEX face_subtypes_name_idx ON face_subtypes(subtype_name);
+        CREATE INDEX face_subtypes_card_idx ON face_subtypes(card_id);
         CREATE INDEX face_colors_color_idx ON face_colors(color);
         CREATE INDEX face_colors_card_idx ON face_colors(card_id);
         CREATE INDEX rulings_oracle_idx ON rulings(oracle_id, published_at);
