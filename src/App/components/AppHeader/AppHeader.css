@@ -14,8 +14,13 @@
   background: var(--paper);
   box-shadow: 0 0 0 100vmax var(--paper);
   clip-path: inset(0 -100vmax);
-  transform: translateY(0);
+
   transition: transform 0.2s ease;
+  will-change: transform;
+}
+
+.app-header.header-visible {
+  transform: translateY(0);
 }
 
 .app-header.header-hidden {

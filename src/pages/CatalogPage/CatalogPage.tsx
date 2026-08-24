@@ -3,13 +3,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { List } from './components/List/List'
 import { SearchBar } from './components/SearchBar/SearchBar'
 import { CardModal } from './components/CardModal/CardModal'
+import { BasicCatalogChrome } from './components/CatalogChrome/BasicCatalogChrome'
+import { AdvancedCatalogChrome } from './components/CatalogChrome/AdvancedCatalogChrome'
 import type { Card } from '../../types/card'
 import {
   buildScryfallQuery,
   parseScryfallQuery,
   type ColorFilterMode,
 } from '../../utils/scryfallQuery'
-import { SCROLL_SENSITIVITY } from '../../config/ui'
 import { queryCards, getCatalogTypes } from '../../services/sqliteCardQuery'
 import {
   bootstrapCatalogFromEmbeddedAssets,
@@ -38,11 +39,6 @@ type SortOption =
   | 'name-desc'
   | 'cmc-asc'
   | 'cmc-desc'
-
-interface CatalogPageProps {
-  isHeaderVisible?: boolean
-  onAdvancedFiltersOpenChange?: (value: boolean) => void
-}
 
 function getFaceName(card: Card): string {
   return card.faces[0]?.name ?? ''
@@ -199,10 +195,7 @@ function sortCards(
   return sorted
 }
 
-export function CatalogPage({
-  isHeaderVisible = true,
-  onAdvancedFiltersOpenChange,
-}: CatalogPageProps) {
+export function CatalogPage() {
   /*
    * The query is the single source of truth for:
    *
@@ -256,9 +249,6 @@ export function CatalogPage({
   const [expandAllCards, setExpandAllCards] =
     useState(false)
 
-  const [, setIsSearchVisible] =
-    useState(true)
-
   const [isAdvancedOpen, setIsAdvancedOpen] =
     useState(false)
 
@@ -277,7 +267,6 @@ export function CatalogPage({
   const catalogBootstrapRef = useRef<Promise<CatalogUpdateStatus> | null>(null)
 
   const sentinelRef = useRef<HTMLDivElement>(null)
-  const lastScrollY = useRef(0)
   const ignoreScrollRef = useRef(false)
   const hasLoadedCatalogRef = useRef(false)
 
@@ -445,50 +434,6 @@ export function CatalogPage({
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [query, sortOption, colorMode])
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY
-
-      if (ignoreScrollRef.current) {
-        lastScrollY.current = currentScrollY
-        return
-      }
-
-      // Keep the search/filters visible while using advanced filters.
-      if (isAdvancedOpen) {
-        setIsSearchVisible(true)
-        lastScrollY.current = currentScrollY
-        return
-      }
-
-      const delta = currentScrollY - lastScrollY.current
-
-      if (currentScrollY <= 0) {
-        setIsSearchVisible(true)
-        lastScrollY.current = currentScrollY
-        return
-      }
-
-      if (delta < -SCROLL_SENSITIVITY) {
-        setIsSearchVisible(true)
-        lastScrollY.current = currentScrollY
-      } else if (delta > SCROLL_SENSITIVITY) {
-        setIsSearchVisible(false)
-        lastScrollY.current = currentScrollY
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll, {
-        passive: true,
-    })
-
-    return () =>
-      window.removeEventListener(
-        'scroll',
-        handleScroll,
-      )
-  }, [isAdvancedOpen])
-
   /*
    * INFINITE SCROLL
    */
@@ -619,20 +564,14 @@ export function CatalogPage({
       setExpandedOracles({})
     }
 
-    setIsSearchVisible(true)
-
     requestAnimationFrame(() => {
       window.scrollTo({
         top: currentScrollY,
         behavior: 'instant',
       })
 
-      lastScrollY.current = currentScrollY
-
       requestAnimationFrame(() => {
         ignoreScrollRef.current = false
-        lastScrollY.current = window.scrollY
-        setIsSearchVisible(true)
       })
     })
   }
@@ -758,8 +697,6 @@ export function CatalogPage({
     ignoreScrollRef.current = true
 
     setIsAdvancedOpen(value)
-    onAdvancedFiltersOpenChange?.(value)
-    setIsSearchVisible(true)
 
     requestAnimationFrame(() => {
       window.scrollTo({
@@ -767,28 +704,14 @@ export function CatalogPage({
         behavior: 'instant',
       })
 
-      lastScrollY.current = currentScrollY
-
       requestAnimationFrame(() => {
         ignoreScrollRef.current = false
-        lastScrollY.current = window.scrollY
       })
     })
   }
 
-  return (
-    <section
-      className="catalog-page"
-      aria-label="Catalog Page"
-    >
-      <div
-        className={`search-bar-wrapper ${
-          isHeaderVisible
-            ? 'search-visible'
-            : 'search-hidden'
-        }`}
-      >
-        <SearchBar
+  const catalogSearchBar = (
+    <SearchBar
           query={query}
           typeValue={typeValue}
           rarityValue={rarityValue}
@@ -826,8 +749,27 @@ export function CatalogPage({
               setShowAllPrints(value),
             )
           }
-        />
-      </div>
+    />
+  )
+
+  return (
+    <section
+      className="catalog-page"
+      aria-label="Catalog Page"
+    >
+      {isAdvancedOpen ? (
+        <AdvancedCatalogChrome>
+          <div className="search-bar-wrapper">
+            {catalogSearchBar}
+          </div>
+        </AdvancedCatalogChrome>
+      ) : (
+        <BasicCatalogChrome>
+          <div className="search-bar-wrapper">
+            {catalogSearchBar}
+          </div>
+        </BasicCatalogChrome>
+      )}
 
       {isCatalogLoading ? (
         <p role="status">

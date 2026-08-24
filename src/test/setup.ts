@@ -8,6 +8,13 @@ window.IntersectionObserver = class {
   disconnect() {}
 } as unknown as typeof IntersectionObserver
 
+// jsdom does not implement ResizeObserver; provide a no-op stub
+window.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver
+
 window.matchMedia = window.matchMedia || function matchMedia() {
   return {
     matches: false,
