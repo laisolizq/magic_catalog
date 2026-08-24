@@ -30,6 +30,7 @@ PLAYABLE_SET_TYPES = {
     "commander",
     "draft_innovation",
     "starter",
+    "eternal",
 }
 
 

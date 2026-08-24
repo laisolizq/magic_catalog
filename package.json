@@ -13,7 +13,6 @@
     "test:watch": "vitest",
     "test:integration:fetch-db": "python3 scripts/fetch_test_database.py",
     "test:integration": "npm run test:integration:fetch-db && vitest run --config vitest.integration.config.ts",
-    "data:tla": "python3 scripts/download_tla_set.py",
     "data:database": "python3 scripts/generate_card_database.py",
     "data:serve": "python3 scripts/serve_card_database.py",
     "preview": "vite preview",
