@@ -705,7 +705,7 @@ export function SearchBar({
           selectedValues={typeValue}
           onSelect={(value) => handleBasicFilterChange(value, onTypeChange)}
         >
-          {typeValue.length === 1
+          {typeValue.length === 1 && typeOptions.includes(typeValue[0])
             ? (
               <img
                 className="type-symbol"
