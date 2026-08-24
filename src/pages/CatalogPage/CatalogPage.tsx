@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { AppHeader } from '../../App/components/AppHeader/AppHeader'
 import { List } from './components/List/List'
 import { SearchBar } from './components/SearchBar/SearchBar'
 import { CardModal } from './components/CardModal/CardModal'
@@ -39,6 +38,11 @@ type SortOption =
   | 'name-desc'
   | 'cmc-asc'
   | 'cmc-desc'
+
+interface CatalogPageProps {
+  isHeaderVisible?: boolean
+  onAdvancedFiltersOpenChange?: (value: boolean) => void
+}
 
 function getFaceName(card: Card): string {
   return card.faces[0]?.name ?? ''
@@ -195,7 +199,10 @@ function sortCards(
   return sorted
 }
 
-export function CatalogPage() {
+export function CatalogPage({
+  isHeaderVisible = true,
+  onAdvancedFiltersOpenChange,
+}: CatalogPageProps) {
   /*
    * The query is the single source of truth for:
    *
@@ -249,7 +256,7 @@ export function CatalogPage() {
   const [expandAllCards, setExpandAllCards] =
     useState(false)
 
-  const [isSearchVisible, setIsSearchVisible] =
+  const [, setIsSearchVisible] =
     useState(true)
 
   const [isAdvancedOpen, setIsAdvancedOpen] =
@@ -751,6 +758,7 @@ export function CatalogPage() {
     ignoreScrollRef.current = true
 
     setIsAdvancedOpen(value)
+    onAdvancedFiltersOpenChange?.(value)
     setIsSearchVisible(true)
 
     requestAnimationFrame(() => {
@@ -775,13 +783,11 @@ export function CatalogPage() {
     >
       <div
         className={`search-bar-wrapper ${
-          isAdvancedOpen || isSearchVisible
+          isHeaderVisible
             ? 'search-visible'
             : 'search-hidden'
         }`}
       >
-        <AppHeader />
-
         <SearchBar
           query={query}
           typeValue={typeValue}

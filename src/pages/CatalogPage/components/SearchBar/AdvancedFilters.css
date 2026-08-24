@@ -1,4 +1,8 @@
 .advanced-filters {
+  width: 100vw;
+  max-width: none;
+  margin-left: calc(50% - 50vw);
+
   min-height: 100%;
   padding: 1rem;
   background: var(--paper);

@@ -1,29 +1,54 @@
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
 
   min-height: 52px;
+
   padding: 0 0 0.2rem;
+
+  background: var(--paper);
+  box-shadow: 0 0 0 100vmax var(--paper);
+  clip-path: inset(0 -100vmax);
+  transform: translateY(0);
+  transition: transform 0.2s ease;
+}
+
+.app-header.header-hidden {
+  transform: translateY(-100%);
 }
 
 .app-brand-row {
   display: flex;
   align-items: center;
+
   gap: 0.5rem;
 }
 
+/* =========================
+   MENU TOGGLE
+   ========================= */
+
 .menu-toggle {
-  border: none;
-  border-radius: 8px;
-  background: var(--surface-2);
-  color: var(--ink-strong);
   width: 2.2rem;
   height: 2.2rem;
+
   padding: 0;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  border: none;
+  border-radius: 8px;
+
+  background: var(--surface-2);
+  color: var(--ink-strong);
+
   cursor: pointer;
 }
 
@@ -32,75 +57,199 @@
   height: 18px;
 }
 
+/* =========================
+   BRAND
+   ========================= */
+
 .app-brand {
   display: flex;
   align-items: center;
 }
 
 .app-name {
+  color: var(--ink-strong);
+
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--ink-strong);
 }
+
+/* =========================
+   OVERLAY
+   ========================= */
 
 .menu-overlay {
   position: fixed;
+
   inset: 0;
-  z-index: 30;
-  background: rgb(25 31 43 / 28%);
+
+  z-index: 1000;
+
+  background: rgb(0 0 0 / 45%);
 }
+
+/* =========================
+   DRAWER
+   ========================= */
 
 .menu-drawer {
   position: absolute;
+
   top: 0;
   left: 0;
-  height: 100svh;
-  width: min(360px, 92vw);
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--surface-2) 92%, white) 0%,
-      var(--surface-2) 55%,
-      var(--surface-3) 100%
-    );
-  padding: 1.1rem;
-  display: grid;
-  align-content: start;
-  gap: 1.2rem;
-  box-shadow: 10px 0 30px rgb(0 0 0 / 16%);
+
+  display: flex;
+  flex-direction: column;
+
+  width: min(20rem, 85vw);
+  height: 100%;
+
+  box-sizing: border-box;
+
+  padding: 1.25rem;
+
+  background: var(--paper);
+  color: var(--ink-strong);
+
+  box-shadow:
+    0.5rem 0 2rem rgb(0 0 0 / 20%);
 }
+
+/* =========================
+   CLOSE
+   ========================= */
 
 .menu-close {
-  justify-self: end;
-  width: 2rem;
-  height: 2rem;
-  border: none;
+  align-self: flex-end;
+
+  width: 2.5rem;
+  height: 2.5rem;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
   border-radius: 8px;
-  background: var(--surface-3);
+
+  background: transparent;
   color: var(--ink-strong);
-  font-size: 1.2rem;
+
+  font-size: 2rem;
+  line-height: 1;
+
   cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
-.menu-copy {
-  margin: 0;
-  color: var(--ink-strong);
-  font-size: 1.05rem;
-  line-height: 1.45;
-  max-width: 22ch;
+.menu-close:hover {
+  background: var(--surface-2);
 }
+
+.menu-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* =========================
+   NAVIGATION
+   ========================= */
+
+.menu-navigation {
+  display: flex;
+  flex-direction: column;
+
+  gap: 0.35rem;
+
+  margin-top: 2rem;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+
+  min-height: 3rem;
+
+  padding: 0 1rem;
+
+  box-sizing: border-box;
+
+  border-radius: 8px;
+
+  color: var(--ink-strong);
+
+  font-size: 1rem;
+  font-weight: 500;
+
+  text-decoration: none;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.menu-item:hover {
+  background: var(--surface-2);
+}
+
+.menu-item.is-active {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.menu-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* =========================
+   FOOTER
+   ========================= */
+
+.menu-copy {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  margin: auto 0 0;
+
+  padding: 1.25rem 0.5rem 0.5rem;
+
+  border-top: 1px solid var(--border);
+
+  color: var(--ink-soft);
+
+  font-size: 0.78rem;
+  line-height: 1.5;
+
+  text-align: center;
+
+  opacity: 0.85;
+}
+
+/* =========================
+   INSTALL
+   ========================= */
 
 .install-cta {
   padding: 8px 14px;
-  border-radius: 8px;
+
   border: none;
+  border-radius: 8px;
 
   cursor: pointer;
+
   font-weight: 600;
 }
 
 .ios-hint {
   margin: 0;
+
   font-size: 0.8rem;
+
   text-align: right;
 }
