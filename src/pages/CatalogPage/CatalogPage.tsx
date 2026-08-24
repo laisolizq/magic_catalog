@@ -18,6 +18,7 @@ import {
   type CatalogUpdateStatus,
 } from '../../services/catalogUpdates'
 import { hasLocalCatalog, type CatalogImportProgress } from '../../services/catalogImport'
+import { selectLatestPrintings } from './selectLatestPrintings'
 import './CatalogPage.css'
 
 const BATCH_SIZE = 12
@@ -89,54 +90,6 @@ function compareSetOrder(left: Card, right: Card): number {
     leftSuffix.localeCompare(rightSuffix) ||
     left.id.localeCompare(right.id)
   )
-}
-
-function comparePrintingPreference(left: Card, right: Card): number {
-  const leftIsMajor = left.setType === 'core' || left.setType === 'expansion'
-  const rightIsMajor = right.setType === 'core' || right.setType === 'expansion'
-  if (leftIsMajor !== rightIsMajor) return leftIsMajor ? 1 : -1
-
-  const releaseDelta = (left.releasedAt ?? '').localeCompare(right.releasedAt ?? '')
-  if (releaseDelta !== 0) return releaseDelta
-
-  const setDelta = left.set.localeCompare(right.set)
-  if (setDelta !== 0) return setDelta
-
-  const [leftNumber, leftSuffix] = collectorSortKey(left.collectorNumber)
-  const [rightNumber, rightSuffix] = collectorSortKey(right.collectorNumber)
-  return (
-    rightNumber - leftNumber ||
-    rightSuffix.localeCompare(leftSuffix) ||
-    right.id.localeCompare(left.id)
-  )
-}
-
-function selectLatestPrintings(cards: Card[]): Card[] {
-  const latestByName = new Map<string, Card>()
-  const cardsByName = new Map<string, Card[]>()
-
-  cards.forEach((card) => {
-    const name = getFaceName(card)
-    const printings = cardsByName.get(name) ?? []
-    printings.push(card)
-    cardsByName.set(name, printings)
-  })
-
-  cardsByName.forEach((printings, name) => {
-    const majorPrintings = printings.filter(
-      (card) => card.setType === 'core' || card.setType === 'expansion',
-    )
-    const candidates = majorPrintings.length > 0 ? majorPrintings : printings
-    const preferred = candidates.slice(1).reduce<Card>((current, card) => {
-      return comparePrintingPreference(card, current) > 0
-        ? card
-        : current
-    }, candidates[0])
-
-    latestByName.set(name, preferred)
-  })
-
-  return cards.filter((card) => latestByName.get(getFaceName(card)) === card)
 }
 
 function sortCards(
