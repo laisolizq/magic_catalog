@@ -2,7 +2,7 @@ import Fuse from 'fuse.js'
 
 import { getCatalogDatabase } from '../db/sqliteClient'
 import type { Card } from '../types/card'
-import type { CatalogQuery, CatalogQueryResult } from '../types/catalog'
+import type { CatalogQuery, CatalogQueryResult, SetOption } from '../types/catalog'
 import type { ColorCountOperator, ColorFilterMode } from '../utils/scryfallQuery'
 
 let cachedDatabaseRef: object | null = null
@@ -368,4 +368,32 @@ export async function getCatalogTypes(): Promise<string[]> {
   if (!database) return []
   return (database.exec('SELECT DISTINCT type_name FROM face_types ORDER BY type_name')[0]?.values ?? [])
     .map((row) => String(row[0]))
+}
+
+// Older cached databases (generated before the sets table existed, or
+// before it had a set_type column) simply have no set names/icons/types to
+// offer - degrade gracefully rather than throwing on a missing table/column.
+function getSetsTableColumns(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): Set<string> {
+  const rows = database.exec('PRAGMA table_info(sets)')[0]?.values ?? []
+  return new Set(rows.map((row) => String(row[1])))
+}
+
+export async function getCatalogSetOptions(): Promise<SetOption[]> {
+  const database = await getCatalogDatabase()
+  if (!database) return []
+
+  const columns = getSetsTableColumns(database)
+  if (!columns.has('code') || !columns.has('name')) return []
+
+  const hasSetType = columns.has('set_type')
+  const rows = database.exec(
+    `SELECT code, name, ${hasSetType ? 'set_type' : "''"}, released_at FROM sets ORDER BY released_at DESC`,
+  )[0]?.values ?? []
+
+  return rows.map((row) => ({
+    code: String(row[0]),
+    name: String(row[1]),
+    setType: String(row[2] ?? ''),
+    releasedAt: String(row[3] ?? ''),
+  }))
 }

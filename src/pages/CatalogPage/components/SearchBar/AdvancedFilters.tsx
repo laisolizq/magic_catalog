@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import Fuse from 'fuse.js'
 import {
   type ColorFilterMode,
 } from '../../../../utils/scryfallQuery'
 import { symbolUrl } from '../../../../utils/utils.ts'
+import type { SetOption } from '../../../../types/catalog'
 import './AdvancedFilters.css'
 
 interface AdvancedFiltersProps {
@@ -12,6 +14,8 @@ interface AdvancedFiltersProps {
   typeValue: string[]
   rarityValue: string[]
   typeOptions: string[]
+  setValue: string[]
+  setOptions: SetOption[]
   showAllPrints: boolean
 
   onColorChange: (value: string[]) => void
@@ -21,6 +25,7 @@ interface AdvancedFiltersProps {
 
   onTypeChange: (value: string[]) => void
   onRarityChange: (value: string[]) => void
+  onSetsChange: (value: string[]) => void
   onShowAllPrintsChange: (value: boolean) => void
 
   onClose: () => void
@@ -61,17 +66,26 @@ const colorModes: {
   },
 ]
 
+const MAX_SET_RESULTS = 8
+
+function setIconUrl(code: string): string {
+  return `https://svgs.scryfall.io/sets/${code.toLowerCase()}.svg`
+}
+
 export function AdvancedFilters({
   colorValue,
   colorMode,
   typeValue,
   rarityValue,
   typeOptions,
+  setValue,
+  setOptions,
   showAllPrints,
   onColorChange,
   onColorModeChange,
   onTypeChange,
   onRarityChange,
+  onSetsChange,
   onShowAllPrintsChange,
   onClose,
 }: AdvancedFiltersProps) {
@@ -96,6 +110,12 @@ export function AdvancedFilters({
   const [selectedRarities, setSelectedRarities] =
     useState<string[]>(rarityValue)
 
+  const [selectedSets, setSelectedSets] =
+    useState<string[]>(setValue)
+
+  const [setSearchQuery, setSetSearchQuery] = useState('')
+  const [isSetSearchOpen, setIsSetSearchOpen] = useState(false)
+
   const [selectedShowAllPrints, setSelectedShowAllPrints] =
     useState<boolean>(showAllPrints)
 
@@ -116,6 +136,42 @@ export function AdvancedFilters({
 
     return () => observer.disconnect()
   }, [])
+
+  const setFuse = useMemo(
+    () =>
+      new Fuse(setOptions, {
+        keys: ['name', 'code'],
+        threshold: 0.35,
+        ignoreLocation: true,
+      }),
+    [setOptions],
+  )
+
+  const setSearchResults = useMemo(() => {
+    const query = setSearchQuery.trim()
+
+    const matches =
+      query.length === 0
+        ? setOptions
+            .filter(
+              (set) => set.setType === 'core' || set.setType === 'expansion',
+            )
+            .slice(0, MAX_SET_RESULTS)
+        : setFuse.search(query, { limit: MAX_SET_RESULTS }).map((result) => result.item)
+
+    return matches.filter((set) => !selectedSets.includes(set.code))
+  }, [setFuse, setOptions, setSearchQuery, selectedSets])
+
+  const handleSelectSet = (code: string) => {
+    if (!selectedSets.includes(code)) {
+      setSelectedSets([...selectedSets, code])
+    }
+    setSetSearchQuery('')
+  }
+
+  const handleRemoveSet = (code: string) => {
+    setSelectedSets(selectedSets.filter((value) => value !== code))
+  }
 
   /*
    * Toggle a value in a temporary selection.
@@ -152,6 +208,7 @@ export function AdvancedFilters({
 
     onTypeChange(selectedTypes)
     onRarityChange(selectedRarities)
+    onSetsChange(selectedSets)
     onShowAllPrintsChange(selectedShowAllPrints)
 
     onClose()
@@ -174,12 +231,15 @@ export function AdvancedFilters({
     setSelectedColorMode('exactly')
     setSelectedTypes([])
     setSelectedRarities([])
+    setSelectedSets([])
+    setSetSearchQuery('')
     setSelectedShowAllPrints(false)
 
     onColorChange([])
     onColorModeChange('exactly')
     onTypeChange([])
     onRarityChange([])
+    onSetsChange([])
     onShowAllPrintsChange(false)
 
     onClose()
@@ -213,6 +273,85 @@ export function AdvancedFilters({
         </button>
 
         <h2>Filters</h2>
+      </div>
+
+      {/* =========================
+          SETS
+          ========================= */}
+
+      <div className="advanced-filter-section">
+        <h3>Sets</h3>
+
+        {selectedSets.length > 0 && (
+          <div className="advanced-options set-chips">
+            {selectedSets.map((code) => (
+              <div
+                key={code}
+                className="set-chip"
+              >
+                {code.toUpperCase()}
+
+                <button
+                  type="button"
+                  className="set-chip-remove"
+                  aria-label={`Remove set ${code.toUpperCase()}`}
+                  onClick={() => handleRemoveSet(code)}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="set-search">
+          <input
+            type="text"
+            className="set-search-input"
+            placeholder="Search sets by name..."
+            value={setSearchQuery}
+            onChange={(event) => setSetSearchQuery(event.target.value)}
+            onFocus={() => setIsSetSearchOpen(true)}
+            onBlur={() => {
+              // Let a result's onClick fire before the list disappears.
+              window.setTimeout(() => setIsSetSearchOpen(false), 150)
+            }}
+          />
+
+          {isSetSearchOpen && (
+            <div
+              className="set-search-results"
+              role="listbox"
+              aria-label="Set search results"
+            >
+              {setSearchResults.length === 0 ? (
+                <p className="set-search-empty">No sets found.</p>
+              ) : (
+                setSearchResults.map((set) => (
+                  <button
+                    key={set.code}
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    className="set-search-result"
+                    onClick={() => handleSelectSet(set.code)}
+                  >
+                    <img
+                      className="set-search-icon"
+                      src={setIconUrl(set.code)}
+                      alt=""
+                      aria-hidden="true"
+                    />
+                    <span className="set-search-name">{set.name}</span>
+                    <span className="set-search-code">
+                      {set.code.toUpperCase()}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* =========================

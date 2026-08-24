@@ -18,7 +18,7 @@ from typing import Any
 
 USER_AGENT = "magic_catalog/1.0 (card database generator)"
 BULK_DATA_URL = "https://api.scryfall.com/bulk-data"
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 ARTIFACT_VERSION = "1"
 VALID_RARITIES = {"common", "uncommon", "rare", "mythic"}
 VALID_COLORS = {"W", "U", "B", "R", "G"}
@@ -139,6 +139,7 @@ def normalize_card(
         "id": card_id,
         "set": set_code,
         "setType": set_type,
+        "setName": data.get("set_name", ""),
         "releasedAt": data.get("released_at", ""),
         "collectorNumber": collector_number,
         "oracleId": data.get("oracle_id", ""),
@@ -216,7 +217,15 @@ def build_sqlite_database(
             published_at TEXT NOT NULL,
             comment TEXT NOT NULL
         );
+        CREATE TABLE sets (
+            code TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            set_type TEXT NOT NULL DEFAULT '',
+            released_at TEXT NOT NULL DEFAULT ''
+        );
     ''')
+
+    sets_seen: dict[str, tuple[str, str, str]] = {}
 
     with gzip.open(cards_path, 'rt', encoding='utf-8') as cards_file:
         for line in cards_file:
@@ -230,6 +239,12 @@ def build_sqlite_database(
                     card.get('oracleId'), card['rarity'],
                     json.dumps(card['faces'], ensure_ascii=True, separators=(',', ':')),
                 ),
+            )
+            # All cards in a set share the same name/type/release date, so
+            # the first one we see for a given set code is enough.
+            sets_seen.setdefault(
+                card['set'],
+                (card.get('setName', ''), card.get('setType', ''), card.get('releasedAt', '')),
             )
             for face_index, face in enumerate(card['faces']):
                 type_line = face.get('typeLine', '')
@@ -251,6 +266,12 @@ def build_sqlite_database(
                         'INSERT OR IGNORE INTO face_colors VALUES (?, ?, ?)',
                         (card['id'], face_index, color),
                     )
+
+    for set_code, (set_name, set_type, released_at) in sets_seen.items():
+        database.execute(
+            'INSERT OR IGNORE INTO sets VALUES (?, ?, ?, ?)',
+            (set_code, set_name, set_type, released_at),
+        )
 
     with gzip.open(rulings_path, 'rt', encoding='utf-8') as rulings_file:
         for line in rulings_file:
@@ -274,6 +295,7 @@ def build_sqlite_database(
         CREATE INDEX face_colors_color_idx ON face_colors(color);
         CREATE INDEX face_colors_card_idx ON face_colors(card_id);
         CREATE INDEX rulings_oracle_idx ON rulings(oracle_id, published_at);
+        CREATE INDEX sets_released_at_idx ON sets(released_at);
     ''')
     database.commit()
     database.close()

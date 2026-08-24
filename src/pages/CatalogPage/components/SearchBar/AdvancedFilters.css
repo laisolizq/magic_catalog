@@ -163,7 +163,7 @@
   align-items: center;
   gap: 0.6rem;
 
-  margin-top: 2rem;
+  margin-top: 1rem;
   padding-top: 1rem;
 
   border-top: 1px solid
@@ -248,6 +248,179 @@
 .advanced-clear:hover {
   background: var(--surface-2);
   color: var(--ink-strong);
+}
+
+/* =========================
+   SETS
+   ========================= */
+
+.set-chips {
+  margin-bottom: 0.65rem;
+}
+
+.set-chip {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 2.25rem;
+  padding: 0.45rem 0.9rem;
+
+  border: 1px solid transparent;
+  border-radius: 9px;
+
+  background: var(--surface-2);
+  color: var(--ink-strong);
+
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.set-chip-remove {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+
+  width: 1.2rem;
+  height: 1.2rem;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: var(--ink-strong);
+  color: var(--paper);
+
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+
+  transition: transform 0.12s ease;
+}
+
+.set-chip-remove:hover {
+  transform: scale(1.1);
+}
+
+.set-search {
+  position: relative;
+}
+
+.set-search-input {
+  width: 100%;
+  min-height: 2.5rem;
+
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--ink-soft) 25%,
+      transparent
+    );
+  border-radius: 9px;
+
+  padding: 0.5rem 0.75rem;
+
+  background: var(--surface-1);
+  color: var(--ink-strong);
+
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+}
+
+.set-search-input:focus {
+  outline: 2px solid var(--ink-strong);
+  outline-offset: -1px;
+}
+
+.set-search-results {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  right: 0;
+  z-index: 5;
+
+  max-height: 16rem;
+  overflow-y: auto;
+
+  display: grid;
+  gap: 0.15rem;
+
+  padding: 0.35rem;
+
+  background: var(--surface-1);
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--ink-soft) 20%,
+      transparent
+    );
+  border-radius: 9px;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 12%);
+}
+
+.set-search-empty {
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.set-search-result {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+
+  border: none;
+  border-radius: 7px;
+
+  padding: 0.45rem 0.6rem;
+
+  background: transparent;
+  color: var(--ink-strong);
+
+  text-align: left;
+  cursor: pointer;
+
+  transition: background 0.12s ease;
+}
+
+.set-search-result:hover,
+.set-search-result:focus-visible {
+  background: var(--surface-2);
+}
+
+.set-search-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.set-search-name {
+  flex: 1;
+
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-search-code {
+  flex-shrink: 0;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
 
 /* =========================

@@ -1,7 +1,7 @@
 import type { Card, CardColor } from './card'
 import type { ColorCountFilter, ColorFilterMode } from '../utils/scryfallQuery'
 
-export const CATALOG_SCHEMA_VERSION = 4
+export const CATALOG_SCHEMA_VERSION = 5
 export const CATALOG_METADATA_ID = 'catalog'
 
 export interface StoredCard extends Card {
@@ -64,6 +64,13 @@ export interface CatalogQuery {
   colors: string[]
   colorMode: ColorFilterMode
   colorCount?: ColorCountFilter | null
+}
+
+export interface SetOption {
+  code: string
+  name: string
+  releasedAt: string
+  setType: string
 }
 
 export interface CatalogQueryResult {

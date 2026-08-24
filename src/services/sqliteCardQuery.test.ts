@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearCatalogDatabase } from '../db/sqliteClient'
 import { seedCatalogFixture } from '../test/catalogFixture'
-import { queryCards } from './sqliteCardQuery'
+import { queryCards, getCatalogSetOptions } from './sqliteCardQuery'
 
 beforeEach(() => seedCatalogFixture())
 afterEach(() => clearCatalogDatabase())
@@ -264,5 +264,22 @@ describe('queryCards with SQLite', () => {
         card.faces.some((face) => face.colors.length < 2),
       ),
     ).toBe(true)
+  })
+})
+
+describe('getCatalogSetOptions', () => {
+  it('returns known sets with names and types, sorted by release date descending', async () => {
+    const options = await getCatalogSetOptions()
+
+    expect(options.length).toBeGreaterThan(0)
+    expect(options.map((option) => option.code)).toContain('hob')
+
+    const hob = options.find((option) => option.code === 'hob')
+    expect(hob?.name).toBe('The Hobbit')
+    expect(hob?.setType).toBe('expansion')
+
+    const releaseDates = options.map((option) => option.releasedAt)
+    const sortedDescending = [...releaseDates].sort().reverse()
+    expect(releaseDates).toEqual(sortedDescending)
   })
 })

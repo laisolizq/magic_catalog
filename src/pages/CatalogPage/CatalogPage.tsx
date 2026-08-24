@@ -6,12 +6,13 @@ import { CardModal } from './components/CardModal/CardModal'
 import { BasicCatalogChrome } from './components/CatalogChrome/BasicCatalogChrome'
 import { AdvancedCatalogChrome } from './components/CatalogChrome/AdvancedCatalogChrome'
 import type { Card } from '../../types/card'
+import type { SetOption } from '../../types/catalog'
 import {
   buildScryfallQuery,
   parseScryfallQuery,
   type ColorFilterMode,
 } from '../../utils/scryfallQuery'
-import { queryCards, getCatalogTypes } from '../../services/sqliteCardQuery'
+import { queryCards, getCatalogTypes, getCatalogSetOptions } from '../../services/sqliteCardQuery'
 import {
   bootstrapCatalogFromEmbeddedAssets,
   updateCatalogFromLatestRelease,
@@ -210,6 +211,7 @@ export function CatalogPage() {
 
   const [displayCards, setDisplayCards] = useState<Card[]>([])
   const [typeOptions, setTypeOptions] = useState<string[]>([])
+  const [setOptions, setSetOptions] = useState<SetOption[]>([])
   const [isCatalogLoading, setIsCatalogLoading] = useState(true)
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [isCatalogReady, setIsCatalogReady] = useState(false)
@@ -352,6 +354,23 @@ export function CatalogPage() {
       )
     }).catch((error) => {
       console.error('[catalog] filter options failed', error)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isCatalogReady])
+
+  useEffect(() => {
+    if (!isCatalogReady) return
+
+    let cancelled = false
+
+    getCatalogSetOptions().then((options) => {
+      if (cancelled) return
+      setSetOptions(options)
+    }).catch((error) => {
+      console.error('[catalog] set options failed', error)
     })
 
     return () => {
@@ -675,6 +694,8 @@ export function CatalogPage() {
           colorMode={colorMode}
           sortOption={sortOption}
           typeOptions={typeOptions}
+          setValue={setValue}
+          setOptions={setOptions}
           isAdvancedOpen={isAdvancedOpen}
           expandAllCards={expandAllCards}
           showAllPrints={showAllPrints}
@@ -700,6 +721,9 @@ export function CatalogPage() {
             updateQueryFilters({ colors: value })
           }
           onColorModeChange={handleColorModeChange}
+          onSetsChange={(value) =>
+            updateQueryFilters({ sets: value })
+          }
           onShowAllPrintsChange={(value) =>
             handleFilterChange(() =>
               setShowAllPrints(value),

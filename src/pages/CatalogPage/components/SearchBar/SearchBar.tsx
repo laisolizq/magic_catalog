@@ -10,6 +10,7 @@ import {
   type ColorFilterMode,
 } from '../../../../utils/scryfallQuery'
 import { symbolUrl } from '../../../../utils/utils.ts'
+import type { SetOption } from '../../../../types/catalog'
 
 type SortOption =
   | 'set-asc'
@@ -223,6 +224,8 @@ interface SearchBarProps {
   colorMode: ColorFilterMode
   sortOption: SortOption
   typeOptions: string[]
+  setValue: string[]
+  setOptions: SetOption[]
   isAdvancedOpen: boolean
   expandAllCards: boolean
   showAllPrints: boolean
@@ -236,6 +239,7 @@ interface SearchBarProps {
   onRarityChange: (value: string[]) => void
   onColorChange: (value: string[]) => void
   onColorModeChange: (value: ColorFilterMode) => void
+  onSetsChange: (value: string[]) => void
   onShowAllPrintsChange: (value: boolean) => void
 }
 
@@ -247,6 +251,8 @@ export function SearchBar({
   colorMode,
   sortOption,
   typeOptions,
+  setValue,
+  setOptions,
   isAdvancedOpen,
   expandAllCards,
   showAllPrints,
@@ -258,6 +264,7 @@ export function SearchBar({
   onRarityChange,
   onColorChange,
   onColorModeChange,
+  onSetsChange,
   onShowAllPrintsChange,
 }: SearchBarProps) {
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null)
@@ -465,6 +472,8 @@ export function SearchBar({
         typeValue={typeValue}
         rarityValue={rarityValue}
         typeOptions={typeOptions}
+        setValue={setValue}
+        setOptions={setOptions}
         showAllPrints={showAllPrints}
         onColorChange={onColorChange}
         onColorModeChange={
@@ -472,6 +481,7 @@ export function SearchBar({
         }
         onTypeChange={onTypeChange}
         onRarityChange={onRarityChange}
+        onSetsChange={onSetsChange}
         onShowAllPrintsChange={onShowAllPrintsChange}
         onClose={() => onAdvancedOpenChange(false)}
       />
