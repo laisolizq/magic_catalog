@@ -1,0 +1,42 @@
+.catalog-chrome {
+  background: var(--paper);
+}
+
+.catalog-basic-chrome {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  transform: translateY(0);
+  transition: transform 0.2s ease;
+  will-change: transform;
+
+  box-shadow: 0 0 0 100vmax var(--paper);
+  clip-path: inset(0 -100vmax);
+}
+
+.catalog-basic-chrome.catalog-chrome-hidden {
+  transform: translateY(-100%);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.catalog-basic-chrome .app-header,
+.catalog-basic-chrome .search-bar-wrapper,
+.catalog-advanced-chrome .app-header,
+.catalog-advanced-chrome .search-bar-wrapper {
+  position: static;
+  transform: none;
+  transition: none;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.catalog-advanced-chrome {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  box-shadow: 0 0 0 100vmax var(--paper);
+  clip-path: inset(0 -100vmax);
+}

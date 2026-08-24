@@ -13,9 +13,11 @@ function App() {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true)
   const [areAdvancedFiltersOpen, setAreAdvancedFiltersOpen] = useState(false)
   const lastScrollY = useRef(0)
+  const scrollDistance = useRef(0)
 
   useEffect(() => {
     lastScrollY.current = window.scrollY
+    scrollDistance.current = 0
     const resetVisibilityFrame = window.requestAnimationFrame(() => {
       setIsHeaderVisible(true)
     })
@@ -28,10 +30,24 @@ function App() {
       const currentScrollY = window.scrollY
       const delta = currentScrollY - lastScrollY.current
 
-      if (currentScrollY <= 0 || delta < -SCROLL_SENSITIVITY) {
+      if (currentScrollY <= 0) {
         setIsHeaderVisible(true)
-      } else if (delta > SCROLL_SENSITIVITY) {
-        setIsHeaderVisible(false)
+        scrollDistance.current = 0
+      } else if (delta !== 0) {
+        const isChangingDirection =
+          Math.sign(delta) !== Math.sign(scrollDistance.current)
+
+        scrollDistance.current = isChangingDirection
+          ? delta
+          : scrollDistance.current + delta
+
+        if (scrollDistance.current <= -SCROLL_SENSITIVITY) {
+          setIsHeaderVisible(true)
+          scrollDistance.current = 0
+        } else if (scrollDistance.current >= SCROLL_SENSITIVITY) {
+          setIsHeaderVisible(false)
+          scrollDistance.current = 0
+        }
       }
 
       lastScrollY.current = currentScrollY
@@ -48,7 +64,7 @@ function App() {
   return (
     <div className="app-shell">
       <main className="app-main">
-        <AppHeader isVisible={isHeaderVisible || !isCatalogPage} />
+        {!isCatalogPage && <AppHeader isVisible />}
 
         <Routes>
           <Route
@@ -56,7 +72,10 @@ function App() {
             element={
               <CatalogPage
                 isHeaderVisible={isHeaderVisible}
-                onAdvancedFiltersOpenChange={setAreAdvancedFiltersOpen}
+                onAdvancedFiltersOpenChange={(value) => {
+                  setAreAdvancedFiltersOpen(value)
+                  if (value) setIsHeaderVisible(true)
+                }}
               />
             }
           />

@@ -28,9 +28,7 @@
 
   cursor: pointer;
 
-  transition:
-    transform 120ms ease,
-    box-shadow 120ms ease;
+  transition: box-shadow 120ms ease;
 
   width: min(100%, 620px);
   max-width: 100%;

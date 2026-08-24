@@ -14,6 +14,7 @@
 
   transform: translateY(0);
   transition: transform 0.2s ease;
+  will-change: transform;
 
   /*
    * Important:
@@ -30,9 +31,17 @@
 }
 
 .search-bar-wrapper.search-hidden {
-  transform: translateY(-100%);
+  transform: translateY(calc(-100% - 52px));
   visibility: hidden;
   pointer-events: none;
+}
+
+.search-bar-wrapper.advanced-filters-wrapper {
+  position: static;
+  transform: none;
+  transition: none;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .catalog-hero {
