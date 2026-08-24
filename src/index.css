@@ -27,6 +27,13 @@
 body {
   margin: 0;
   overflow-x: hidden;
+  /*
+   * The catalog chrome animates its own height to hide/reveal itself on
+   * scroll; browser scroll anchoring would otherwise "correct" scrollY to
+   * compensate for that layout shift, fighting our own scroll handler and
+   * causing the header to bounce open/closed.
+   */
+  overflow-anchor: none;
 }
 
 button,

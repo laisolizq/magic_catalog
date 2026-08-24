@@ -4,17 +4,10 @@
 }
 
 .search-bar-wrapper {
-  position: sticky;
-  top: 52px;
-  z-index: 10;
   display: grid;
   gap: 0;
 
   margin-top: -0.35rem;
-
-  transform: translateY(0);
-  transition: transform 0.2s ease;
-  will-change: transform;
 
   /*
    * Important:
@@ -22,26 +15,6 @@
    * cards don't appear through it while scrolling.
    */
   background: var(--paper);
-  box-shadow: 0 0 0 100vmax var(--paper);
-  clip-path: inset(0 -100vmax);
-}
-
-.search-bar-wrapper.search-visible {
-  transform: translateY(0);
-}
-
-.search-bar-wrapper.search-hidden {
-  transform: translateY(calc(-100% - 52px));
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.search-bar-wrapper.advanced-filters-wrapper {
-  position: static;
-  transform: none;
-  transition: none;
-  visibility: visible;
-  pointer-events: auto;
 }
 
 .catalog-hero {

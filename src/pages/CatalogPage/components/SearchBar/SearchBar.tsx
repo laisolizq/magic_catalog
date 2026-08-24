@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { AdvancedFilters } from './AdvancedFilters'
 import { FilterSheet } from './FilterSheet'
@@ -205,8 +206,13 @@ export function SearchBar({
   const [isTypeOpen, setIsTypeOpen] = useState(false)
   const [isRarityOpen, setIsRarityOpen] = useState(false)
   const [searchValue, setSearchValue] = useState(query)
+  const [sortMenuPosition, setSortMenuPosition] = useState<{
+    top: number
+    right: number
+  } | null>(null)
 
   const sortControlRef = useRef<HTMLDivElement>(null)
+  const sortMenuRef = useRef<HTMLDivElement>(null)
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isEditingSearchRef = useRef(false)
 
@@ -232,15 +238,37 @@ export function SearchBar({
   useEffect(() => {
     if (!isSortOpen) return
 
+    const anchor = sortControlRef.current
+    if (anchor) {
+      const rect = anchor.getBoundingClientRect()
+      setSortMenuPosition({
+        top: rect.bottom + 5,
+        right: window.innerWidth - rect.right,
+      })
+    }
+
     const handlePointerDown = (event: PointerEvent) => {
-      if (!sortControlRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node
+      if (
+        !sortControlRef.current?.contains(target) &&
+        !sortMenuRef.current?.contains(target)
+      ) {
         setIsSortOpen(false)
       }
     }
 
+    // The menu is portaled and its position is a one-time snapshot, so close
+    // it rather than let it drift out of sync while the page scrolls/resizes.
+    const closeMenu = () => setIsSortOpen(false)
+
     document.addEventListener('pointerdown', handlePointerDown)
-    return () =>
+    window.addEventListener('scroll', closeMenu, true)
+    window.addEventListener('resize', closeMenu)
+    return () => {
       document.removeEventListener('pointerdown', handlePointerDown)
+      window.removeEventListener('scroll', closeMenu, true)
+      window.removeEventListener('resize', closeMenu)
+    }
   }, [isSortOpen])
 
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -524,12 +552,22 @@ export function SearchBar({
             </svg>
           </button>
 
-          {isSortOpen && (
-            <div
-              className="sort-menu"
-              role="menu"
-              aria-label="Sort options"
-            >
+          {isSortOpen &&
+            sortMenuPosition &&
+            // Rendered in a portal so the menu isn't clipped/repositioned by
+            // the chrome's translateY transform and overflow: hidden (used
+            // for the header hide/reveal-on-scroll animation).
+            createPortal(
+              <div
+                ref={sortMenuRef}
+                className="sort-menu"
+                role="menu"
+                aria-label="Sort options"
+                style={{
+                  top: sortMenuPosition.top,
+                  right: sortMenuPosition.right,
+                }}
+              >
               {SORT_CATEGORIES.map(({ value, label }) => {
                 const [activeCategory, activeDirection] =
                   sortOption.split('-') as [SortCategory, 'asc' | 'desc']
@@ -568,8 +606,9 @@ export function SearchBar({
                     </button>
                   )
               })}
-            </div>
-          )}
+              </div>,
+              document.body,
+            )}
         </div>
       </div>
 

@@ -93,8 +93,6 @@ flowchart LR
   (`scryfallQuery.ts`), color-matching rules (`cardColors.ts`), symbol/type
   filter helpers (`cardFilters.ts`, `utils.ts`).
 - [src/types/](../src/types) — shared `Card`/`Catalog*` type definitions.
-- [src/config/ui.ts](../src/config/ui.ts) — small tunable UI constants (e.g.
-  scroll sensitivity for the search bar's show/hide behavior).
 
 ## Testing
 

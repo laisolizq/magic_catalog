@@ -40,11 +40,6 @@ type SortOption =
   | 'cmc-asc'
   | 'cmc-desc'
 
-interface CatalogPageProps {
-  isHeaderVisible?: boolean
-  onAdvancedFiltersOpenChange?: (value: boolean) => void
-}
-
 function getFaceName(card: Card): string {
   return card.faces[0]?.name ?? ''
 }
@@ -200,10 +195,7 @@ function sortCards(
   return sorted
 }
 
-export function CatalogPage({
-  isHeaderVisible = true,
-  onAdvancedFiltersOpenChange,
-}: CatalogPageProps) {
+export function CatalogPage() {
   /*
    * The query is the single source of truth for:
    *
@@ -705,7 +697,6 @@ export function CatalogPage({
     ignoreScrollRef.current = true
 
     setIsAdvancedOpen(value)
-    onAdvancedFiltersOpenChange?.(value)
 
     requestAnimationFrame(() => {
       window.scrollTo({
@@ -773,7 +764,7 @@ export function CatalogPage({
           </div>
         </AdvancedCatalogChrome>
       ) : (
-        <BasicCatalogChrome isVisible={isHeaderVisible}>
+        <BasicCatalogChrome>
           <div className="search-bar-wrapper">
             {catalogSearchBar}
           </div>

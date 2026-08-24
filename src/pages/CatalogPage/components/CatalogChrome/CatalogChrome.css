@@ -1,5 +1,19 @@
 .catalog-chrome {
   background: var(--paper);
+
+  /*
+   * Cancel out .app-shell's top padding so the chrome always sits flush
+   * against the viewport top, matching where it sticks once scrolled -
+   * otherwise the app menu/search bar would jump down by that padding
+   * the moment the page is scrolled at all.
+   */
+  margin-top: -1rem;
+}
+
+@media (max-width: 640px) {
+  .catalog-chrome {
+    margin-top: -0.65rem;
+  }
 }
 
 .catalog-basic-chrome {
@@ -7,18 +21,15 @@
   top: 0;
   z-index: 20;
 
-  transform: translateY(0);
-  transition: transform 0.2s ease;
-  will-change: transform;
+  overflow: hidden;
+  will-change: height;
 
   box-shadow: 0 0 0 100vmax var(--paper);
   clip-path: inset(0 -100vmax);
 }
 
-.catalog-basic-chrome.catalog-chrome-hidden {
-  transform: translateY(-100%);
-  visibility: hidden;
-  pointer-events: none;
+.catalog-chrome-inner {
+  will-change: transform;
 }
 
 .catalog-basic-chrome .app-header,

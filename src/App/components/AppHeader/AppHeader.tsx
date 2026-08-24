@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { InstallPopup } from '../InstallPopup/InstallPopup'
 import './AppHeader.css'
@@ -46,7 +47,11 @@ export function AppHeader({ isVisible = true }: AppHeaderProps) {
         <InstallPopup />
       </header>
 
-      {isMenuOpen && (
+      {isMenuOpen &&
+        // Rendered in a portal so the overlay isn't clipped/repositioned by
+        // the chrome's translateY transform (which creates its own
+        // containing block for fixed-position descendants).
+        createPortal(
         <div
           className="menu-overlay"
           onClick={closeMenu}
@@ -96,7 +101,8 @@ export function AppHeader({ isVisible = true }: AppHeaderProps) {
               Made with love by Red &amp; Lua
             </p>
           </aside>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )
