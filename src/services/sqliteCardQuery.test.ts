@@ -101,4 +101,168 @@ describe('queryCards with SQLite', () => {
       result.cards.every((card) => card.faces.every((face) => !face.colors.includes('B'))),
     ).toBe(true)
   })
+
+  it('colorMode "moreThan" matches proper supersets (like Scryfall\'s c>ug)', async () => {
+    const result = await queryCards({
+      text: '',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: ['U', 'G'],
+      colorMode: 'moreThan',
+    })
+
+    expect(result.cards.length).toBeGreaterThan(0)
+    expect(
+      result.cards.every((card) =>
+        card.faces.some((face) =>
+          face.colors.includes('U') &&
+          face.colors.includes('G') &&
+          face.colors.length > 2,
+        ),
+      ),
+    ).toBe(true)
+    // Exactly UG (not a proper superset) must be excluded.
+    expect(
+      result.cards.every((card) =>
+        !card.faces.some((face) =>
+          face.colors.length === 2 &&
+          face.colors.includes('U') &&
+          face.colors.includes('G'),
+        ),
+      ),
+    ).toBe(true)
+  })
+
+  it('colorMode "lessThan" matches proper subsets, including colorless cards (like Scryfall\'s c<ug)', async () => {
+    const result = await queryCards({
+      text: '',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: ['U', 'G'],
+      colorMode: 'lessThan',
+    })
+
+    expect(result.cards.length).toBeGreaterThan(0)
+    expect(
+      result.cards.every((card) =>
+        card.faces.some((face) =>
+          face.colors.length < 2 &&
+          face.colors.every((color) => ['U', 'G'].includes(color)),
+        ),
+      ),
+    ).toBe(true)
+    // Colorless cards are a proper subset of every non-empty color set.
+    expect(
+      result.cards.some((card) => card.faces.some((face) => face.colors.length === 0)),
+    ).toBe(true)
+    // Exactly UG must be excluded.
+    expect(
+      result.cards.every((card) =>
+        !card.faces.some((face) =>
+          face.colors.length === 2 &&
+          face.colors.includes('U') &&
+          face.colors.includes('G'),
+        ),
+      ),
+    ).toBe(true)
+  })
+
+  it('colorMode "not" matches cards whose colors aren\'t exactly the selection', async () => {
+    const result = await queryCards({
+      text: '',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: ['U', 'G'],
+      colorMode: 'not',
+    })
+
+    const isExactlyUG = (colors: string[]) =>
+      colors.length === 2 && colors.includes('U') && colors.includes('G')
+
+    expect(result.cards.length).toBeGreaterThan(0)
+    expect(
+      result.cards.every((card) =>
+        card.faces.some((face) => !isExactlyUG(face.colors)),
+      ),
+    ).toBe(true)
+  })
+
+  it('colorCount ">=" matches cards with at least that many colors', async () => {
+    const result = await queryCards({
+      text: '',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+      colorCount: { operator: '>=', value: 2 },
+    })
+
+    expect(result.cards.length).toBeGreaterThan(0)
+    expect(
+      result.cards.every((card) =>
+        card.faces.some((face) => face.colors.length >= 2),
+      ),
+    ).toBe(true)
+  })
+
+  it('colorCount "=" with 0 matches colorless cards', async () => {
+    const result = await queryCards({
+      text: '',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+      colorCount: { operator: '=', value: 0 },
+    })
+
+    expect(result.cards.length).toBeGreaterThan(0)
+    expect(
+      result.cards.every((card) =>
+        card.faces.some((face) => face.colors.length === 0),
+      ),
+    ).toBe(true)
+  })
+
+  it('colorCount "!=" includes colorless cards as a non-match for any positive count', async () => {
+    const result = await queryCards({
+      text: '',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+      colorCount: { operator: '!=', value: 1 },
+    })
+
+    // Colorless (0 colors) and multicolor (2+ colors) faces both satisfy "!= 1".
+    expect(
+      result.cards.every((card) =>
+        card.faces.some((face) => face.colors.length !== 1),
+      ),
+    ).toBe(true)
+  })
+
+  it('colorCount "<" includes colorless cards, since 0 is less than any positive count', async () => {
+    const result = await queryCards({
+      text: '',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+      colorCount: { operator: '<', value: 2 },
+    })
+
+    expect(result.cards.length).toBeGreaterThan(0)
+    expect(
+      result.cards.every((card) =>
+        card.faces.some((face) => face.colors.length < 2),
+      ),
+    ).toBe(true)
+  })
 })

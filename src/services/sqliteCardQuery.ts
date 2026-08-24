@@ -3,7 +3,7 @@ import Fuse from 'fuse.js'
 import { getCatalogDatabase } from '../db/sqliteClient'
 import type { Card } from '../types/card'
 import type { CatalogQuery, CatalogQueryResult } from '../types/catalog'
-import type { ColorFilterMode } from '../utils/scryfallQuery'
+import type { ColorCountOperator, ColorFilterMode } from '../utils/scryfallQuery'
 
 let cachedDatabaseRef: object | null = null
 let cachedAllCards: Card[] | null = null
@@ -82,29 +82,86 @@ function buildColorCondition(colors: string[], colorMode: ColorFilterMode): SqlC
   if (selectedWubrg.length > 0) {
     const placeholders = selectedWubrg.map(() => '?').join(', ')
     const matchCount = `SUM(CASE WHEN color IN (${placeholders}) THEN 1 ELSE 0 END)`
+    const selectedCount = selectedWubrg.length
 
     // exactly: face colors === selected. including: face colors ⊇ selected.
-    // atMost: face colors ⊆ selected (colorless faces are a subset of anything,
-    // so they're matched separately below since they have no face_colors rows).
+    // atMost: face colors ⊆ selected. moreThan/lessThan are the strict
+    // (proper superset/subset) versions of including/atMost. not: face
+    // colors !== selected. Colorless faces (0 colors) are a subset of
+    // anything, so they're matched separately below since they have no
+    // face_colors rows.
     const havingClause =
       colorMode === 'including'
-        ? `${matchCount} = ${selectedWubrg.length}`
+        ? `${matchCount} = ${selectedCount}`
         : colorMode === 'atMost'
           ? `COUNT(*) = ${matchCount}`
-          : `COUNT(*) = ${selectedWubrg.length} AND ${matchCount} = ${selectedWubrg.length}`
+          : colorMode === 'moreThan'
+            ? `${matchCount} = ${selectedCount} AND COUNT(*) > ${selectedCount}`
+            : colorMode === 'lessThan'
+              ? `COUNT(*) = ${matchCount} AND COUNT(*) < ${selectedCount}`
+              : colorMode === 'not'
+                ? `NOT (COUNT(*) = ${selectedCount} AND ${matchCount} = ${selectedCount})`
+                : `COUNT(*) = ${selectedCount} AND ${matchCount} = ${selectedCount}`
 
     fragments.push(
       `EXISTS (SELECT 1 FROM face_colors WHERE card_id = cards.id GROUP BY face_index HAVING ${havingClause})`,
     )
     params.push(...selectedWubrg)
 
-    if (colorMode === 'atMost' && !colors.includes('C')) {
+    // A colorless face is a subset of every color set, so it also satisfies
+    // atMost/lessThan (0 colors), and it's never equal to a non-empty
+    // selected set, so it also satisfies "not".
+    const alsoMatchesColorless =
+      colorMode === 'atMost' || colorMode === 'lessThan' || colorMode === 'not'
+
+    if (alsoMatchesColorless && !colors.includes('C')) {
       fragments.push(COLORLESS_FACE_FRAGMENT)
     }
   }
 
   if (fragments.length === 0) return null
   return { sql: `(${fragments.join(' OR ')})`, params }
+}
+
+// A face's color count is its face_colors row count (0 for colorless faces,
+// which never appear as a GROUP BY group - see COLORLESS_FACE_FRAGMENT).
+// Matches the "any face matches" semantics used by buildColorCondition.
+function buildColorCountCondition(operator: ColorCountOperator, value: number): SqlCondition {
+  if (!Number.isInteger(value) || value < 0) {
+    return { sql: '0', params: [] }
+  }
+
+  if (value === 0) {
+    switch (operator) {
+      case '=':
+      case '<=':
+        return { sql: `(${COLORLESS_FACE_FRAGMENT})`, params: [] }
+      case '!=':
+      case '>':
+        return {
+          sql: 'EXISTS (SELECT 1 FROM face_colors WHERE card_id = cards.id)',
+          params: [],
+        }
+      case '>=':
+        return { sql: '1', params: [] }
+      case '<':
+        return { sql: '0', params: [] }
+    }
+  }
+
+  // value >= 1: a colorless face (count 0) also satisfies !=, < and <=.
+  const coloredFaceMatch =
+    `EXISTS (SELECT 1 FROM face_colors WHERE card_id = cards.id GROUP BY face_index HAVING COUNT(*) ${operator} ${value})`
+
+  const alsoMatchesColorless =
+    operator === '!=' || operator === '<' || operator === '<='
+
+  return {
+    sql: alsoMatchesColorless
+      ? `(${coloredFaceMatch} OR ${COLORLESS_FACE_FRAGMENT})`
+      : coloredFaceMatch,
+    params: [],
+  }
 }
 
 function resetCacheIfDatabaseChanged(database: object): void {
@@ -217,10 +274,11 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   const hasRarityFilter = hasFilterValues(query.rarities)
   const hasTypeFilter = hasFilterValues(query.types)
   const hasColorFilter = hasFilterValues(query.colors)
+  const hasColorCountFilter = query.colorCount != null
   const text = query.text.trim()
   const hasText = text.length > 0
 
-  if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter) {
+  if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter && !hasColorCountFilter) {
     const cards = await getAllCards(database)
     const fuse = getAllCardsFuse(cards)
     if (!hasText) return { cards, total: cards.length }
@@ -237,6 +295,7 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
     types: query.types,
     colors: query.colors,
     colorMode: query.colorMode,
+    colorCount: query.colorCount,
   })
   let cards = cachedFilterResults.get(filterKey)
 
@@ -268,6 +327,15 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
       conditions.push(colorCondition.sql)
       parameters.push(...colorCondition.params)
     }
+  }
+
+  if (query.colorCount) {
+    const colorCountCondition = buildColorCountCondition(
+      query.colorCount.operator,
+      query.colorCount.value,
+    )
+    conditions.push(colorCountCondition.sql)
+    parameters.push(...colorCountCondition.params)
   }
 
   const result = database.exec(

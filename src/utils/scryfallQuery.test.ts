@@ -8,6 +8,7 @@ describe('parseScryfallQuery', () => {
       text: '',
       colors: [],
       colorMode: 'exactly',
+      colorCount: null,
       types: [],
       rarities: [],
       sets: [],
@@ -19,6 +20,7 @@ describe('parseScryfallQuery', () => {
       text: 'dragon whelp',
       colors: [],
       colorMode: 'exactly',
+      colorCount: null,
       types: [],
       rarities: [],
       sets: [],
@@ -35,6 +37,66 @@ describe('parseScryfallQuery', () => {
     expect(parseScryfallQuery('c=c').colors).toEqual(['C'])
     expect(parseScryfallQuery('c>1').colors).toEqual(['M'])
     expect(parseScryfallQuery('color>1').colors).toEqual(['M'])
+  })
+
+  it('parses colorless/multicolor words directly', () => {
+    expect(parseScryfallQuery('c=multicolor').colors).toEqual(['M'])
+    expect(parseScryfallQuery('c=m').colors).toEqual(['M'])
+  })
+
+  it('parses comparison operators against a range of colors', () => {
+    expect(parseScryfallQuery('c>ug')).toMatchObject({
+      colors: ['U', 'G'],
+      colorMode: 'moreThan',
+    })
+    expect(parseScryfallQuery('c<ug')).toMatchObject({
+      colors: ['U', 'G'],
+      colorMode: 'lessThan',
+    })
+    expect(parseScryfallQuery('c!=ug')).toMatchObject({
+      colors: ['U', 'G'],
+      colorMode: 'not',
+    })
+  })
+
+  it('builds and round-trips comparison operators against a range of colors', () => {
+    for (const colorMode of ['moreThan', 'lessThan', 'not'] as const) {
+      const built = buildScryfallQuery({
+        text: '',
+        colors: ['U', 'G'],
+        colorMode,
+        types: [],
+        rarities: [],
+        sets: [],
+      })
+      expect(parseScryfallQuery(built).colorMode).toBe(colorMode)
+      expect(parseScryfallQuery(built).colors).toEqual(['U', 'G'])
+    }
+  })
+
+  it('parses color count comparisons', () => {
+    expect(parseScryfallQuery('c>=2').colorCount).toEqual({
+      operator: '>=',
+      value: 2,
+    })
+    expect(parseScryfallQuery('c<3').colorCount).toEqual({
+      operator: '<',
+      value: 3,
+    })
+    expect(parseScryfallQuery('c!=1').colorCount).toEqual({
+      operator: '!=',
+      value: 1,
+    })
+    expect(parseScryfallQuery('c=0').colorCount).toEqual({
+      operator: '=',
+      value: 0,
+    })
+  })
+
+  it('still treats c>1 as the Multicolor chip rather than a color count', () => {
+    const parsed = parseScryfallQuery('c>1')
+    expect(parsed.colors).toEqual(['M'])
+    expect(parsed.colorCount).toBeNull()
   })
 
   it('accumulates multiple t: clauses into an array', () => {
@@ -70,6 +132,7 @@ describe('parseScryfallQuery', () => {
       text: 'dragon',
       colors: ['W', 'U'],
       colorMode: 'exactly',
+      colorCount: null,
       types: ['Creature'],
       rarities: ['rare'],
       sets: ['tla'],
@@ -83,6 +146,7 @@ describe('buildScryfallQuery', () => {
       text: 'dragon',
       colors: ['W', 'U', 'C'],
       colorMode: 'exactly' as const,
+      colorCount: null,
       types: ['Creature', 'Instant'],
       rarities: ['rare', 'mythic'],
       sets: ['tla', 'hob'],
@@ -102,6 +166,23 @@ describe('buildScryfallQuery', () => {
       rarities: [],
       sets: [],
     })).toBe('c>1')
+  })
+
+  it('builds and round-trips color count comparisons', () => {
+    const built = buildScryfallQuery({
+      text: '',
+      colors: [],
+      types: [],
+      rarities: [],
+      sets: [],
+      colorCount: { operator: '>=', value: 2 },
+    })
+
+    expect(built).toBe('c>=2')
+    expect(parseScryfallQuery(built).colorCount).toEqual({
+      operator: '>=',
+      value: 2,
+    })
   })
 
   it('builds rarities using Scryfall abbreviations', () => {

@@ -361,6 +361,7 @@ export function CatalogPage() {
           rarities: rarityValue,
           colors: colorValue,
           colorMode,
+          colorCount: parsedQuery.colorCount,
         })
         console.log(`[catalog] card query completed in ${(performance.now() - queryStartedAt).toFixed(0)}ms`)
 
@@ -637,6 +638,7 @@ export function CatalogPage() {
           colors: prevParsed.colors,
           colorMode:
             prevParsed.colorMode,
+          colorCount: prevParsed.colorCount,
           types: prevParsed.types,
           rarities: prevParsed.rarities,
           sets: prevParsed.sets,
@@ -674,6 +676,7 @@ export function CatalogPage() {
           text: parsed.text,
           colors: parsed.colors,
           colorMode: value,
+          colorCount: parsed.colorCount,
           types: parsed.types,
           rarities: parsed.rarities,
           sets: parsed.sets,
