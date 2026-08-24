@@ -105,7 +105,7 @@
 
 .keywords-search {
   position: sticky;
-  top: 0;
+  top: 52px;
 
   z-index: 10;
 

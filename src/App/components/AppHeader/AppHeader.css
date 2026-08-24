@@ -1,4 +1,8 @@
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -6,6 +10,16 @@
   min-height: 52px;
 
   padding: 0 0 0.2rem;
+
+  background: var(--paper);
+  box-shadow: 0 0 0 100vmax var(--paper);
+  clip-path: inset(0 -100vmax);
+  transform: translateY(0);
+  transition: transform 0.2s ease;
+}
+
+.app-header.header-hidden {
+  transform: translateY(-100%);
 }
 
 .app-brand-row {

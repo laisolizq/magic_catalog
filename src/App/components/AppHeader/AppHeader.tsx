@@ -4,7 +4,11 @@ import { useState } from 'react'
 import { InstallPopup } from '../InstallPopup/InstallPopup'
 import './AppHeader.css'
 
-export function AppHeader() {
+interface AppHeaderProps {
+  isVisible?: boolean
+}
+
+export function AppHeader({ isVisible = true }: AppHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const closeMenu = () => {
@@ -13,7 +17,7 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="app-header">
+      <header className={`app-header ${isVisible ? 'header-visible' : 'header-hidden'}`}>
         <div className="app-brand-row">
           <button
             type="button"
