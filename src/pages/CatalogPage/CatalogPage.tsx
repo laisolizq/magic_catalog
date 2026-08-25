@@ -177,7 +177,12 @@ export function CatalogPage() {
   )
 
   const setValue = parsedQuery.sets
-  const typeValue = parsedQuery.types
+  // typeOptions/selectedValues comparisons elsewhere are lowercase, but
+  // parseScryfallQuery capitalizes types for display purposes.
+  const typeValue = useMemo(
+    () => parsedQuery.types.map((type) => type.toLowerCase()),
+    [parsedQuery.types],
+  )
   const rarityValue =
     parsedQuery.rarities
   const colorValue = parsedQuery.colors
