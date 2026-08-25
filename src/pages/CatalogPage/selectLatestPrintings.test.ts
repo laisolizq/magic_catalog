@@ -104,4 +104,29 @@ describe('selectLatestPrintings', () => {
 
     expect(result).toEqual([modernHorizons3])
   })
+
+  it('prefers the original collector number over a same-set later-dated reprint (e.g. LTR Holiday release)', () => {
+    // LTR's Holiday release reuses the 'ltr' set code for reprints of cards
+    // that already exist in the June 2023 printing, just with a later
+    // releasedAt and a much higher collector number. The original numbering
+    // should still be treated as the default printing.
+    const original = makeCard({
+      id: 'ltr-original',
+      set: 'ltr',
+      setType: 'draft_innovation',
+      collectorNumber: '10',
+      releasedAt: '2023-06-23',
+    })
+    const holidayReprint = makeCard({
+      id: 'ltr-holiday',
+      set: 'ltr',
+      setType: 'draft_innovation',
+      collectorNumber: '461',
+      releasedAt: '2023-11-03',
+    })
+
+    const result = selectLatestPrintings([original, holidayReprint])
+
+    expect(result).toEqual([original])
+  })
 })

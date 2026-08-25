@@ -32,11 +32,18 @@ function tierIndexForSetType(setType: string | undefined): number {
 }
 
 function comparePrintingPreference(left: Card, right: Card): number {
-  const releaseDelta = (left.releasedAt ?? '').localeCompare(right.releasedAt ?? '')
-  if (releaseDelta !== 0) return releaseDelta
+  // Release date only distinguishes *different* sets (e.g. picking the newer
+  // of two reprint sets). Within the same set, some products (like LTR's
+  // later Holiday-release variants) reuse the set code with a later release
+  // date purely for the reprint batch, so falling through to release date
+  // here would wrongly prefer those over the original numbering.
+  if (left.set !== right.set) {
+    const releaseDelta = (left.releasedAt ?? '').localeCompare(right.releasedAt ?? '')
+    if (releaseDelta !== 0) return releaseDelta
 
-  const setDelta = left.set.localeCompare(right.set)
-  if (setDelta !== 0) return setDelta
+    const setDelta = left.set.localeCompare(right.set)
+    if (setDelta !== 0) return setDelta
+  }
 
   const [leftNumber, leftSuffix] = collectorSortKey(left.collectorNumber)
   const [rightNumber, rightSuffix] = collectorSortKey(right.collectorNumber)
