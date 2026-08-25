@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { List } from './components/List/List'
 import { SearchBar } from './components/SearchBar/SearchBar'
@@ -41,6 +42,45 @@ type SortOption =
   | 'name-desc'
   | 'cmc-asc'
   | 'cmc-desc'
+
+interface QueryUrlParams {
+  query: string
+  sortOption: SortOption
+  showAllPrints: boolean
+  visibleCount: number
+}
+
+function encodeQueryParams(params: Partial<QueryUrlParams>): URLSearchParams {
+  const encoded = new URLSearchParams()
+  if (params.query) encoded.set('q', params.query)
+  if (params.sortOption) encoded.set('sort', params.sortOption)
+  if (params.showAllPrints) encoded.set('all', '1')
+  if (params.visibleCount) encoded.set('batch', String(params.visibleCount))
+  return encoded
+}
+
+function decodeQueryParams(search: string): Partial<QueryUrlParams> {
+  const params = new URLSearchParams(search)
+  return {
+    query: params.get('q') || undefined,
+    sortOption: (params.get('sort') as SortOption) || undefined,
+    showAllPrints: params.has('all'),
+    visibleCount: params.has('batch') ? Number(params.get('batch')) || undefined : undefined,
+  }
+}
+
+function getLatestReleasedSet(setOptions: SetOption[]): SetOption | undefined {
+  const now = new Date()
+  // Filter sets that have been released (releasedAt <= now) and are core or expansion
+  const releasedSets = setOptions.filter(set => 
+    new Date(set.releasedAt) <= now && 
+    (set.setType === 'core' || set.setType === 'expansion')
+  )
+  // Sort by release date descending and return the first (most recent)
+  return releasedSets.sort((a, b) => 
+    new Date(b.releasedAt).getTime() - new Date(a.releasedAt).getTime()
+  )[0]
+}
 
 function getFaceName(card: Card): string {
   return card.faces[0]?.name ?? ''
@@ -150,6 +190,13 @@ function sortCards(
 }
 
 export function CatalogPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Initialize state from URL params
+  const urlParams = useMemo(() => decodeQueryParams(location.search), [location.search])
+  const hasQueryFromUrl = Boolean(urlParams.query)
+
   /*
    * The query is the single source of truth for:
    *
@@ -169,7 +216,7 @@ export function CatalogPage() {
    *   dragon c>=wu t:creature r:r
    */
   const [query, setQuery] =
-    useState('s:hob')
+    useState(urlParams.query || '')
 
   const parsedQuery = useMemo(
     () => parseScryfallQuery(query),
@@ -191,10 +238,10 @@ export function CatalogPage() {
   const [
     showAllPrints,
     setShowAllPrints,
-  ] = useState(false)
+  ] = useState(urlParams.showAllPrints || false)
 
   const [visibleCount, setVisibleCount] =
-    useState(BATCH_SIZE)
+    useState(urlParams.visibleCount || BATCH_SIZE)
 
   const [selectedCard, setSelectedCard] =
     useState<Card | null>(null)
@@ -212,7 +259,7 @@ export function CatalogPage() {
     useState(false)
 
   const [sortOption, setSortOption] =
-    useState<SortOption>('set-asc')
+    useState<SortOption>(urlParams.sortOption || 'set-asc')
 
   const [displayCards, setDisplayCards] = useState<Card[]>([])
   const [typeOptions, setTypeOptions] = useState<string[]>([])
@@ -229,6 +276,49 @@ export function CatalogPage() {
   const sentinelRef = useRef<HTMLDivElement>(null)
   const ignoreScrollRef = useRef(false)
   const hasLoadedCatalogRef = useRef(false)
+  const hasInitializedQueryRef = useRef(false)
+
+  /*
+   * SYNC STATE TO URL
+   * Whenever query, sort, showAllPrints, or visibleCount change, update URL params
+   * so refresh preserves the current search state
+   */
+  useEffect(() => {
+    const params = encodeQueryParams({
+      query,
+      sortOption,
+      showAllPrints,
+      visibleCount,
+    })
+    const newSearch = params.toString() ? `?${params.toString()}` : ''
+    
+    if (newSearch !== location.search) {
+      navigate(
+        {
+          pathname: location.pathname,
+          search: newSearch,
+        },
+        { replace: true }
+      )
+    }
+  }, [query, sortOption, showAllPrints, visibleCount, navigate, location.pathname, location.search])
+
+  /*
+   * HANDLE BACK BUTTON TO CLOSE MODAL
+   * When user presses back button and modal is open, close it
+   */
+  useEffect(() => {
+    if (!selectedCard) return
+
+    const handlePopState = () => {
+      setSelectedCard(null)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [selectedCard])
 
   useEffect(() => {
     let cancelled = false
@@ -382,6 +472,21 @@ export function CatalogPage() {
       cancelled = true
     }
   }, [isCatalogReady])
+
+  /*
+   * UPDATE INITIAL QUERY TO LATEST RELEASED SET
+   * If no query was provided in URL params, use the latest released set
+   */
+  useEffect(() => {
+    if (hasQueryFromUrl || setOptions.length === 0 || hasInitializedQueryRef.current) return
+
+    const latestSet = getLatestReleasedSet(setOptions)
+    if (latestSet) {
+      hasInitializedQueryRef.current = true
+      // eslint-disable-next-line
+      setQuery(`s:${latestSet.code}`)
+    }
+  }, [setOptions, hasQueryFromUrl])
 
   const filteredCards = displayCards
 
@@ -775,6 +880,8 @@ export function CatalogPage() {
           onOpenDetails={(card, faceIndex = 0) => {
             setSelectedFaceIndex(faceIndex)
             setSelectedCard(card)
+            // Push a new history entry so back button can close the modal
+            window.history.pushState({ modalOpen: true }, '')
           }}
         />
       )}
