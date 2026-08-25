@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { List } from './components/List/List'
@@ -303,23 +303,6 @@ export function CatalogPage() {
     }
   }, [query, sortOption, showAllPrints, visibleCount, navigate, location.pathname, location.search])
 
-  /*
-   * HANDLE BACK BUTTON TO CLOSE MODAL
-   * When user presses back button and modal is open, close it
-   */
-  useEffect(() => {
-    if (!selectedCard) return
-
-    const handlePopState = () => {
-      setSelectedCard(null)
-    }
-
-    window.addEventListener('popstate', handlePopState)
-    return () => {
-      window.removeEventListener('popstate', handlePopState)
-    }
-  }, [selectedCard])
-
   useEffect(() => {
     let cancelled = false
 
@@ -598,7 +581,7 @@ export function CatalogPage() {
     )
   }
 
-  const scrollToCard = (
+  const scrollToCard = useCallback((
     cardId?: string,
     faceIndex?: number,
   ) => {
@@ -620,7 +603,36 @@ export function CatalogPage() {
         behavior: 'smooth',
       })
     }
-  }
+  }, [])
+
+  const closeModal = useCallback(() => {
+    if (!selectedCard) return
+
+    const cardId = selectedCard.id
+    const cardIndex = modalCards.findIndex((card) => card.id === cardId)
+
+    if (cardIndex >= 0) {
+      setVisibleCount((previous) => Math.max(previous, cardIndex + 1))
+    }
+
+    setSelectedCard(null)
+
+    // The card may need to be rendered before it can be used as a scroll target.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollToCard(cardId)
+      })
+    })
+  }, [selectedCard, modalCards, scrollToCard])
+
+  useEffect(() => {
+    if (!selectedCard) return
+
+    window.addEventListener('popstate', closeModal)
+    return () => {
+      window.removeEventListener('popstate', closeModal)
+    }
+  }, [selectedCard, closeModal])
 
   /*
    * EXPAND ALL
@@ -895,16 +907,7 @@ export function CatalogPage() {
         <CardModal
           card={selectedCard}
           initialFaceIndex={selectedFaceIndex}
-          onClose={() => {
-            const cardId = selectedCard?.id
-            const faceIdx = selectedFaceIndex
-
-            setSelectedCard(null)
-
-            requestAnimationFrame(() => {
-              scrollToCard(cardId, faceIdx)
-            })
-          }}
+          onClose={closeModal}
           onShowPrevious={showPreviousCard}
           onShowNext={showNextCard}
           hasPrevious={selectedCardIndex > 0}
