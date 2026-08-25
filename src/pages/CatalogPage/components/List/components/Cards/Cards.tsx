@@ -1,4 +1,5 @@
 import type { Card, CardFace } from '../../../../../../types/card'
+import { symbolUrl } from '../../../../../../utils/utils'
 import { ManaCost } from './components/ManaCost/ManaCost'
 import './Cards.css'
 
@@ -17,10 +18,6 @@ function getFrameClass(colors: CardFace['colors']) {
   if (colors.length === 0) return 'frame-c'
   if (colors.length > 1) return 'frame-multi'
   return `frame-${colors[0].toLowerCase()}`
-}
-
-function symbolUrl(sym: string): string {
-  return `https://svgs.scryfall.io/card-symbols/${sym}.svg`
 }
 
 function setSymbolUrl(setCode: string, rarity: Card['rarity']): string {
