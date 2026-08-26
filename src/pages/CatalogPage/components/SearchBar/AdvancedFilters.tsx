@@ -68,7 +68,7 @@ const colorModes: {
   },
 ]
 
-const MAX_SET_RESULTS = 5
+const MAX_SET_RESULTS = 6
 
 function setIconUrl(code: string): string {
   return `https://svgs.scryfall.io/sets/${code.toLowerCase()}.svg`
