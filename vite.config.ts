@@ -1,9 +1,23 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
+
+function getAppVersion(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: 'pipe' })
+      .toString()
+      .trim() || 'dev'
+  } catch {
+    return 'dev'
+  }
+}
 
 export default defineConfig({
   base: '/magic_catalog/',
+  define: {
+    __APP_VERSION__: JSON.stringify(getAppVersion()),
+  },
   // Pre-bundle heavy deps at server start instead of blocking first request
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-dom/client', 'react-router-dom'],

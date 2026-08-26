@@ -12,6 +12,12 @@ export function AppHeader() {
     setIsMenuOpen(false)
   }
 
+  const refreshApp = async () => {
+    const registration = await navigator.serviceWorker?.getRegistration()
+    await registration?.update()
+    window.location.reload()
+  }
+
   return (
     <>
       <header className="app-header">
@@ -96,6 +102,33 @@ export function AppHeader() {
             <p className="menu-copy">
               Made with love by Red &amp; Lua
             </p>
+
+            <div className="menu-version">
+              <span>Version {__APP_VERSION__}</span>
+              <button
+                type="button"
+                className="menu-refresh"
+                aria-label="Refresh app"
+                title="Refresh app"
+                onClick={() => void refreshApp()}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M20 11a8.1 8.1 0 0 0-14.7-4.7L3 9" />
+                  <path d="M3 4v5h5" />
+                  <path d="M4 13a8.1 8.1 0 0 0 14.7 4.7L21 15" />
+                  <path d="M21 20v-5h-5" />
+                </svg>
+              </button>
+            </div>
           </aside>
         </div>,
         document.body,
