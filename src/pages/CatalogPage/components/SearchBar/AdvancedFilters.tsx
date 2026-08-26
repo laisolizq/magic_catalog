@@ -12,6 +12,9 @@ interface AdvancedFiltersProps {
   colorMode: ColorFilterMode
   oracleValue: string
 
+  typeValue: string[]
+  rarityValue: string[]
+  typeOptions: string[]
   setValue: string[]
   setOptions: SetOption[]
   showAllPrints: boolean
@@ -22,6 +25,8 @@ interface AdvancedFiltersProps {
   ) => void
   onOracleChange: (value: string) => void
 
+  onTypeChange: (value: string[]) => void
+  onRarityChange: (value: string[]) => void
   onSetsChange: (value: string[]) => void
   onShowAllPrintsChange: (value: boolean) => void
 
@@ -36,6 +41,13 @@ const colors = [
   'G',
   'C',
   'M',
+]
+
+const rarities = [
+  'common',
+  'uncommon',
+  'rare',
+  'mythic',
 ]
 
 const colorModes: {
@@ -66,12 +78,17 @@ export function AdvancedFilters({
   colorValue,
   colorMode,
   oracleValue,
+  typeValue,
+  rarityValue,
+  typeOptions,
   setValue,
   setOptions,
   showAllPrints,
   onColorChange,
   onColorModeChange,
   onOracleChange,
+  onTypeChange,
+  onRarityChange,
   onSetsChange,
   onShowAllPrintsChange,
   onClose,
@@ -93,6 +110,12 @@ export function AdvancedFilters({
 
   const [selectedOracle, setSelectedOracle] =
     useState(oracleValue)
+
+  const [selectedTypes, setSelectedTypes] =
+    useState<string[]>(typeValue)
+
+  const [selectedRarities, setSelectedRarities] =
+    useState<string[]>(rarityValue)
 
   const [selectedSets, setSelectedSets] =
     useState<string[]>(setValue)
@@ -199,6 +222,8 @@ export function AdvancedFilters({
     onColorModeChange(selectedColorMode)
     onOracleChange(selectedOracle)
 
+    onTypeChange(selectedTypes)
+    onRarityChange(selectedRarities)
     onSetsChange(selectedSets)
     onShowAllPrintsChange(selectedShowAllPrints)
 
@@ -388,6 +413,74 @@ export function AdvancedFilters({
               }
             >
               {mode.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* =========================
+          TYPE
+          ========================= */}
+
+      <div className="advanced-filter-section">
+        <h3>Type</h3>
+
+        <div className="advanced-options">
+          {typeOptions.map((type) => (
+            <button
+              key={type}
+              type="button"
+              className={`filter-option ${
+                selectedTypes.includes(type)
+                  ? 'is-selected'
+                  : ''
+              }`}
+              aria-pressed={selectedTypes.includes(
+                type,
+              )}
+              onClick={() =>
+                toggleValue(
+                  selectedTypes,
+                  type,
+                  setSelectedTypes,
+                )
+              }
+            >
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* =========================
+          RARITY
+          ========================= */}
+
+      <div className="advanced-filter-section">
+        <h3>Rarity</h3>
+
+        <div className="advanced-options">
+          {rarities.map((rarity) => (
+            <button
+              key={rarity}
+              type="button"
+              className={`filter-option filter-rarity-${rarity} ${
+                selectedRarities.includes(rarity)
+                  ? 'is-selected'
+                  : ''
+              }`}
+              aria-pressed={selectedRarities.includes(
+                rarity,
+              )}
+              onClick={() =>
+                toggleValue(
+                  selectedRarities,
+                  rarity,
+                  setSelectedRarities,
+                )
+              }
+            >
+                  {rarity.charAt(0).toUpperCase() + rarity.slice(1)}
             </button>
           ))}
         </div>
