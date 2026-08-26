@@ -56,6 +56,63 @@ describe('queryCards with SQLite', () => {
     ).toBe(true)
   })
 
+  it('filters oracle text by a case-insensitive literal substring', async () => {
+    const result = await queryCards({
+      text: '',
+      oracle: 'DRAW A CARD',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+    })
+
+    expect(result.cards.length).toBeGreaterThan(0)
+    expect(
+      result.cards.every((card) =>
+        card.faces.some((face) =>
+          face.oracleText.toLowerCase().includes('draw a card'),
+        ),
+      ),
+    ).toBe(true)
+  })
+
+  it('combines oracle text filtering with other filters', async () => {
+    const result = await queryCards({
+      text: '',
+      oracle: 'draw a card',
+      sets: ['tla'],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+    })
+
+    expect(result.cards.every((card) => card.set === 'tla')).toBe(true)
+    expect(
+      result.cards.every((card) =>
+        card.faces.some((face) =>
+          face.oracleText.toLowerCase().includes('draw a card'),
+        ),
+      ),
+    ).toBe(true)
+  })
+
+  it('returns no cards for a nonmatching oracle phrase', async () => {
+    const result = await queryCards({
+      text: '',
+      oracle: 'phrase that does not exist',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+    })
+
+    expect(result.cards).toEqual([])
+    expect(result.total).toBe(0)
+  })
+
   it('colorMode "including" matches cards containing the selected color plus others', async () => {
     const result = await queryCards({
       text: '',

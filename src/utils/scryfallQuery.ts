@@ -5,7 +5,7 @@
 //   "dragon c>=2"
 //   "dragon c!=1"
 //
-// Supported prefixes: c=/color=, t:/type:, r:/rarity:, s:/set:
+// Supported prefixes: c=/color=, t:/type:, r:/rarity:, s:/set:, o:/oracle:
 //
 // Color operators:
 //   c=   -> exactly
@@ -35,7 +35,7 @@
 // - t:/r:/s: accept a single word each (repeat the prefix for more values)
 // - r: accepts Scryfall's rarity abbreviations (c/u/r/m) or full words, and
 //   is always built back out using the abbreviation (e.g. r:u)
-// - quoted phrases ("draw a card") are kept together as free text
+// - quoted phrases ("draw a card") are kept together as free text or field values
 // - negation (e.g. -t:creature) isn't supported; such tokens are treated
 //   as free text so they don't silently do the wrong thing
 
@@ -62,6 +62,7 @@ export interface ColorCountFilter {
 
 export interface ParsedQuery {
   text: string
+  oracle: string
   colors: string[]
   colorMode: ColorFilterMode
   colorCount: ColorCountFilter | null
@@ -72,6 +73,7 @@ export interface ParsedQuery {
 
 export interface QueryFilters {
   text: string
+  oracle?: string
   colors: string[]
   colorMode?: ColorFilterMode
   colorCount?: ColorCountFilter | null
@@ -114,11 +116,11 @@ const RARITY_ABBREVIATIONS: Record<string, string> = {
 }
 
 const TOKEN_REGEX =
-  /[A-Za-z]+(?:>=|<=|!=|:|=|>|<)"[^"]*"|[A-Za-z]+(?:>=|<=|!=|:|=|>|<)\S+|"[^"]*"|\S+/g
+  /[A-Za-z]+(?:>=|<=|!=|:|=|>|<)"(?:\\.|[^"\\])*"|[A-Za-z]+(?:>=|<=|!=|:|=|>|<)\S+|"(?:\\.|[^"\\])*"|\S+/g
 
 const FIELD_ALIASES: Record<
   string,
-  'colors' | 'types' | 'rarities' | 'sets'
+  'colors' | 'types' | 'rarities' | 'sets' | 'oracle'
 > = {
   c: 'colors',
   color: 'colors',
@@ -128,11 +130,13 @@ const FIELD_ALIASES: Record<
   rarity: 'rarities',
   s: 'sets',
   set: 'sets',
+  o: 'oracle',
+  oracle: 'oracle',
 }
 
 function stripQuotes(value: string): string {
   if (value.startsWith('"') && value.endsWith('"')) {
-    return value.slice(1, -1)
+    return value.slice(1, -1).replace(/\\([\\"])/g, '$1')
   }
 
   return value
@@ -162,6 +166,7 @@ function capitalize(value: string): string {
 }
 
 export function parseScryfallQuery(input: string): ParsedQuery {
+  let oracle = ''
   const colors: string[] = []
   const types: string[] = []
   const rarities: string[] = []
@@ -275,6 +280,11 @@ export function parseScryfallQuery(input: string): ParsedQuery {
         if (!sets.includes(set)) sets.push(set)
         continue
       }
+
+      if (field === 'oracle') {
+        oracle = rawValue
+        continue
+      }
     }
 
     textWords.push(stripQuotes(token))
@@ -282,6 +292,7 @@ export function parseScryfallQuery(input: string): ParsedQuery {
 
   return {
     text: textWords.join(' '),
+    oracle,
     colors,
     colorMode,
     colorCount,
@@ -374,6 +385,11 @@ export function buildScryfallQuery(
   const parts = [
     filters.text.trim(),
   ]
+
+  if (filters.oracle?.trim()) {
+    const oracle = filters.oracle.trim()
+    parts.push(`o:${/\s/.test(oracle) ? `"${oracle.replace(/"/g, '\\"')}"` : oracle}`)
+  }
 
   parts.push(
     ...buildColorClauses(

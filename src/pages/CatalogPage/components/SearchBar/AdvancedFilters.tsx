@@ -10,6 +10,7 @@ import './AdvancedFilters.css'
 interface AdvancedFiltersProps {
   colorValue: string[]
   colorMode: ColorFilterMode
+  oracleValue: string
 
   typeValue: string[]
   rarityValue: string[]
@@ -22,6 +23,7 @@ interface AdvancedFiltersProps {
   onColorModeChange: (
     value: ColorFilterMode,
   ) => void
+  onOracleChange: (value: string) => void
 
   onTypeChange: (value: string[]) => void
   onRarityChange: (value: string[]) => void
@@ -75,6 +77,7 @@ function setIconUrl(code: string): string {
 export function AdvancedFilters({
   colorValue,
   colorMode,
+  oracleValue,
   typeValue,
   rarityValue,
   typeOptions,
@@ -83,6 +86,7 @@ export function AdvancedFilters({
   showAllPrints,
   onColorChange,
   onColorModeChange,
+  onOracleChange,
   onTypeChange,
   onRarityChange,
   onSetsChange,
@@ -103,6 +107,9 @@ export function AdvancedFilters({
 
   const [selectedColorMode, setSelectedColorMode] =
     useState<ColorFilterMode>(colorMode)
+
+  const [selectedOracle, setSelectedOracle] =
+    useState(oracleValue)
 
   const [selectedTypes, setSelectedTypes] =
     useState<string[]>(typeValue)
@@ -204,6 +211,7 @@ export function AdvancedFilters({
   const handleAccept = () => {
     onColorChange(selectedColors)
     onColorModeChange(selectedColorMode)
+    onOracleChange(selectedOracle)
 
     onTypeChange(selectedTypes)
     onRarityChange(selectedRarities)
@@ -236,6 +244,7 @@ export function AdvancedFilters({
 
     onColorChange([])
     onColorModeChange('exactly')
+    onOracleChange('')
     onTypeChange([])
     onRarityChange([])
     onSetsChange([])
@@ -326,6 +335,17 @@ export function AdvancedFilters({
             </div>
           )}
         </div>
+
+        <label className="oracle-filter">
+          <h3>Oracle</h3>
+          <input
+            type="text"
+            className="set-search-input"
+            placeholder="Oracle contains..."
+            value={selectedOracle}
+            onChange={(event) => setSelectedOracle(event.target.value)}
+          />
+        </label>
       </div>
 
       {/* =========================

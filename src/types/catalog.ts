@@ -58,6 +58,7 @@ export interface CatalogArtifactMetadata {
 
 export interface CatalogQuery {
   text: string
+  oracle?: string
   sets: string[]
   types: string[]
   rarities: string[]

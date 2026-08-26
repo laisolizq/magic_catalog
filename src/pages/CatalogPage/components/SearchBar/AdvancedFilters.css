@@ -183,10 +183,6 @@
   transform: scale(0.96);
 }
 
-/* =========================
-   CLEAR FILTERS
-   ========================= */
-
 .advanced-clear {
   margin-left: auto;
 
@@ -263,6 +259,15 @@
 
 .set-search {
   position: relative;
+}
+
+.oracle-filter {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-soft);
 }
 
 .set-search-input {

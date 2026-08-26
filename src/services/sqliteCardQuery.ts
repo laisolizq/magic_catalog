@@ -238,6 +238,10 @@ function normalizeSearchText(value: string): string {
     .replace(/\s+/g, ' ')
 }
 
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, '\\$&')
+}
+
 function searchCards(
   fuse: Fuse<SearchIndexEntry>,
   cards: Card[],
@@ -276,9 +280,11 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   const hasColorFilter = hasFilterValues(query.colors)
   const hasColorCountFilter = query.colorCount != null
   const text = query.text.trim()
+  const oracle = query.oracle?.trim() ?? ''
   const hasText = text.length > 0
+  const hasOracleFilter = oracle.length > 0
 
-  if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter && !hasColorCountFilter) {
+  if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter && !hasColorCountFilter && !hasOracleFilter) {
     const cards = await getAllCards(database)
     const fuse = getAllCardsFuse(cards)
     if (!hasText) return { cards, total: cards.length }
@@ -296,6 +302,7 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
     colors: query.colors,
     colorMode: query.colorMode,
     colorCount: query.colorCount,
+    oracle,
   })
   let cards = cachedFilterResults.get(filterKey)
 
@@ -336,6 +343,16 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
     )
     conditions.push(colorCountCondition.sql)
     parameters.push(...colorCountCondition.params)
+  }
+
+  if (hasOracleFilter) {
+    conditions.push(`EXISTS (
+      SELECT 1
+      FROM json_each(cards.faces_json) AS face
+      WHERE lower(COALESCE(json_extract(face.value, '$.oracleText'), ''))
+        LIKE '%' || lower(?) || '%' ESCAPE '\\'
+    )`)
+    parameters.push(escapeLikePattern(oracle))
   }
 
   const result = database.exec(

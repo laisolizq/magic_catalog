@@ -389,6 +389,7 @@ export function CatalogPage() {
         const queryStartedAt = performance.now()
         const result = await queryCards({
           text: parsedQuery.text,
+          oracle: parsedQuery.oracle,
           sets: setValue,
           types: typeValue,
           rarities: rarityValue,
@@ -721,6 +722,7 @@ export function CatalogPage() {
       types: string[]
       rarities: string[]
       sets: string[]
+      oracle: string
     }>,
   ) => {
     handleFilterChange(() =>
@@ -729,6 +731,7 @@ export function CatalogPage() {
 
         return buildScryfallQuery({
           text: prevParsed.text,
+          oracle: prevParsed.oracle,
           colors: prevParsed.colors,
           colorMode:
             prevParsed.colorMode,
@@ -768,6 +771,7 @@ export function CatalogPage() {
 
         return buildScryfallQuery({
           text: parsed.text,
+          oracle: parsed.oracle,
           colors: parsed.colors,
           colorMode: value,
           colorCount: parsed.colorCount,
@@ -814,6 +818,7 @@ export function CatalogPage() {
           rarityValue={rarityValue}
           colorValue={colorValue}
           colorMode={colorMode}
+          oracleValue={parsedQuery.oracle}
           sortOption={sortOption}
           typeOptions={typeOptions}
           setValue={setValue}
@@ -843,6 +848,9 @@ export function CatalogPage() {
             updateQueryFilters({ colors: value })
           }
           onColorModeChange={handleColorModeChange}
+          onOracleChange={(value) =>
+            updateQueryFilters({ oracle: value })
+          }
           onSetsChange={(value) =>
             updateQueryFilters({ sets: value })
           }

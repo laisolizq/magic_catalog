@@ -6,6 +6,7 @@ describe('parseScryfallQuery', () => {
   it('returns empty filters for an empty string', () => {
     expect(parseScryfallQuery('')).toEqual({
       text: '',
+      oracle: '',
       colors: [],
       colorMode: 'exactly',
       colorCount: null,
@@ -18,6 +19,7 @@ describe('parseScryfallQuery', () => {
   it('parses plain free text with no operators', () => {
     expect(parseScryfallQuery('dragon whelp')).toEqual({
       text: 'dragon whelp',
+      oracle: '',
       colors: [],
       colorMode: 'exactly',
       colorCount: null,
@@ -112,6 +114,24 @@ describe('parseScryfallQuery', () => {
     expect(parsed.sets).toEqual(['tla'])
   })
 
+  it('parses oracle text tokens and quoted phrases', () => {
+    expect(parseScryfallQuery('o:draw')).toMatchObject({
+      text: '',
+      oracle: 'draw',
+    })
+    expect(parseScryfallQuery('oracle:"draw a card"')).toMatchObject({
+      text: '',
+      oracle: 'draw a card',
+    })
+  })
+
+  it('keeps oracle filters separate from free text and other filters', () => {
+    const parsed = parseScryfallQuery('dragon o:"draw a card" t:instant')
+    expect(parsed.text).toBe('dragon')
+    expect(parsed.oracle).toBe('draw a card')
+    expect(parsed.types).toEqual(['Instant'])
+  })
+
   it('parses rarity abbreviations into full words', () => {
     expect(parseScryfallQuery('r:c').rarities).toEqual(['common'])
     expect(parseScryfallQuery('r:u').rarities).toEqual(['uncommon'])
@@ -130,6 +150,7 @@ describe('parseScryfallQuery', () => {
 
     expect(parsed).toEqual({
       text: 'dragon',
+      oracle: '',
       colors: ['W', 'U'],
       colorMode: 'exactly',
       colorCount: null,
@@ -144,6 +165,7 @@ describe('buildScryfallQuery', () => {
   it('round-trips filters through parseScryfallQuery', () => {
     const filters = {
       text: 'dragon',
+      oracle: '',
       colors: ['W', 'U', 'C'],
       colorMode: 'exactly' as const,
       colorCount: null,
@@ -156,6 +178,20 @@ describe('buildScryfallQuery', () => {
     const reparsed = parseScryfallQuery(built)
 
     expect(reparsed).toEqual(filters)
+  })
+
+  it('builds a quoted oracle phrase', () => {
+    const built = buildScryfallQuery({
+      text: '',
+      oracle: 'draw a card',
+      colors: [],
+      types: [],
+      rarities: [],
+      sets: [],
+    })
+
+    expect(built).toBe('o:"draw a card"')
+    expect(parseScryfallQuery(built).oracle).toBe('draw a card')
   })
 
   it('builds c>1 for multicolor', () => {

@@ -222,6 +222,7 @@ interface SearchBarProps {
   rarityValue: string[]
   colorValue: string[]
   colorMode: ColorFilterMode
+  oracleValue: string
   sortOption: SortOption
   typeOptions: string[]
   setValue: string[]
@@ -239,6 +240,7 @@ interface SearchBarProps {
   onRarityChange: (value: string[]) => void
   onColorChange: (value: string[]) => void
   onColorModeChange: (value: ColorFilterMode) => void
+  onOracleChange: (value: string) => void
   onSetsChange: (value: string[]) => void
   onShowAllPrintsChange: (value: boolean) => void
 }
@@ -249,6 +251,7 @@ export function SearchBar({
   rarityValue,
   colorValue,
   colorMode,
+  oracleValue,
   sortOption,
   typeOptions,
   setValue,
@@ -264,6 +267,7 @@ export function SearchBar({
   onRarityChange,
   onColorChange,
   onColorModeChange,
+  onOracleChange,
   onSetsChange,
   onShowAllPrintsChange,
 }: SearchBarProps) {
@@ -469,6 +473,7 @@ export function SearchBar({
       <AdvancedFilters
         colorValue={colorValue}
         colorMode={colorMode}
+        oracleValue={oracleValue}
         typeValue={typeValue}
         rarityValue={rarityValue}
         typeOptions={typeOptions}
@@ -479,6 +484,7 @@ export function SearchBar({
         onColorModeChange={
           onColorModeChange
         }
+        onOracleChange={onOracleChange}
         onTypeChange={onTypeChange}
         onRarityChange={onRarityChange}
         onSetsChange={onSetsChange}
