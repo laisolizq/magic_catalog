@@ -474,9 +474,6 @@ export function SearchBar({
         colorValue={colorValue}
         colorMode={colorMode}
         oracleValue={oracleValue}
-        typeValue={typeValue}
-        rarityValue={rarityValue}
-        typeOptions={typeOptions}
         setValue={setValue}
         setOptions={setOptions}
         showAllPrints={showAllPrints}
@@ -485,8 +482,6 @@ export function SearchBar({
           onColorModeChange
         }
         onOracleChange={onOracleChange}
-        onTypeChange={onTypeChange}
-        onRarityChange={onRarityChange}
         onSetsChange={onSetsChange}
         onShowAllPrintsChange={onShowAllPrintsChange}
         onClose={() => onAdvancedOpenChange(false)}
