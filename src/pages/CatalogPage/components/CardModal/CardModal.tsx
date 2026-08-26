@@ -263,6 +263,7 @@ export function CardModal({
         </div>
 
         <ControlsBar
+          card={card}
           hasRulings={hasRulings}
           rulingsOpen={rulingsOpen}
           onToggleRulings={toggleRulings}

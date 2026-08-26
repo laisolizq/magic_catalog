@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { CatalogPage } from './CatalogPage'
@@ -16,7 +17,11 @@ afterEach(async () => {
 describe('CatalogPage', () => {
   it('filters, expands oracle, and opens details modal', async () => {
     const user = userEvent.setup()
-    render(<CatalogPage />)
+    render(
+      <MemoryRouter initialEntries={['/catalog?q=s%3Ahob']}>
+        <CatalogPage />
+      </MemoryRouter>,
+    )
 
     const firstCard = mockCards[0]
     const firstName = firstCard.faces?.[0]?.name ?? ''
@@ -54,7 +59,11 @@ describe('CatalogPage', () => {
 
   it('sorts by selected option and keeps sort after filtering', async () => {
     const user = userEvent.setup()
-    render(<CatalogPage />)
+    render(
+      <MemoryRouter initialEntries={['/catalog?q=s%3Ahob']}>
+        <CatalogPage />
+      </MemoryRouter>,
+    )
 
     // The app defaults to the hob set (s:hob) on load.
     const expectedFirstByNameAsc = mockCards

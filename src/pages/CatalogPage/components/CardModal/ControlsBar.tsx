@@ -1,6 +1,9 @@
-// ControlsBar: modal controls (rulings, prev, close, next)
+import type { Card } from '../../../../types/card'
+import scryfallIcon from '../../../../assets/icons/scryfall.svg'
+import bookIcon from '../../../../assets/icons/book.svg'
 
 interface ControlsBarProps {
+  card: Card
   hasRulings: boolean
   rulingsOpen: boolean
   onToggleRulings: () => void
@@ -12,6 +15,7 @@ interface ControlsBarProps {
 }
 
 export function ControlsBar({
+  card,
   hasRulings,
   rulingsOpen,
   onToggleRulings,
@@ -22,9 +26,29 @@ export function ControlsBar({
   hasNext,
 }: ControlsBarProps) {
   const disabledWhenRulings = rulingsOpen
+  const scryfallUrl = card.collectorNumber
+    ? `https://scryfall.com/card/${encodeURIComponent(card.set)}/${encodeURIComponent(card.collectorNumber)}`
+    : `https://scryfall.com/search?q=oracleid%3A${encodeURIComponent(card.oracleId ?? card.id)}`
 
   return (
     <div className="card-modal-controls">
+      <a
+        className="controls-button scryfall-button"
+        href={scryfallUrl}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Open card on Scryfall"
+        title="Open card on Scryfall"
+      >
+        <img
+          className="scryfall-icon"
+          src={scryfallIcon}
+          alt=""
+          aria-hidden="true"
+        />
+      </a>
+
+      
       <button
         type="button"
         className={`controls-button ${!hasRulings ? 'disabled' : ''} ${rulingsOpen ? 'active' : ''}`}
@@ -33,7 +57,12 @@ export function ControlsBar({
         aria-label="Toggle rulings"
         disabled={!hasRulings && !rulingsOpen}
       >
-        📖
+        <img
+          className="book-icon"
+          src={bookIcon}
+          alt=""
+          aria-hidden="true"
+        />
       </button>
 
       <button

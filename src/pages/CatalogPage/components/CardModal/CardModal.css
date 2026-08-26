@@ -119,8 +119,28 @@
   padding: 0.45rem 0.9rem;
   font-size: 1rem;
   cursor: pointer;
+  text-decoration: none;
 }
 
+.scryfall-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scryfall-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+  object-fit: contain;
+}
+
+.book-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+  object-fit: contain;
+}
 .controls-button.disabled {
   opacity: 0.35;
   filter: grayscale(60%);

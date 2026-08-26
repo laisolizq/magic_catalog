@@ -1,5 +1,10 @@
 import type { CatalogArtifactMetadata, CatalogMetadata } from '../types/catalog'
-import { persistCatalogMetadata, readCatalogMetadata, replaceCatalogDatabase } from '../db/sqliteClient'
+import {
+  hasLocalCatalog as hasStoredCatalog,
+  persistCatalogMetadata,
+  readCatalogMetadata,
+  replaceCatalogDatabase,
+} from '../db/sqliteClient'
 
 export interface CatalogImportProgress {
   phase: string
@@ -58,8 +63,7 @@ export async function importCatalogArtifact(
 }
 
 export async function hasLocalCatalog(): Promise<boolean> {
-  const { hasLocalCatalog: hasStoredDatabase } = await import('../db/sqliteClient')
-  return hasStoredDatabase()
+  return hasStoredCatalog()
 }
 
 export async function getCatalogMetadata(): Promise<CatalogMetadata | undefined> {
