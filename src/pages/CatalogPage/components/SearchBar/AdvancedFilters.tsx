@@ -179,6 +179,15 @@ export function AdvancedFilters({
     setSelectedSets(selectedSets.filter((value) => value !== code))
   }
 
+  const handleInputNext = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      event.currentTarget.blur()
+    }
+  }
+
   /*
    * Toggle a value in a temporary selection.
    */
@@ -229,30 +238,6 @@ export function AdvancedFilters({
     onClose()
   }
 
-  /*
-   * Clear all filters immediately.
-   */
-
-  const handleClear = () => {
-    setSelectedColors([])
-    setSelectedColorMode('exactly')
-    setSelectedTypes([])
-    setSelectedRarities([])
-    setSelectedSets([])
-    setSetSearchQuery('')
-    setSelectedShowAllPrints(false)
-
-    onColorChange([])
-    onColorModeChange('exactly')
-    onOracleChange('')
-    onTypeChange([])
-    onRarityChange([])
-    onSetsChange([])
-    onShowAllPrintsChange(false)
-
-    onClose()
-  }
-
   return (
     <section
       className="advanced-filters"
@@ -292,8 +277,10 @@ export function AdvancedFilters({
             type="text"
             className="set-search-input"
             placeholder="Search sets by name..."
+            enterKeyHint="next"
             value={setSearchQuery}
             onChange={(event) => setSetSearchQuery(event.target.value)}
+            onKeyDown={handleInputNext}
             onFocus={() => setIsSetSearchOpen(true)}
             onBlur={() => {
               // Let a result's onClick fire before the list disappears.
@@ -342,8 +329,10 @@ export function AdvancedFilters({
             type="text"
             className="set-search-input"
             placeholder="Oracle contains..."
+            enterKeyHint="next"
             value={selectedOracle}
             onChange={(event) => setSelectedOracle(event.target.value)}
+            onKeyDown={handleInputNext}
           />
         </label>
       </div>
@@ -531,14 +520,6 @@ export function AdvancedFilters({
           onClick={handleCancel}
         >
           Cancel
-        </button>
-
-        <button
-          type="button"
-          className="advanced-clear"
-          onClick={handleClear}
-        >
-          Clear filters
         </button>
 
         <button

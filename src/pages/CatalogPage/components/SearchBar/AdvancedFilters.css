@@ -126,8 +126,7 @@
 }
 
 .advanced-cancel,
-.advanced-accept,
-.advanced-clear {
+.advanced-accept {
   min-height: 2.5rem;
 
   border-radius: 9px;
@@ -165,6 +164,8 @@
 }
 
 .advanced-accept {
+  margin-left: auto;
+
   border: none;
 
   background: var(--ink-strong);
@@ -178,23 +179,8 @@
 }
 
 .advanced-cancel:active,
-.advanced-accept:active,
-.advanced-clear:active {
+.advanced-accept:active {
   transform: scale(0.96);
-}
-
-.advanced-clear {
-  margin-left: auto;
-
-  border: none;
-
-  background: transparent;
-  color: var(--ink-soft);
-}
-
-.advanced-clear:hover {
-  background: var(--surface-2);
-  color: var(--ink-strong);
 }
 
 /* =========================
@@ -265,8 +251,6 @@
   display: grid;
   gap: 0.45rem;
   margin-top: 1rem;
-  font-size: 0.78rem;
-  font-weight: 700;
   color: var(--ink-soft);
 }
 
@@ -406,8 +390,7 @@
   }
 
   .advanced-cancel,
-  .advanced-accept,
-  .advanced-clear {
+  .advanced-accept {
     min-height: 2.4rem;
     padding: 0.5rem 0.8rem;
     font-size: 0.76rem;
