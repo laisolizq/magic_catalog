@@ -66,7 +66,7 @@ const colorModes: {
   },
 ]
 
-const MAX_SET_RESULTS = 8
+const MAX_SET_RESULTS = 5
 
 function setIconUrl(code: string): string {
   return `https://svgs.scryfall.io/sets/${code.toLowerCase()}.svg`
@@ -156,7 +156,6 @@ export function AdvancedFilters({
             .filter(
               (set) => set.setType === 'core' || set.setType === 'expansion',
             )
-            .slice(0, MAX_SET_RESULTS)
         : setFuse.search(query, { limit: MAX_SET_RESULTS }).map((result) => result.item)
 
     return matches.filter((set) => !selectedSets.includes(set.code))
@@ -250,31 +249,6 @@ export function AdvancedFilters({
       className="advanced-filters"
       aria-label="Advanced filters"
     >
-      <div className="advanced-filters-header">
-        <button
-          type="button"
-          className="advanced-back"
-          onClick={handleCancel}
-          aria-label="Close advanced filters"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M19 12H5" />
-            <path d="M11 18l-6-6 6-6" />
-          </svg>
-        </button>
-
-        <h2>Filters</h2>
-      </div>
-
       {/* =========================
           SETS
           ========================= */}
