@@ -8,7 +8,7 @@ afterEach(() => cleanup())
 const mockCard: Card = {
   id: 'card-1',
   oracleId: 'oracle-1',
-  name: 'Test Card',
+  rarity: 'common',
   set: 'hob',
   collectorNumber: '1',
   faces: [
@@ -17,6 +17,7 @@ const mockCard: Card = {
       typeLine: 'Creature',
       manaCost: '{1}',
       oracleText: 'Test text',
+      colors: [],
       imageUrl: 'http://example.com/image.jpg',
     },
   ],
