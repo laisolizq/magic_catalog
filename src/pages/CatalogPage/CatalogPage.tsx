@@ -264,11 +264,11 @@ export function CatalogPage() {
   const [displayCards, setDisplayCards] = useState<Card[]>([])
   const [typeOptions, setTypeOptions] = useState<string[]>([])
   const [setOptions, setSetOptions] = useState<SetOption[]>([])
-  const [isCatalogLoading, setIsCatalogLoading] = useState(true)
+  const [isCatalogLoading, setIsCatalogLoading] = useState(false)
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [isCatalogReady, setIsCatalogReady] = useState(false)
   const [catalogProgress, setCatalogProgress] = useState<CatalogImportProgress>({
-    phase: 'Starting catalog import',
+    phase: '',
     percent: 0,
   })
   const catalogBootstrapRef = useRef<Promise<CatalogUpdateStatus> | null>(null)
@@ -310,7 +310,10 @@ export function CatalogPage() {
       const hasCatalogBeforeUpdate = await hasLocalCatalog()
 
       if (hasCatalogBeforeUpdate) {
-        if (!cancelled) setIsCatalogReady(true)
+        if (!cancelled) {
+          setIsCatalogLoading(true)
+          setIsCatalogReady(true)
+        }
 
         if (!catalogBootstrapRef.current) {
           catalogBootstrapRef.current = updateCatalogFromLatestRelease(setCatalogProgress)
@@ -326,7 +329,10 @@ export function CatalogPage() {
       const hasCatalogAfterBootstrap = await hasLocalCatalog()
 
       if (hasCatalogAfterBootstrap) {
-        if (!cancelled) setIsCatalogReady(true)
+        if (!cancelled) {
+          setIsCatalogLoading(true)
+          setIsCatalogReady(true)
+        }
 
         if (!catalogBootstrapRef.current) {
           catalogBootstrapRef.current = updateCatalogFromLatestRelease(setCatalogProgress)
@@ -359,6 +365,7 @@ export function CatalogPage() {
         return
       }
 
+      setIsCatalogLoading(true)
       setIsCatalogReady(true)
     }
 
@@ -881,12 +888,14 @@ export function CatalogPage() {
         </BasicCatalogChrome>
       )}
 
-      {isCatalogLoading ? (
-        <p role="status">
-          {catalogProgress.phase} ({catalogProgress.percent}%)
-        </p>
-      ) : catalogError ? (
+      {catalogError ? (
         <p role="alert">{catalogError}</p>
+      ) : !isCatalogReady ? null : isCatalogLoading ? (
+        catalogProgress.phase ? (
+          <p role="status">
+            {catalogProgress.phase} ({catalogProgress.percent}%)
+          </p>
+        ) : null
       ) : (
         <List
           cards={visibleCardsSorted}
