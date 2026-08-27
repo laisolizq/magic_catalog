@@ -97,6 +97,18 @@ export function AppHeader() {
               >
                 Rules
               </NavLink>
+
+              <NavLink
+                to="/decks"
+                className={({ isActive }) =>
+                  isActive
+                    ? 'menu-item is-active'
+                    : 'menu-item'
+                }
+                onClick={closeMenu}
+              >
+                Decks
+              </NavLink>
             </nav>
 
             <p className="menu-copy">

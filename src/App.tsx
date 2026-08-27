@@ -18,14 +18,25 @@ const KeywordsPage = lazy(async () => {
   return { default: module.KeywordsPage }
 })
 
+const DecksPage = lazy(async () => {
+  const module = await import('./pages/DecksPage/DecksPage')
+  return { default: module.DecksPage }
+})
+
+const DeckViewPage = lazy(async () => {
+  const module = await import('./pages/DecksPage/DeckViewPage')
+  return { default: module.DeckViewPage }
+})
+
 function App() {
   const { pathname } = useLocation()
   const isCatalogPage = pathname === '/catalog'
+  const isDeckViewPage = pathname.startsWith('/decks/')
 
   return (
     <div className="app-shell">
       <main className="app-main">
-        {!isCatalogPage && <AppHeader />}
+        {!isCatalogPage && !isDeckViewPage && <AppHeader />}
 
         <Suspense fallback={<p role="status">Loading...</p>}>
           <Routes>
@@ -36,6 +47,8 @@ function App() {
             <Route path="/rules" element={<RulesPage />} />
             <Route path="/rules/keywords-abilities" element={<KeywordsPage type="abilities" />} />
             <Route path="/rules/keywords-actions" element={<KeywordsPage type="actions"/>} />
+            <Route path="/decks" element={<DecksPage />} />
+            <Route path="/decks/:deckId" element={<DeckViewPage />} />
             <Route
               path="*"
               element={<Navigate to="/catalog" replace />}

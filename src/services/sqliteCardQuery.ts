@@ -279,12 +279,13 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   const hasTypeFilter = hasFilterValues(query.types)
   const hasColorFilter = hasFilterValues(query.colors)
   const hasColorCountFilter = query.colorCount != null
+  const hasCardIdsFilter = (query.cardIds?.length ?? 0) > 0
   const text = query.text.trim()
   const oracle = query.oracle?.trim() ?? ''
   const hasText = text.length > 0
   const hasOracleFilter = oracle.length > 0
 
-  if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter && !hasColorCountFilter && !hasOracleFilter) {
+  if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter && !hasColorCountFilter && !hasOracleFilter && !hasCardIdsFilter) {
     const cards = await getAllCards(database)
     const fuse = getAllCardsFuse(cards)
     if (!hasText) return { cards, total: cards.length }
@@ -303,12 +304,19 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
     colorMode: query.colorMode,
     colorCount: query.colorCount,
     oracle,
+    cardIds: query.cardIds,
   })
   let cards = cachedFilterResults.get(filterKey)
 
   if (!cards) {
   const conditions: string[] = []
   const parameters: string[] = []
+
+  if (hasCardIdsFilter) {
+    const names = query.cardIds!.map(() => '?')
+    query.cardIds!.forEach((id) => parameters.push(id))
+    conditions.push(`id IN (${names.join(', ')})`)
+  }
 
   if (hasSetFilter) {
     const names = query.sets.map(() => '?')
@@ -371,6 +379,34 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   const searchedCards = searchCards(fuse, cards, text)
   console.log(`[catalog] SQLite Fuse search completed in ${(performance.now() - searchStartedAt).toFixed(0)}ms`)
   return { cards: searchedCards, total: searchedCards.length }
+}
+
+// Used by decklist import to resolve a pasted card name to a printing.
+// Exact (case-insensitive) face-name matches are preferred and sorted
+// newest-first; falls back to the fuzzy index for typos/partial names.
+export async function findCardPrintings(name: string): Promise<Card[]> {
+  const database = await getCatalogDatabase()
+  if (!database) return []
+
+  resetCacheIfDatabaseChanged(database as unknown as object)
+
+  const cards = await getAllCards(database)
+  const normalizedName = name.trim().toLowerCase()
+  if (!normalizedName) return []
+
+  const exactMatches = cards.filter((card) =>
+    card.faces.some((face) => face.name.trim().toLowerCase() === normalizedName),
+  )
+
+  if (exactMatches.length > 0) {
+    return [...exactMatches].sort((left, right) =>
+      (right.releasedAt ?? '').localeCompare(left.releasedAt ?? ''),
+    )
+  }
+
+  const fuse = getAllCardsFuse(cards)
+  const fuzzyMatches = searchCards(fuse, cards, name)
+  return fuzzyMatches.length > 0 ? [fuzzyMatches[0]] : []
 }
 
 export async function getCatalogSets(): Promise<string[]> {

@@ -1,0 +1,44 @@
+.decks-page {
+  min-height: 100%;
+  padding: 2rem 1.5rem 4rem;
+  background: var(--paper);
+  color: var(--ink-strong);
+}
+
+.decks-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.decks-page h1 { margin: 0.8rem 0 0.5rem; font-family: var(--font-display); font-size: 2.4rem; }
+.decks-page-header p { margin: 0; color: var(--ink-soft); }
+.decks-back { color: var(--ink); text-decoration: none; }
+.deck-list { display: grid; gap: 0.7rem; max-width: 48rem; }
+.deck-list-item { display: flex; align-items: stretch; border: 1px solid var(--surface-3); border-radius: 10px; background: var(--surface-2); }
+.deck-list-link { flex: 1; display: grid; gap: 0.3rem; padding: 1rem; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.deck-list-link span { color: var(--ink-soft); font-size: 0.82rem; }
+.deck-delete-button, .deck-icon-button { border: 0; background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 1.35rem; }
+.deck-delete-button { width: 3rem; }
+.deck-primary-button, .deck-secondary-button { border: 0; border-radius: 7px; padding: 0.7rem 1rem; font: inherit; cursor: pointer; }
+.deck-primary-button { background: var(--ink-strong); color: var(--paper); }
+.deck-primary-button:disabled { opacity: 0.55; cursor: wait; }
+.deck-secondary-button { background: var(--surface-2); color: var(--ink-strong); }
+.decks-empty { padding: 2rem 0; color: var(--ink-soft); }
+.decks-empty h2 { color: var(--ink-strong); }
+.deck-error { color: #9b2c2c; }
+.deck-modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 1rem; background: rgb(0 0 0 / 45%); }
+.deck-modal { width: min(100%, 36rem); max-height: calc(100vh - 2rem); overflow: auto; padding: 1.25rem; border-radius: 10px; background: var(--paper); box-shadow: 0 1rem 3rem rgb(0 0 0 / 25%); }
+.deck-modal-header, .deck-modal-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.deck-modal h2 { margin: 0; }
+.deck-field { display: grid; gap: 0.4rem; margin-top: 1rem; color: var(--ink); font-size: 0.85rem; }
+.deck-field input, .deck-field textarea { box-sizing: border-box; width: 100%; border: 1px solid var(--surface-3); border-radius: 7px; padding: 0.7rem; background: var(--surface-2); color: var(--ink-strong); font: inherit; }
+.deck-field textarea { resize: vertical; line-height: 1.45; }
+.deck-modal-actions { justify-content: flex-end; margin-top: 1.25rem; }
+
+@media (max-width: 600px) {
+  .decks-page-header { align-items: flex-start; flex-direction: column; }
+  .deck-primary-button { width: 100%; }
+}

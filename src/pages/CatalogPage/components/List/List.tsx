@@ -7,6 +7,7 @@ interface ListProps {
   expandedOracles: Record<string, boolean>
   onToggleOracle: (cardId: string) => void
   onOpenDetails: (card: Card, faceIndex?: number) => void
+  quantities?: Record<string, number>
 }
 
 export function List({
@@ -14,6 +15,7 @@ export function List({
   expandedOracles,
   onToggleOracle,
   onOpenDetails,
+  quantities,
 }: ListProps) {
   if (cards.length === 0) {
     return <p className="empty-state">No cards found for this query.</p>
@@ -28,6 +30,7 @@ export function List({
           isOracleExpanded={Boolean(expandedOracles[card.id])}
           onToggleOracle={onToggleOracle}
           onOpenDetails={onOpenDetails}
+          quantity={quantities?.[card.id]}
         />
       ))}
     </section>

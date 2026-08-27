@@ -11,6 +11,10 @@ const routes = [
     label: 'Keywords',
     path: '/keywords',
   },
+  {
+    label: 'Decks',
+    path: '/decks',
+  },
 ]
 
 export function Navigation() {

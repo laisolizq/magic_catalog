@@ -8,6 +8,7 @@ interface CardsProps {
   isOracleExpanded: boolean
   onToggleOracle: (cardId: string) => void
   onOpenDetails: (card: Card, faceIndex?: number) => void
+  quantity?: number
 }
 
 function getRarityClass(rarity: Card['rarity']) {
@@ -131,6 +132,7 @@ export function Cards({
   isOracleExpanded,
   onToggleOracle,
   onOpenDetails,
+  quantity,
 }: CardsProps) {
   const faces: CardFace[] = card.faces
 
@@ -192,6 +194,10 @@ export function Cards({
                       onOpenDetails(card, faceIndex)
                     }}
                   />
+
+                  {Boolean(quantity) && (
+                    <span className="deck-quantity-badge">{quantity}x</span>
+                  )}
 
                   {hasPowerAndToughness && (
                     <span className="power-line">

@@ -65,6 +65,7 @@ export interface CatalogQuery {
   colors: string[]
   colorMode: ColorFilterMode
   colorCount?: ColorCountFilter | null
+  cardIds?: string[]
 }
 
 export interface SetOption {
