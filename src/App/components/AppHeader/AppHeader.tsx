@@ -1,15 +1,44 @@
 import { NavLink } from 'react-router-dom'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { InstallPopup } from '../InstallPopup/InstallPopup'
 import './AppHeader.css'
 
+const DEVELOPER_MODE_STORAGE_KEY = 'magic-catalog-developer-mode'
+
 export function AppHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isDeveloperMode, setIsDeveloperMode] = useState(() => {
+    try {
+      return localStorage.getItem(DEVELOPER_MODE_STORAGE_KEY) === 'true'
+    } catch {
+      return false
+    }
+  })
+  const menuCopyTapCount = useRef(0)
 
   const closeMenu = () => {
     setIsMenuOpen(false)
+  }
+
+  const handleMenuCopyTap = () => {
+    menuCopyTapCount.current += 1
+
+    if (menuCopyTapCount.current < 10) return
+
+    menuCopyTapCount.current = 0
+    setIsDeveloperMode((current) => {
+      const next = !current
+
+      try {
+        localStorage.setItem(DEVELOPER_MODE_STORAGE_KEY, String(next))
+      } catch {
+        return next
+      }
+
+      return next
+    })
   }
 
   const refreshApp = async () => {
@@ -86,32 +115,49 @@ export function AppHeader() {
                 Catalog
               </NavLink>
 
-              <NavLink
-                to="/rules"
-                className={({ isActive }) =>
-                  isActive
-                    ? 'menu-item is-active'
-                    : 'menu-item'
-                }
-                onClick={closeMenu}
-              >
-                Rules
-              </NavLink>
+              {isDeveloperMode && (
+                <>
+                  <NavLink
+                    to="/rules"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'menu-item is-active'
+                        : 'menu-item'
+                    }
+                    onClick={closeMenu}
+                  >
+                    Rules
+                  </NavLink>
 
-              <NavLink
-                to="/decks"
-                className={({ isActive }) =>
-                  isActive
-                    ? 'menu-item is-active'
-                    : 'menu-item'
-                }
-                onClick={closeMenu}
-              >
-                Decks
-              </NavLink>
+                  <NavLink
+                    to="/decks"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'menu-item is-active'
+                        : 'menu-item'
+                    }
+                    onClick={closeMenu}
+                  >
+                    Decks
+                  </NavLink>
+                </>
+              )}
             </nav>
 
-            <p className="menu-copy">
+            <p
+              className="menu-copy"
+              role="button"
+              tabIndex={0}
+              aria-label="Toggle developer mode"
+              aria-pressed={isDeveloperMode}
+              onClick={handleMenuCopyTap}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  handleMenuCopyTap()
+                }
+              }}
+            >
               Made with love by Red &amp; Lua
             </p>
 
