@@ -179,6 +179,10 @@
     box-shadow 0.15s ease;
 }
 
+.keywords-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
 .keywords-search-input::placeholder {
   color: var(--ink-soft);
 
