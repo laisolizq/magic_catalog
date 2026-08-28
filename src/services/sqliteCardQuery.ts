@@ -266,7 +266,9 @@ function searchCards(
 }
 
 export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResult> {
+  const databaseStartedAt = performance.now()
   const database = await getCatalogDatabase()
+  console.log(`[catalog] database ready in ${(performance.now() - databaseStartedAt).toFixed(0)}ms`)
   if (!database) return { cards: [], total: 0 }
 
   // Let the browser paint the latest input before synchronous SQLite work.
@@ -309,6 +311,7 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   let cards = cachedFilterResults.get(filterKey)
 
   if (!cards) {
+  const sqlStartedAt = performance.now()
   const conditions: string[] = []
   const parameters: string[] = []
 
@@ -367,7 +370,11 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
     `${cardSelectSql(database)}${conditions.length ? ` WHERE ${conditions.join(' AND ')}` : ''}`,
     parameters,
   )
+    console.log(`[catalog] SQLite query completed in ${(performance.now() - sqlStartedAt).toFixed(0)}ms`)
+
+    const mappingStartedAt = performance.now()
     cards = (result[0]?.values ?? []).map(rowToCard)
+    console.log(`[catalog] SQLite rows mapped in ${(performance.now() - mappingStartedAt).toFixed(0)}ms`)
 
     cachedFilterResults.set(filterKey, cards)
   }

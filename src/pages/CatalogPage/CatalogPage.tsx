@@ -20,6 +20,7 @@ import {
   type CatalogUpdateStatus,
 } from '../../services/catalogUpdates'
 import { hasLocalCatalog, type CatalogImportProgress } from '../../services/catalogImport'
+import { getCatalogDatabase } from '../../db/sqliteClient'
 import { selectLatestPrintings } from './selectLatestPrintings'
 import './CatalogPage.css'
 
@@ -310,6 +311,10 @@ export function CatalogPage() {
       const hasCatalogBeforeUpdate = await hasLocalCatalog()
 
       if (hasCatalogBeforeUpdate) {
+        void getCatalogDatabase().catch((error) => {
+          console.error('[catalog] database warmup failed', error)
+        })
+
         if (!cancelled) {
           setIsCatalogLoading(true)
           setIsCatalogReady(true)
@@ -404,7 +409,7 @@ export function CatalogPage() {
           colorMode,
           colorCount: parsedQuery.colorCount,
         })
-        console.log(`[catalog] card query completed in ${(performance.now() - queryStartedAt).toFixed(0)}ms`)
+        console.log(`[catalog] card query ${JSON.stringify(parsedQuery)} completed in ${(performance.now() - queryStartedAt).toFixed(0)}ms`)
 
         if (cancelled) return
         setDisplayCards(result.cards)

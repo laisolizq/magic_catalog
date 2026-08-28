@@ -1,12 +1,8 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AppHeader } from './App/components/AppHeader/AppHeader'
+import { CatalogPage } from './pages/CatalogPage/CatalogPage'
 import './App.css'
-
-const CatalogPage = lazy(async () => {
-  const module = await import('./pages/CatalogPage/CatalogPage')
-  return { default: module.CatalogPage }
-})
 
 const RulesPage = lazy(async () => {
   const module = await import('./pages/RulesPage/RulesPage')
@@ -46,7 +42,7 @@ function App() {
             />
             <Route path="/rules" element={<RulesPage />} />
             <Route path="/rules/keywords-abilities" element={<KeywordsPage type="abilities" />} />
-            <Route path="/rules/keywords-actions" element={<KeywordsPage type="actions"/>} />
+            <Route path="/rules/keywords-actions" element={<KeywordsPage type="actions" />} />
             <Route path="/decks" element={<DecksPage />} />
             <Route path="/decks/:deckId" element={<DeckViewPage />} />
             <Route
