@@ -243,6 +243,7 @@ export function AdvancedFilters({
       className="advanced-filters"
       aria-label="Advanced filters"
     >
+      <div className="advanced-filters-scroll">
       {/* =========================
           SETS
           ========================= */}
@@ -507,6 +508,8 @@ export function AdvancedFilters({
           />
           Show all prints
         </label>
+      </div>
+
       </div>
 
       {/* =========================

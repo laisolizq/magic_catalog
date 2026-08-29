@@ -4,14 +4,25 @@
 
 .catalog-basic-chrome {
   position: sticky;
-  top: 0;
+  /* Matches .app-shell's own padding so the chrome keeps the same gap from
+     the viewport edge once stuck, instead of snapping flush to top:0. */
+  top: 1rem;
   z-index: 20;
 
   overflow: hidden;
   will-change: height;
 
   box-shadow: 0 0 0 100vmax var(--paper);
-  clip-path: inset(0 -100vmax);
+  /* Bleed the solid background upward too, so it covers the gap between
+     the viewport edge and the chrome's own top (its "top" offset above)
+     instead of letting scrolled cards show through there. */
+  clip-path: inset(-100vmax -100vmax 0 -100vmax);
+}
+
+@media (max-width: 640px) {
+  .catalog-basic-chrome {
+    top: 0.65rem;
+  }
 }
 
 .catalog-chrome-inner {
@@ -25,11 +36,42 @@
   position: static;
 }
 
-.catalog-advanced-chrome {
-  position: sticky;
-  top: 0;
-  z-index: 20;
+/* The advanced chrome is position: fixed, so it escapes .app-shell's own
+   padding - restore it here to keep the menu button aligned with the
+   catalog page's header. */
+.catalog-advanced-chrome .app-header {
+  padding-top: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
 
-  box-shadow: 0 0 0 100vmax var(--paper);
-  clip-path: inset(0 -100vmax);
+@media (max-width: 640px) {
+  .catalog-advanced-chrome .app-header {
+    padding-top: 0.65rem;
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+  }
+}
+
+/* Takes over the full viewport instead of pushing the card list down, so
+   the header stays fixed above and the actions bar fixed below, with only
+   the filters themselves (.advanced-filters-scroll) scrolling. */
+.catalog-advanced-chrome {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+
+  display: flex;
+  flex-direction: column;
+
+  background: var(--paper);
+}
+
+.catalog-advanced-chrome .search-bar-wrapper {
+  flex: 1;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }

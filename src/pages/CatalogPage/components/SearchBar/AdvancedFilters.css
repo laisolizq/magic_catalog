@@ -3,10 +3,24 @@
   max-width: none;
   margin-left: calc(50% - 50vw);
 
-  min-height: 100%;
-  padding: 1rem;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
   background: var(--paper);
   color: var(--ink-strong);
+}
+
+/* Only this middle section scrolls - the header (AppHeader, rendered by
+   AdvancedCatalogChrome) and the actions bar below stay fixed in place. */
+.advanced-filters-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
+  padding: 1rem;
 }
 
 /* =========================
@@ -110,12 +124,13 @@
    ========================= */
 
 .advanced-filters-actions {
+  flex: none;
+
   display: flex;
   align-items: center;
   gap: 0.6rem;
 
-  margin-top: 1rem;
-  padding-top: 1rem;
+  padding: 1rem;
 
   border-top: 1px solid
     color-mix(
@@ -368,7 +383,7 @@
    ========================= */
 
 @media (max-width: 600px) {
-  .advanced-filters {
+  .advanced-filters-scroll {
     padding: 0.8rem;
   }
 
@@ -387,6 +402,7 @@
 
   .advanced-filters-actions {
     gap: 0.45rem;
+    padding: 0.8rem;
   }
 
   .advanced-cancel,
