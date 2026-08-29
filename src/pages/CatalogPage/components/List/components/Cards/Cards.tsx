@@ -1,7 +1,43 @@
+import { useState } from 'react'
 import type { Card, CardFace } from '../../../../../../types/card'
 import { symbolUrl } from '../../../../../../utils/utils'
 import { ManaCost } from './components/ManaCost/ManaCost'
 import './Cards.css'
+
+// Query results (name, type, oracle text) are ready long before the art
+// image (an external Scryfall fetch) finishes loading - show a shimmering
+// placeholder in its place instead of a blank/static frame until it does.
+function CardThumb({
+  src,
+  alt,
+  onOpenDetails,
+}: {
+  src: string
+  alt: string
+  onOpenDetails: () => void
+}) {
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  return (
+    <>
+      {!isLoaded && (
+        <div className="card-thumb-placeholder" aria-hidden="true" />
+      )}
+
+      <img
+        className={`card-thumb ${isLoaded ? 'is-loaded' : ''}`}
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setIsLoaded(true)}
+        onClick={(event) => {
+          event.stopPropagation()
+          onOpenDetails()
+        }}
+      />
+    </>
+  )
+}
 
 interface CardsProps {
   card: Card
@@ -184,15 +220,10 @@ export function Cards({
                 aria-hidden="true"
               >
                 <div className="card-art-frame">
-                  <img
-                    className="card-thumb"
+                  <CardThumb
                     src={getFaceImage(face)}
                     alt={face.name}
-                    loading="lazy"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onOpenDetails(card, faceIndex)
-                    }}
+                    onOpenDetails={() => onOpenDetails(card, faceIndex)}
                   />
 
                   {Boolean(quantity) && (

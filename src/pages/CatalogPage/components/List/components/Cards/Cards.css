@@ -385,11 +385,49 @@
 
   display: block;
 
+  opacity: 0;
+  transition: opacity 220ms ease;
+
   /*
    * Slightly soften the image so it
    * integrates with the card frame.
    */
   filter: saturate(0.92);
+}
+
+.card-thumb.is-loaded {
+  opacity: 1;
+}
+
+.card-thumb-placeholder {
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 4%) 25%,
+    rgb(255 255 255 / 12%) 37%,
+    rgb(255 255 255 / 4%) 63%
+  );
+  background-size: 400% 100%;
+
+  animation: card-thumb-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes card-thumb-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-thumb-placeholder {
+    animation: none;
+  }
 }
 
 
