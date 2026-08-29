@@ -21,6 +21,7 @@ import {
 } from '../../services/catalogUpdates'
 import { hasLocalCatalog, type CatalogImportProgress } from '../../services/catalogImport'
 import { getCatalogDatabase } from '../../db/sqliteClient'
+import { CardSkeleton } from './components/List/components/CardSkeleton/CardSkeleton'
 import { selectLatestPrintings } from './selectLatestPrintings'
 import './CatalogPage.css'
 
@@ -895,12 +896,20 @@ export function CatalogPage() {
 
       {catalogError ? (
         <p role="alert">{catalogError}</p>
-      ) : !isCatalogReady ? null : isCatalogLoading ? (
-        catalogProgress.phase ? (
-          <p role="status">
-            {catalogProgress.phase} ({catalogProgress.percent}%)
-          </p>
-        ) : null
+      ) : !isCatalogReady || isCatalogLoading ? (
+        <>
+          <section className="cards-grid" aria-busy="true" aria-label="Loading catalog">
+            {Array.from({ length: 8 }, (_, index) => (
+              <CardSkeleton key={index} />
+            ))}
+          </section>
+
+          {catalogProgress.phase && (
+            <p role="status">
+              {catalogProgress.phase} ({catalogProgress.percent}%)
+            </p>
+          )}
+        </>
       ) : (
         <List
           cards={visibleCardsSorted}
