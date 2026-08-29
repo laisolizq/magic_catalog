@@ -1,5 +1,11 @@
 .card-tile-skeleton {
   cursor: default;
+
+  /* Real cards are always exactly as tall as their art (the text column
+     never exceeds it) - pin skeletons to the same height so they match at
+     every breakpoint instead of approximating it via the text stack. */
+  min-height: var(--card-media-height);
+  box-sizing: border-box;
 }
 
 .card-tile-skeleton:hover {
