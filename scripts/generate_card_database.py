@@ -19,20 +19,24 @@ from typing import Any
 
 USER_AGENT = "magic_catalog/1.0 (card database generator)"
 BULK_DATA_URL = "https://api.scryfall.com/bulk-data"
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 ARTIFACT_VERSION = "1"
 VALID_RARITIES = {"common", "uncommon", "rare", "mythic"}
 VALID_COLORS = {"W", "U", "B", "R", "G"}
 EXCLUDED_LAYOUTS = {"token", "double_faced_token", "art_series"}
-PLAYABLE_SET_TYPES = {
-    "core",
-    "expansion",
-    "masters",
+# Formats tracked for inclusion and per-card legality. A card is kept if it is
+# legal, restricted, or banned (i.e. tournament-relevant) in at least one of
+# these formats; cards that are not_legal everywhere are excluded.
+TRACKED_FORMATS = (
+    "standard",
+    "pioneer",
+    "modern",
+    "pauper",
+    "legacy",
+    "vintage",
     "commander",
-    "draft_innovation",
-    "starter",
-    "eternal",
-}
+)
+INCLUDED_LEGALITY_STATUSES = {"legal", "restricted", "banned"}
 
 
 def fetch_json(url: str) -> dict[str, Any]:
@@ -94,8 +98,30 @@ def build_face(data: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]
     return face
 
 
+def extract_legalities(data: dict[str, Any]) -> dict[str, str]:
+    raw_legalities = data.get("legalities")
+    legalities = raw_legalities if isinstance(raw_legalities, dict) else {}
+    return {
+        format_name: legalities.get(format_name, "not_legal")
+        for format_name in TRACKED_FORMATS
+    }
+
+
+def is_tournament_legal(legalities: dict[str, str]) -> bool:
+    return any(status in INCLUDED_LEGALITY_STATUSES for status in legalities.values())
+
+
+def is_unreleased(data: dict[str, Any], reference_date: str) -> bool:
+    # Preview/spoiled cards report "not_legal" everywhere until their set
+    # actually releases, so a future released_at is the only signal that
+    # they'll eventually be tournament-legal.
+    released_at = data.get("released_at")
+    return isinstance(released_at, str) and released_at > reference_date
+
+
 def normalize_card(
     data: dict[str, Any],
+    reference_date: str,
     allowed_sets: set[str] | None = None,
 ) -> dict[str, Any] | None:
     if data.get("lang") != "en":
@@ -104,9 +130,11 @@ def normalize_card(
     if data.get("layout") in EXCLUDED_LAYOUTS:
         return None
 
-    set_type = data.get("set_type")
-    if set_type not in PLAYABLE_SET_TYPES:
+    legalities = extract_legalities(data)
+    if not is_tournament_legal(legalities) and not is_unreleased(data, reference_date):
         return None
+
+    set_type = data.get("set_type")
 
     set_code = data.get("set")
     if allowed_sets is not None and (
@@ -146,6 +174,7 @@ def normalize_card(
         "oracleId": data.get("oracle_id", ""),
         "rarity": rarity,
         "faces": faces,
+        "legalities": legalities,
     }
 
 
@@ -253,7 +282,8 @@ def build_sqlite_database(
             oracle_id TEXT,
             rarity TEXT NOT NULL,
             faces_json TEXT NOT NULL,
-            added_at TEXT NOT NULL DEFAULT ''
+            added_at TEXT NOT NULL DEFAULT '',
+            legalities_json TEXT NOT NULL DEFAULT '{}'
         );
         CREATE TABLE face_types (
             card_id TEXT NOT NULL,
@@ -294,7 +324,7 @@ def build_sqlite_database(
         for line in cards_file:
             card = json.loads(line)
             database.execute(
-                'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 (
                     card['id'], card['set'], card.get('setType', ''),
                     card.get('releasedAt', ''),
@@ -302,6 +332,7 @@ def build_sqlite_database(
                     card.get('oracleId'), card['rarity'],
                     json.dumps(card['faces'], ensure_ascii=True, separators=(',', ':')),
                     previous_added_dates.get(card['id']) or default_added_at(card, generation_date),
+                    json.dumps(card.get('legalities', {}), ensure_ascii=True, separators=(',', ':')),
                 ),
             )
             # All cards in a set share the same name/type/release date, so
@@ -445,7 +476,7 @@ def main() -> int:
                 if not line.strip():
                     continue
 
-                normalized = normalize_card(json.loads(line), allowed_sets)
+                normalized = normalize_card(json.loads(line), generation_date, allowed_sets)
                 if normalized is None:
                     continue
 

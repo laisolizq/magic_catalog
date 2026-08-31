@@ -1,5 +1,21 @@
 export type CardColor = 'W' | 'U' | 'B' | 'R' | 'G' | 'C'
 
+// Formats tracked by the card database (see generate_card_database.py's
+// TRACKED_FORMATS); a card is only included if it is legal, restricted, or
+// banned in at least one of these.
+export type MagicFormat =
+  | 'standard'
+  | 'pioneer'
+  | 'modern'
+  | 'pauper'
+  | 'legacy'
+  | 'vintage'
+  | 'commander'
+
+export type LegalityStatus = 'legal' | 'not_legal' | 'restricted' | 'banned'
+
+export type Legalities = Partial<Record<MagicFormat, LegalityStatus>>
+
 export interface Card {
   id: string
   set: string
@@ -14,6 +30,7 @@ export interface Card {
   faces: Array<CardFace>
   // some data sources use the key 'rulings' (correct spelling)
   rulings?: Array<Ruling>
+  legalities?: Legalities
 }
 
 export interface CardFace {
