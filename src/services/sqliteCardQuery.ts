@@ -26,6 +26,7 @@ function rowToCard(row: unknown[]): Card {
     oracleId: row[5] ? String(row[5]) : undefined,
     rarity: row[6] as Card['rarity'],
     faces: JSON.parse(String(row[7])) as Card['faces'],
+    addedAt: row[8] ? String(row[8]) : undefined,
   }
 }
 
@@ -33,7 +34,8 @@ function cardSelectSql(database: NonNullable<Awaited<ReturnType<typeof getCatalo
   const columns = database.exec('PRAGMA table_info(cards)')[0]?.values ?? []
   const hasSetType = columns.some((column) => column[1] === 'set_type')
   const hasReleaseDate = columns.some((column) => column[1] === 'released_at')
-  return `SELECT id, set_code, ${hasSetType ? 'set_type' : "''"}, ${hasReleaseDate ? 'released_at' : "''"}, collector_number, oracle_id, rarity, faces_json
+  const hasAddedDate = columns.some((column) => column[1] === 'added_at')
+  return `SELECT id, set_code, ${hasSetType ? 'set_type' : "''"}, ${hasReleaseDate ? 'released_at' : "''"}, collector_number, oracle_id, rarity, faces_json, ${hasAddedDate ? 'added_at' : "''"}
      FROM cards`
 }
 

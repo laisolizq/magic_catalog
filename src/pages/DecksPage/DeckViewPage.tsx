@@ -14,7 +14,7 @@ import type { SetOption } from '../../types/catalog'
 import { buildScryfallQuery, parseScryfallQuery, type ColorFilterMode } from '../../utils/scryfallQuery'
 import './DeckViewPage.css'
 
-type SortOption = 'set-asc' | 'set-desc' | 'name-asc' | 'name-desc' | 'cmc-asc' | 'cmc-desc'
+type SortOption = 'set-asc' | 'set-desc' | 'name-asc' | 'name-desc' | 'cmc-asc' | 'cmc-desc' | 'added-asc' | 'added-desc'
 
 const typeFilters = ['artifact', 'battle', 'creature', 'enchantment', 'instant', 'land', 'planeswalker', 'sorcery']
 
@@ -26,6 +26,8 @@ function sortCards(cards: Card[], option: SortOption) {
     if (option === 'name-desc') return -nameOrder
     if (option === 'set-desc') return right.set.localeCompare(left.set) || nameOrder
     if (option === 'set-asc') return left.set.localeCompare(right.set) || nameOrder
+    if (option === 'added-desc') return (right.addedAt ?? '').localeCompare(left.addedAt ?? '') || nameOrder
+    if (option === 'added-asc') return (left.addedAt ?? '').localeCompare(right.addedAt ?? '') || nameOrder
     return nameOrder
   })
 }
