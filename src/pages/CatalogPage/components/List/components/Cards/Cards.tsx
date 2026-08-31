@@ -61,6 +61,37 @@ function setSymbolUrl(setCode: string, rarity: Card['rarity']): string {
   return `https://svgs.scryfall.io/sets/${setCode}.svg?rarity=${rarity}`
 }
 
+// Falls back to the set code letters when Scryfall has no symbol for the set
+// (e.g. very new or non-standard sets) instead of a broken image icon.
+function SetSymbol({
+  setCode,
+  rarity,
+}: {
+  setCode: string
+  rarity: Card['rarity']
+}) {
+  const [hasError, setHasError] = useState(false)
+
+  if (hasError) {
+    return (
+      <span className="set-symbol set-symbol-fallback" aria-hidden="true">
+        {setCode.toUpperCase()}
+      </span>
+    )
+  }
+
+  return (
+    <img
+      className="set-symbol"
+      src={setSymbolUrl(setCode, rarity)}
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      onError={() => setHasError(true)}
+    />
+  )
+}
+
 // Shortens the "Legendary" supertype so long type lines take up less room.
 function abbreviateTypeLine(typeLine: string): string {
   return typeLine.replace(/\bLegendary\b/g, 'Lgd.')
@@ -268,16 +299,7 @@ export function Cards({
                     card.rarity ?? ''
                   }`}
                 >
-                  <img
-                    className="set-symbol"
-                    src={setSymbolUrl(
-                      card.set,
-                      card.rarity,
-                    )}
-                    alt=""
-                    aria-hidden="true"
-                    loading="lazy"
-                  />
+                  <SetSymbol setCode={card.set} rarity={card.rarity} />
                 </span>
               </div>
 

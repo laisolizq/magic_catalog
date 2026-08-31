@@ -23,8 +23,16 @@ describe('CatalogPage', () => {
       </MemoryRouter>,
     )
 
-    const firstCard = mockCards[0]
-    const firstName = firstCard.faces?.[0]?.name ?? ''
+    // The default sort is 'Recently Added' (added-desc); the fixture has no
+    // addedAt data, so ties fall back to name-ascending order.
+    const firstCard = mockCards
+      .filter((card) => card.set === 'hob')
+      .sort((a, b) => {
+        const left = a.faces[0]?.name ?? ''
+        const right = b.faces[0]?.name ?? ''
+        return left.localeCompare(right)
+      })[0]
+    const firstName = firstCard?.faces?.[0]?.name ?? ''
 
     expect(await screen.findByText(firstName)).toBeInTheDocument()
 
@@ -65,7 +73,9 @@ describe('CatalogPage', () => {
       </MemoryRouter>,
     )
 
-    // The app defaults to the hob set (s:hob) on load.
+    // The app defaults to the hob set (s:hob) on load, sorted by 'Recently
+    // Added'; the fixture has no addedAt data, so this also ties out to
+    // name-ascending order (same as explicitly picking the 'Name' sort below).
     const expectedFirstByNameAsc = mockCards
       .filter((card) => card.set === 'hob')
       .sort((a, b) => {
@@ -75,9 +85,7 @@ describe('CatalogPage', () => {
       })[0]
       ?.faces[0]?.name
 
-    const firstHobName = mockCards.find((card) => card.set === 'hob')
-      ?.faces[0]?.name ?? ''
-    expect(await screen.findByText(firstHobName)).toBeInTheDocument()
+    expect(await screen.findByText(expectedFirstByNameAsc)).toBeInTheDocument()
 
     await user.click(
       screen.getByRole('button', {

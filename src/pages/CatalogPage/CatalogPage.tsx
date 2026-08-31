@@ -44,6 +44,8 @@ type SortOption =
   | 'name-desc'
   | 'cmc-asc'
   | 'cmc-desc'
+  | 'added-asc'
+  | 'added-desc'
 
 interface QueryUrlParams {
   query: string
@@ -69,19 +71,6 @@ function decodeQueryParams(search: string): Partial<QueryUrlParams> {
     showAllPrints: params.has('all'),
     visibleCount: params.has('batch') ? Number(params.get('batch')) || undefined : undefined,
   }
-}
-
-function getLatestReleasedSet(setOptions: SetOption[]): SetOption | undefined {
-  const now = new Date()
-  // Filter sets that have been released (releasedAt <= now) and are core or expansion
-  const releasedSets = setOptions.filter(set => 
-    new Date(set.releasedAt) <= now && 
-    (set.setType === 'core' || set.setType === 'expansion')
-  )
-  // Sort by release date descending and return the first (most recent)
-  return releasedSets.sort((a, b) => 
-    new Date(b.releasedAt).getTime() - new Date(a.releasedAt).getTime()
-  )[0]
 }
 
 function getFaceName(card: Card): string {
@@ -183,6 +172,18 @@ function sortCards(
         )
       }
 
+      case 'added-asc': {
+        const delta = (left.addedAt ?? '').localeCompare(right.addedAt ?? '')
+        if (delta !== 0) return delta
+        return getFaceName(left).localeCompare(getFaceName(right))
+      }
+
+      case 'added-desc': {
+        const delta = (right.addedAt ?? '').localeCompare(left.addedAt ?? '')
+        if (delta !== 0) return delta
+        return getFaceName(left).localeCompare(getFaceName(right))
+      }
+
       default:
         return 0
     }
@@ -197,7 +198,6 @@ export function CatalogPage() {
 
   // Initialize state from URL params
   const urlParams = useMemo(() => decodeQueryParams(location.search), [location.search])
-  const hasQueryFromUrl = Boolean(urlParams.query)
 
   /*
    * The query is the single source of truth for:
@@ -261,7 +261,7 @@ export function CatalogPage() {
     useState(false)
 
   const [sortOption, setSortOption] =
-    useState<SortOption>(urlParams.sortOption || 'set-asc')
+    useState<SortOption>(urlParams.sortOption || 'added-desc')
 
   const [displayCards, setDisplayCards] = useState<Card[]>([])
   const [typeOptions, setTypeOptions] = useState<string[]>([])
@@ -278,7 +278,6 @@ export function CatalogPage() {
   const sentinelRef = useRef<HTMLDivElement>(null)
   const ignoreScrollRef = useRef(false)
   const hasLoadedCatalogRef = useRef(false)
-  const hasInitializedQueryRef = useRef(false)
 
   /*
    * SYNC STATE TO URL
@@ -469,21 +468,6 @@ export function CatalogPage() {
       cancelled = true
     }
   }, [isCatalogReady])
-
-  /*
-   * UPDATE INITIAL QUERY TO LATEST RELEASED SET
-   * If no query was provided in URL params, use the latest released set
-   */
-  useEffect(() => {
-    if (hasQueryFromUrl || setOptions.length === 0 || hasInitializedQueryRef.current) return
-
-    const latestSet = getLatestReleasedSet(setOptions)
-    if (latestSet) {
-      hasInitializedQueryRef.current = true
-      // eslint-disable-next-line
-      setQuery(`s:${latestSet.code}`)
-    }
-  }, [setOptions, hasQueryFromUrl])
 
   const filteredCards = displayCards
 

@@ -19,15 +19,27 @@ type SortOption =
   | 'name-desc'
   | 'cmc-asc'
   | 'cmc-desc'
+  | 'added-asc'
+  | 'added-desc'
 
-type SortCategory = 'set' | 'name' | 'cmc'
+type SortCategory = 'set' | 'name' | 'cmc' | 'added'
 const SEARCH_DEBOUNCE_MS = 300
 
 const SORT_CATEGORIES: Array<{ value: SortCategory; label: string }> = [
   { value: 'set', label: 'Set' },
   { value: 'name', label: 'Name' },
   { value: 'cmc', label: 'Mana Value' },
+  { value: 'added', label: 'Recently Added' },
 ]
+
+// Default direction the first time a category is selected; repeat clicks
+// toggle between asc/desc. 'added' defaults to newest-first.
+const DEFAULT_SORT_DIRECTION: Record<SortCategory, 'asc' | 'desc'> = {
+  set: 'asc',
+  name: 'asc',
+  cmc: 'asc',
+  added: 'desc',
+}
 
 const COLOR_OPTIONS = [
   {
@@ -438,9 +450,11 @@ export function SearchBar({
     ]
 
     const nextDirection =
-      category === activeCategory && activeDirection === 'asc'
-        ? 'desc'
-        : 'asc'
+      category === activeCategory
+        ? activeDirection === 'asc'
+          ? 'desc'
+          : 'asc'
+        : DEFAULT_SORT_DIRECTION[category]
 
     onSortChange(`${category}-${nextDirection}` as SortOption)
     closePanel()

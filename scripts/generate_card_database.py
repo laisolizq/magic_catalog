@@ -10,6 +10,7 @@ import json
 import os
 import sqlite3
 import sys
+import tempfile
 import time
 import urllib.request
 from datetime import datetime, timezone
@@ -18,7 +19,7 @@ from typing import Any
 
 USER_AGENT = "magic_catalog/1.0 (card database generator)"
 BULK_DATA_URL = "https://api.scryfall.com/bulk-data"
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 ARTIFACT_VERSION = "1"
 VALID_RARITIES = {"common", "uncommon", "rare", "mythic"}
 VALID_COLORS = {"W", "U", "B", "R", "G"}
@@ -148,6 +149,41 @@ def normalize_card(
     }
 
 
+def default_previous_database_url() -> str | None:
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    if not repo:
+        return None
+    return f"https://github.com/{repo}/releases/download/card-database-latest/catalog.sqlite.gz"
+
+
+def fetch_previous_added_dates(url: str) -> dict[str, str]:
+    """Read each card's 'added_at' from a previously published database, so
+    repeat runs can carry forward the date a card was first seen instead of
+    resetting it to today (Scryfall exposes no spoiler/preview date)."""
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(request, timeout=120) as response:
+        compressed = response.read()
+
+    with tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False) as handle:
+        handle.write(gzip.decompress(compressed))
+        temp_path = Path(handle.name)
+
+    try:
+        database = sqlite3.connect(temp_path)
+        try:
+            columns = database.execute("PRAGMA table_info(cards)").fetchall()
+            if not any(column[1] == "added_at" for column in columns):
+                return {}
+            rows = database.execute(
+                "SELECT id, added_at FROM cards WHERE added_at != ''"
+            ).fetchall()
+            return {row[0]: row[1] for row in rows}
+        finally:
+            database.close()
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+
 def find_bulk_download_url(data_type: str) -> tuple[str, str]:
     payload = fetch_json(BULK_DATA_URL)
     for item in payload.get("data", []):
@@ -172,13 +208,39 @@ def parse_args() -> argparse.Namespace:
         "--sets",
         help="Comma-separated set codes to include; omit to include all sets.",
     )
+    parser.add_argument(
+        "--previous-database-url",
+        help=(
+            "URL of a previously published catalog.sqlite.gz used to carry "
+            "forward each card's first-seen ('added') date; defaults to the "
+            "current GitHub release when GITHUB_REPOSITORY is set."
+        ),
+    )
+    parser.add_argument(
+        "--skip-previous-lookup",
+        action="store_true",
+        help="Skip fetching the previous release database; every card is stamped with today's date as its 'added' date.",
+    )
     return parser.parse_args()
+
+
+def default_added_at(card: dict[str, Any], generation_date: str) -> str:
+    """Approximate 'added' date for a card with no prior recorded value: its
+    set's release date if already released (so backfilled/unknown history
+    doesn't look newer than it is), otherwise today (a future release date
+    means the card was spoiled ahead of release)."""
+    released_at = card.get("releasedAt") or ""
+    if released_at and released_at <= generation_date:
+        return released_at
+    return generation_date
 
 
 def build_sqlite_database(
     cards_path: Path,
     rulings_path: Path,
     database_path: Path,
+    previous_added_dates: dict[str, str],
+    generation_date: str,
 ) -> None:
     database = sqlite3.connect(database_path)
     database.executescript('''
@@ -190,7 +252,8 @@ def build_sqlite_database(
             collector_number TEXT NOT NULL,
             oracle_id TEXT,
             rarity TEXT NOT NULL,
-            faces_json TEXT NOT NULL
+            faces_json TEXT NOT NULL,
+            added_at TEXT NOT NULL DEFAULT ''
         );
         CREATE TABLE face_types (
             card_id TEXT NOT NULL,
@@ -231,13 +294,14 @@ def build_sqlite_database(
         for line in cards_file:
             card = json.loads(line)
             database.execute(
-                'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 (
                     card['id'], card['set'], card.get('setType', ''),
                     card.get('releasedAt', ''),
                     card['collectorNumber'],
                     card.get('oracleId'), card['rarity'],
                     json.dumps(card['faces'], ensure_ascii=True, separators=(',', ':')),
+                    previous_added_dates.get(card['id']) or default_added_at(card, generation_date),
                 ),
             )
             # All cards in a set share the same name/type/release date, so
@@ -288,6 +352,7 @@ def build_sqlite_database(
     database.executescript('''
         CREATE INDEX cards_set_idx ON cards(set_code);
         CREATE INDEX cards_rarity_idx ON cards(rarity);
+        CREATE INDEX cards_added_at_idx ON cards(added_at);
         CREATE INDEX face_types_name_idx ON face_types(type_name);
         CREATE INDEX face_types_card_idx ON face_types(card_id);
         CREATE INDEX face_subtypes_name_idx ON face_subtypes(subtype_name);
@@ -303,6 +368,9 @@ def build_sqlite_database(
 
 def main() -> int:
     generation_started_at = time.perf_counter()
+    run_timestamp = datetime.now(timezone.utc)
+    generated_at = run_timestamp.isoformat()
+    generation_date = run_timestamp.date().isoformat()
     args = parse_args()
     allowed_sets = (
         {set_code.strip().lower() for set_code in args.sets.split(",") if set_code.strip()}
@@ -312,6 +380,24 @@ def main() -> int:
     root_dir = Path(__file__).resolve().parent.parent
     output_dir = (root_dir / args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    previous_added_dates: dict[str, str] = {}
+    if not args.skip_previous_lookup:
+        previous_database_url = args.previous_database_url or default_previous_database_url()
+        if previous_database_url:
+            print(f"Fetching previous card database from {previous_database_url}...", file=sys.stderr)
+            try:
+                previous_added_dates = fetch_previous_added_dates(previous_database_url)
+                print(
+                    f"Loaded {len(previous_added_dates)} known 'added' dates from the previous release.",
+                    file=sys.stderr,
+                )
+            except Exception as error:
+                print(
+                    f"Warning: could not load previous card database ({error}); "
+                    "treating all cards as newly added today.",
+                    file=sys.stderr,
+                )
 
     if args.download_url:
         download_url = args.download_url
@@ -418,7 +504,13 @@ def main() -> int:
     temporary_rulings_path.replace(rulings_path)
 
     sqlite_started_at = time.perf_counter()
-    build_sqlite_database(artifact_path, rulings_path, temporary_sqlite_path)
+    build_sqlite_database(
+        artifact_path,
+        rulings_path,
+        temporary_sqlite_path,
+        previous_added_dates,
+        generation_date,
+    )
     database_checksum = hashlib.sha256()
     with open(temporary_sqlite_path, 'rb') as sqlite_file:
         with gzip.open(temporary_database_path, 'wb', compresslevel=9) as database_output:
@@ -435,7 +527,6 @@ def main() -> int:
         file=sys.stderr,
     )
 
-    generated_at = datetime.now(timezone.utc).isoformat()
     metadata = {
         "artifactVersion": ARTIFACT_VERSION,
         "schemaVersion": SCHEMA_VERSION,

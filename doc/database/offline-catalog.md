@@ -17,6 +17,8 @@ The command writes these files to `artifacts/card-database/`:
 
 Only records whose Scryfall `lang` field is `en` are included. The database includes `core`, `expansion`, `masters`, `commander`, `draft_innovation`, and `starter` set types. Other set types, including memorabilia and funny products such as beginner-box front cards, are excluded. Token cards (`token` and `double_faced_token` layouts) and art-series cards (`art_series` layout) are also skipped before the artifact is written. Rulings are loaded from Scryfall's bulk rulings file and filtered by the selected cards' `oracle_id` values; no per-card rulings requests are made.
 
+Scryfall does not expose a card's spoiler/preview date, so each card row also carries an `added_at` date approximating one: the date it was first seen in a generated database. On each run, the generator downloads the previously published `catalog.sqlite.gz` (from `--previous-database-url`, or the current GitHub release when `GITHUB_REPOSITORY` is set) to carry forward known `added_at` values. A card with no prior recorded value falls back to its set's `released_at` date if that date has already passed (so backfilled or historical cards aren't misreported as newly added), or to today's date if the release date is still in the future (a spoiled-but-unreleased card). Pass `--skip-previous-lookup` to stamp every card with its fallback date instead of checking history (e.g. for one-off local runs). Because this value only reflects when *this generator* first recorded a card, its accuracy depends on how often the artifact is regenerated.
+
 To generate only the requested sets, pass their Scryfall set codes:
 
 ```sh
@@ -31,7 +33,7 @@ The artifact is intentionally not bundled into the Vite application. The browser
 
 ## Publish a release
 
-The workflow in `.github/workflows/card-database.yml` supports both manual dispatch and a weekly scheduled run. It publishes `catalog.sqlite.gz` and `metadata.json` to the `card-database-latest` GitHub Release.
+The workflow in `.github/workflows/card-database.yml` supports both manual dispatch and a daily scheduled run. It publishes `catalog.sqlite.gz` and `metadata.json` to the `card-database-latest` GitHub Release.
 
 The browser checks the latest release metadata when online. Queries never require a network connection. After a successful import, the catalog remains available offline.
 
@@ -40,8 +42,8 @@ The browser checks the latest release metadata when online. Queries never requir
 After generating the artifact, create `.env.local` in the repository root:
 
 ```env
-VITE_CATALOG_DATABASE_URL=http://localhost:8080/catalog.sqlite.gz
-VITE_CATALOG_METADATA_URL=http://localhost:8080/metadata.json
+VITE_CATALOG_DATABASE_URL=http://127.0.0.1:8080/catalog.sqlite.gz
+VITE_CATALOG_METADATA_URL=http://127.0.0.1:8080/metadata.json
 ```
 
 Start the artifact server in one terminal:

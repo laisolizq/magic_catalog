@@ -5,6 +5,9 @@ export interface Card {
   set: string
   setType?: string
   releasedAt?: string
+  // Date the card was first seen in a generated database (approximates a
+  // spoiler date, since Scryfall does not expose one).
+  addedAt?: string
   collectorNumber?: string
   oracleId?: string
   rarity: 'common' | 'uncommon' | 'rare' | 'mythic'
