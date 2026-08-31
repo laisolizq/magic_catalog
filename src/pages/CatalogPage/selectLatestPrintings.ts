@@ -11,17 +11,11 @@ function collectorSortKey(value: string | undefined): [number, string] {
 }
 
 // Ordered most -> least preferred. A card's default printing is picked from
-// whichever tier it has any printing in, highest first (e.g. a mh3/commander
-// split like Kappa Cannoneer prefers the draft_innovation/mh3 one over any
-// commander-deck printing, regardless of release date), then the latest
-// release within that tier.
+// whichever tier it has any printing in, highest first (a core/expansion
+// printing always wins over any other set type): the latest release within
+// the core/expansion tier, or the earliest release for any other tier.
 const SET_TYPE_TIERS: readonly (readonly string[])[] = [
   ['core', 'expansion'],
-  ['draft_innovation'],
-  ['masters'],
-  ['commander'],
-  ['starter'],
-  ['eternal'],
 ]
 
 function tierIndexForSetType(setType: string | undefined): number {
@@ -31,15 +25,19 @@ function tierIndexForSetType(setType: string | undefined): number {
   return index === -1 ? SET_TYPE_TIERS.length : index
 }
 
-function comparePrintingPreference(left: Card, right: Card): number {
-  // Release date only distinguishes *different* sets (e.g. picking the newer
-  // of two reprint sets). Within the same set, some products (like LTR's
-  // later Holiday-release variants) reuse the set code with a later release
-  // date purely for the reprint batch, so falling through to release date
-  // here would wrongly prefer those over the original numbering.
+function comparePrintingPreference(
+  left: Card,
+  right: Card,
+  preferOldest: boolean,
+): number {
+  // Release date only distinguishes *different* sets (e.g. picking the
+  // newer/older of two reprint sets). Within the same set, some products
+  // (like LTR's later Holiday-release variants) reuse the set code with a
+  // later release date purely for the reprint batch, so falling through to
+  // release date here would wrongly prefer those over the original numbering.
   if (left.set !== right.set) {
     const releaseDelta = (left.releasedAt ?? '').localeCompare(right.releasedAt ?? '')
-    if (releaseDelta !== 0) return releaseDelta
+    if (releaseDelta !== 0) return preferOldest ? -releaseDelta : releaseDelta
 
     const setDelta = left.set.localeCompare(right.set)
     if (setDelta !== 0) return setDelta
@@ -72,9 +70,12 @@ export function selectLatestPrintings(cards: Card[]): Card[] {
     const candidates = printings.filter(
       (card) => tierIndexForSetType(card.setType) === bestTierIndex,
     )
+    // Core/expansion (tier 0) prefers the newest set; every other set type
+    // prefers the oldest, so the original printing wins over later reprints.
+    const preferOldest = bestTierIndex !== 0
 
     const preferred = candidates.slice(1).reduce<Card>((current, card) => {
-      return comparePrintingPreference(card, current) > 0
+      return comparePrintingPreference(card, current, preferOldest) > 0
         ? card
         : current
     }, candidates[0])

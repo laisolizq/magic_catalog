@@ -45,9 +45,10 @@ describe('selectLatestPrintings', () => {
     expect(result).toEqual([newerExpansion])
   })
 
-  it('prefers the latest printing within the best available tier (e.g. Ragavan)', () => {
+  it('prefers the oldest printing within the best available tier when it is not core/expansion (e.g. Ragavan)', () => {
     // Ragavan only exists in draft_innovation sets: mh2 (2021) and its
-    // h2r Timeshifts reprint (2024). Both share a tier, so the newest wins.
+    // h2r Timeshifts reprint (2024). Both share a tier, so the original
+    // (oldest) printing wins.
     const mh2 = makeCard({
       id: 'h2r-mh2',
       set: 'mh2',
@@ -63,13 +64,15 @@ describe('selectLatestPrintings', () => {
 
     const result = selectLatestPrintings([mh2, h2r])
 
-    expect(result).toEqual([h2r])
+    expect(result).toEqual([mh2])
   })
 
-  it('prefers a draft_innovation printing over commander-deck printings, regardless of release date (e.g. Kappa Cannoneer)', () => {
+  it('prefers the oldest printing among non-core/expansion set types (e.g. Kappa Cannoneer)', () => {
     // Kappa Cannoneer debuted in Neon Dynasty Commander (2022, commander),
     // was later printed in Modern Horizons 3 (2024, draft_innovation), and
-    // also reprinted in newer commander decks (2024/2025). mh3 should win.
+    // also reprinted in a newer commander deck (2025). With only a single
+    // "everything else" tier below core/expansion, the original (oldest)
+    // release wins.
     const neonDynastyCommander = makeCard({
       id: 'nec',
       set: 'nec',
@@ -102,7 +105,7 @@ describe('selectLatestPrintings', () => {
       edgeOfEternitiesCommander,
     ])
 
-    expect(result).toEqual([modernHorizons3])
+    expect(result).toEqual([neonDynastyCommander])
   })
 
   it('prefers the original collector number over a same-set later-dated reprint (e.g. LTR Holiday release)', () => {
