@@ -1,0 +1,231 @@
+.life-counter-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  overflow: hidden;
+}
+
+/* Sections */
+.life-counter-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: var(--paper);
+  position: relative;
+}
+
+.player-1 {
+  transform: rotate(180deg);
+}
+
+.player-2 {
+}
+
+/* Life counter container */
+.life-counter-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  position: relative;
+}
+
+/* Counter buttons */
+.life-counter-btn {
+  width: 4rem;
+  height: 4rem;
+  border: 2px solid var(--accent);
+  background: var(--surface-1);
+  border-radius: 8px;
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--ink-strong);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  font-family: var(--font-body);
+}
+
+.life-counter-btn:active {
+  background: var(--surface-3);
+  border-color: var(--accent-strong);
+  transform: scale(0.95);
+}
+
+.life-counter-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--accent-strong);
+}
+
+.minus-btn {
+  order: 1;
+}
+
+.plus-btn {
+  order: 3;
+}
+
+/* Life display */
+.life-counter-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  order: 2;
+  flex-shrink: 0;
+}
+
+.life-value {
+  font-size: 4rem;
+  font-weight: bold;
+  font-family: var(--font-display);
+  color: var(--ink-strong);
+  line-height: 1;
+  min-width: 120px;
+  text-align: center;
+}
+
+/* Reset button */
+.life-counter-reset {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--ink-soft);
+  background: var(--surface-2);
+  border-radius: 4px;
+  font-size: 1rem;
+  color: var(--ink-strong);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.life-counter-reset:active {
+  background: var(--surface-3);
+  border-color: var(--ink-strong);
+  transform: scale(0.9);
+}
+
+.life-counter-reset:hover {
+  background: var(--surface-3);
+  border-color: var(--ink-strong);
+}
+
+/* Divider buttons */
+.life-counter-divider-btn {
+  width: 2rem;
+  height: 2rem;
+  border: 1.5px solid var(--accent);
+  background: var(--surface-1);
+  border-radius: 50%;
+  font-size: 1rem;
+  color: var(--ink-strong);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.life-counter-divider-btn:active {
+  background: var(--surface-3);
+  border-color: var(--accent-strong);
+  transform: scale(0.9);
+}
+
+.life-counter-divider-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--accent-strong);
+}
+
+/* Divider */
+.life-counter-divider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 1.5rem;
+  height: auto;
+  background: var(--paper);
+  border-top: 1px solid var(--surface-3);
+  border-bottom: 1px solid var(--surface-3);
+}
+
+.divider-logo {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: contain;
+  flex-shrink: 0;
+  opacity: 0.7;
+  padding: 0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .life-counter-section {
+    padding: 1.5rem;
+  }
+
+  .life-counter-btn {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 2rem;
+    gap: 1rem;
+  }
+
+  .life-value {
+    font-size: 3rem;
+    min-width: 100px;
+  }
+
+  .life-counter-reset {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.875rem;
+    top: 0.25rem;
+    right: 0.25rem;
+  }
+
+  .divider-logo {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 400px) {
+  .life-counter-container {
+    gap: 1rem;
+  }
+
+  .life-counter-btn {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.75rem;
+  }
+
+  .life-value {
+    font-size: 2.5rem;
+    min-width: 90px;
+  }
+
+  .divider-logo {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}

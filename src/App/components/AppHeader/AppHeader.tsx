@@ -140,6 +140,18 @@ export function AppHeader() {
                   >
                     Decks
                   </NavLink>
+
+                  <NavLink
+                    to="/life-counter"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'menu-item is-active'
+                        : 'menu-item'
+                    }
+                    onClick={closeMenu}
+                  >
+                    Life Counter
+                  </NavLink>
                 </>
               )}
             </nav>
