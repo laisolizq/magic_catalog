@@ -33,9 +33,17 @@ The artifact is intentionally not bundled into the Vite application. The browser
 
 ## Publish a release
 
-The workflow in `.github/workflows/card-database.yml` supports both manual dispatch and a daily scheduled run. It publishes `catalog.sqlite.gz` and `metadata.json` to the `card-database-latest` GitHub Release.
+The workflow in `.github/workflows/card-database.yml` supports both manual dispatch and a scheduled run (every 30 minutes). It publishes both databases and metadata to the `card-database-latest` GitHub Release:
+
+- `catalog.sqlite.gz`: Full database with all cards
+- `catalog-recent.sqlite.gz`: Curated database with only cards added in the last 3 months (used for faster bootstrap)
+- `metadata.json`: Artifact version, schema version, timestamps, card counts, and checksums for both databases
 
 The browser checks the latest release metadata when online. Queries never require a network connection. After a successful import, the catalog remains available offline.
+
+### Bootstrap Database
+
+On first load, the app downloads and caches `catalog-recent.sqlite.gz` from `public/card-database/bootstrap/` (prebuilt and versioned in git). This recent database is much smaller and loads faster. After the bootstrap completes, the app checks for updates and optionally downloads the full `catalog.sqlite.gz` for comprehensive access to all cards.
 
 ## Test locally
 

@@ -39,14 +39,20 @@ flowchart LR
 
 1. **Generation (offline, not part of the running app)**:
    [scripts/generate_card_database.py](../scripts/generate_card_database.py)
-   pulls Scryfall's bulk `all_cards`/rulings data and writes a normalized
-   SQLite database (`catalog.sqlite.gz`) plus `metadata.json` (checksum,
-   counts, schema/artifact version) to `artifacts/card-database/`.
+   pulls Scryfall's bulk `all_cards`/rulings data and writes two normalized
+   SQLite databases to `artifacts/card-database/`:
+   - `catalog.sqlite.gz`: Full database with all cards
+   - `catalog-recent.sqlite.gz`: Recent database with cards added in the last 3 months (used for bootstrap)
+   
+   Both are accompanied by `metadata.json` (checksum, counts, schema/artifact version).
+
 2. **Publishing**: [.github/workflows/card-database.yml](../.github/workflows/card-database.yml)
-   runs that script on a weekly schedule (or manually) and publishes the two
-   files to the `card-database-latest` GitHub Release. A separate frozen
-   `card-database-test` release exists purely for integration tests (see
-   [Testing](#testing) below) and is never auto-updated.
+   runs that script on a scheduled basis (every 30 minutes) and publishes both
+   databases to the `card-database-latest` GitHub Release. It also updates
+   `public/card-database/bootstrap/` with the recent database for faster first-load
+   performance. A separate frozen `card-database-test` release exists purely for
+   integration tests (see [Testing](#testing) below) and is never auto-updated.
+
 3. **First load / updates**: [catalogUpdates.ts](../src/services/catalogUpdates.ts)
    bootstraps from a small embedded "starter" database under
    [public/card-database/bootstrap](../public/card-database/bootstrap) when no

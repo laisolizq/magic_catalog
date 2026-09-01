@@ -13,7 +13,7 @@ import sys
 import tempfile
 import time
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -239,6 +239,27 @@ def load_previous_metadata(path: Path) -> dict | None:
         return None
 
 
+def compress_and_checksum_database(
+    temp_sqlite_path: Path, temporary_database_path: Path
+) -> tuple[str, int, int]:
+    """Compress SQLite database and calculate checksum.
+    
+    Returns:
+        Tuple of (checksum_hex, compressed_bytes, uncompressed_bytes)
+    """
+    database_checksum = hashlib.sha256()
+    uncompressed_bytes = temp_sqlite_path.stat().st_size
+    
+    with open(temp_sqlite_path, 'rb') as sqlite_file:
+        with gzip.open(temporary_database_path, 'wb', compresslevel=9) as database_output:
+            while chunk := sqlite_file.read(1024 * 1024):
+                database_checksum.update(chunk)
+                database_output.write(chunk)
+    
+    compressed_bytes = temporary_database_path.stat().st_size
+    return database_checksum.hexdigest(), compressed_bytes, uncompressed_bytes
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", default="artifacts/card-database")
@@ -280,7 +301,23 @@ def build_sqlite_database(
     database_path: Path,
     previous_added_dates: dict[str, str],
     generation_date: str,
-) -> None:
+    recent_only: bool = False,
+    cutoff_date: str = "",
+) -> tuple[int, int, int]:
+    """Build SQLite database from card and ruling data.
+    
+    Args:
+        cards_path: Path to compressed JSONL cards file
+        rulings_path: Path to compressed JSONL rulings file
+        database_path: Output path for SQLite database
+        previous_added_dates: Map of card IDs to their added_at dates
+        generation_date: Current generation date (YYYY-MM-DD)
+        recent_only: If True, only include cards with added_at >= cutoff_date
+        cutoff_date: Filter cards added after this date (YYYY-MM-DD format)
+        
+    Returns:
+        Tuple of (card_count, rulings_count, uncompressed_bytes)
+    """
     database = sqlite3.connect(database_path)
     database.executescript('''
         CREATE TABLE cards (
@@ -329,10 +366,19 @@ def build_sqlite_database(
     ''')
 
     sets_seen: dict[str, tuple[str, str, str]] = {}
+    card_count = 0
+    uncompressed_bytes = 0
+    oracle_ids: set[str] = set()
 
     with gzip.open(cards_path, 'rt', encoding='utf-8') as cards_file:
         for line in cards_file:
             card = json.loads(line)
+            card_added_at = previous_added_dates.get(card['id']) or default_added_at(card, generation_date)
+            
+            # Filter by date if recent_only is True
+            if recent_only and card_added_at < cutoff_date:
+                continue
+            
             database.execute(
                 'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 (
@@ -341,16 +387,24 @@ def build_sqlite_database(
                     card['collectorNumber'],
                     card.get('oracleId'), card['rarity'],
                     json.dumps(card['faces'], ensure_ascii=True, separators=(',', ':')),
-                    previous_added_dates.get(card['id']) or default_added_at(card, generation_date),
+                    card_added_at,
                     json.dumps(card.get('legalities', {}), ensure_ascii=True, separators=(',', ':')),
                 ),
             )
-            # All cards in a set share the same name/type/release date, so
-            # the first one we see for a given set code is enough.
+            card_count += 1
+            
+            # Track oracle IDs for rulings
+            oracle_id = card.get('oracleId')
+            if isinstance(oracle_id, str) and oracle_id:
+                oracle_ids.add(oracle_id)
+            
+            # Track set info
             sets_seen.setdefault(
                 card['set'],
                 (card.get('setName', ''), card.get('setType', ''), card.get('releasedAt', '')),
             )
+            
+            # Build face indices
             for face_index, face in enumerate(card['faces']):
                 type_line = face.get('typeLine', '')
                 main_part, _, subtype_part = type_line.partition('\u2014')
@@ -378,17 +432,23 @@ def build_sqlite_database(
             (set_code, set_name, set_type, released_at),
         )
 
+    rulings_count = 0
     with gzip.open(rulings_path, 'rt', encoding='utf-8') as rulings_file:
         for line in rulings_file:
             ruling = json.loads(line)
+            oracle_id = ruling.get("oracle_id")
+            if oracle_id not in oracle_ids:
+                continue
+
             database.execute(
                 'INSERT INTO rulings VALUES (?, ?, ?, ?, ?)',
                 (
-                    ruling['oracleId'], ruling.get('object', 'ruling'),
-                    ruling.get('source', ''), ruling.get('published_at', ''),
-                    ruling.get('comment', ''),
+                    oracle_id, ruling.get("object", "ruling"),
+                    ruling.get("source", ""), ruling.get("published_at", ""),
+                    ruling.get("comment", ""),
                 ),
             )
+            rulings_count += 1
 
     database.executescript('''
         CREATE INDEX cards_set_idx ON cards(set_code);
@@ -405,6 +465,8 @@ def build_sqlite_database(
     ''')
     database.commit()
     database.close()
+    
+    return card_count, rulings_count, 0  # uncompressed_bytes will be set by caller
 
 
 def main() -> int:
@@ -572,44 +634,99 @@ def main() -> int:
     temporary_artifact_path.replace(artifact_path)
     temporary_rulings_path.replace(rulings_path)
 
+    # Calculate 3-month cutoff date for recent database
+    run_datetime = datetime.fromisoformat(generated_at)
+    three_months_ago = (run_datetime - timedelta(days=90)).date().isoformat()
+
     sqlite_started_at = time.perf_counter()
-    build_sqlite_database(
+    
+    # Build full database
+    print("[generate-card-database] Building full database...", file=sys.stderr)
+    temporary_sqlite_path = output_dir / f"catalog.sqlite.{run_id}.tmp"
+    card_count_full, rulings_count_full, _ = build_sqlite_database(
         artifact_path,
         rulings_path,
         temporary_sqlite_path,
         previous_added_dates,
         generation_date,
+        recent_only=False,
+        cutoff_date="",
     )
-    database_checksum = hashlib.sha256()
-    with open(temporary_sqlite_path, 'rb') as sqlite_file:
-        with gzip.open(temporary_database_path, 'wb', compresslevel=9) as database_output:
-            while chunk := sqlite_file.read(1024 * 1024):
-                database_checksum.update(chunk)
-                database_output.write(chunk)
-    database_uncompressed_bytes = temporary_sqlite_path.stat().st_size
+    
+    database_path = output_dir / "catalog.sqlite.gz"
+    temporary_database_path = output_dir / f"catalog.sqlite.gz.{run_id}.tmp"
+    checksum_full, compressed_bytes_full, uncompressed_bytes_full = compress_and_checksum_database(
+        temporary_sqlite_path, temporary_database_path
+    )
     temporary_sqlite_path.unlink()
     temporary_database_path.replace(database_path)
+    
+    # Build recent database (last 3 months)
+    print("[generate-card-database] Building recent database (last 3 months)...", file=sys.stderr)
+    temporary_sqlite_recent_path = output_dir / f"catalog-recent.sqlite.{run_id}.tmp"
+    card_count_recent, rulings_count_recent, _ = build_sqlite_database(
+        artifact_path,
+        rulings_path,
+        temporary_sqlite_recent_path,
+        previous_added_dates,
+        generation_date,
+        recent_only=True,
+        cutoff_date=three_months_ago,
+    )
+    
+    database_recent_path = output_dir / "catalog-recent.sqlite.gz"
+    temporary_database_recent_path = output_dir / f"catalog-recent.sqlite.gz.{run_id}.tmp"
+    checksum_recent, compressed_bytes_recent, uncompressed_bytes_recent = compress_and_checksum_database(
+        temporary_sqlite_recent_path, temporary_database_recent_path
+    )
+    temporary_sqlite_recent_path.unlink()
+    temporary_database_recent_path.replace(database_recent_path)
+    
+    # Cleanup intermediate files
     artifact_path.unlink()
     rulings_path.unlink()
+    
     print(
-        f"Finished SQLite database in {time.perf_counter() - sqlite_started_at:.2f}s",
+        f"Finished SQLite databases in {time.perf_counter() - sqlite_started_at:.2f}s",
         file=sys.stderr,
     )
 
+    # Update metadata with both databases
     metadata = {
         "artifactVersion": ARTIFACT_VERSION,
         "schemaVersion": SCHEMA_VERSION,
         "generatedAt": generated_at,
         "sourceUpdatedAt": source_updated_at,
         "rulingsSourceUpdatedAt": rulings_updated_at,
-        "cardCount": card_count,
-        "rulingsCount": rulings_count,
+        "cardCount": card_count_full,
+        "rulingsCount": rulings_count_full,
         "sets": sorted(allowed_sets) if allowed_sets is not None else None,
         "dbFormat": "sqlite",
-        "databaseAssetName": database_path.name,
-        "databaseChecksum": database_checksum.hexdigest(),
-        "databaseCompressedBytes": database_path.stat().st_size,
-        "databaseUncompressedBytes": database_uncompressed_bytes,
+        "databases": {
+            "full": {
+                "assetName": "catalog.sqlite.gz",
+                "cardCount": card_count_full,
+                "rulingsCount": rulings_count_full,
+                "checksum": checksum_full,
+                "compressedBytes": compressed_bytes_full,
+                "uncompressedBytes": uncompressed_bytes_full,
+            },
+            "recent": {
+                "assetName": "catalog-recent.sqlite.gz",
+                "cardCount": card_count_recent,
+                "rulingsCount": rulings_count_recent,
+                "checksum": checksum_recent,
+                "compressedBytes": compressed_bytes_recent,
+                "uncompressedBytes": uncompressed_bytes_recent,
+                "description": "Cards added in the last 3 months",
+                "cutoffDate": three_months_ago,
+            },
+        },
+        # Legacy fields for backward compatibility
+        "databaseAssetName": "catalog.sqlite.gz",
+        "databaseChecksum": checksum_full,
+        "databaseCompressedBytes": compressed_bytes_full,
+        "databaseUncompressedBytes": uncompressed_bytes_full,
     }
     temporary_metadata_path = output_dir / f"metadata.json.{run_id}.tmp"
     temporary_metadata_path.write_text(
@@ -618,9 +735,9 @@ def main() -> int:
     )
     temporary_metadata_path.replace(output_dir / "metadata.json")
     print(
-        f"Generated SQLite database with {card_count} cards and "
-        f"{rulings_count} rulings in "
-        f"{time.perf_counter() - generation_started_at:.2f}s at {database_path}"
+        f"Generated SQLite databases: full ({card_count_full} cards) and "
+        f"recent ({card_count_recent} cards, last 3 months) in "
+        f"{time.perf_counter() - generation_started_at:.2f}s"
     )
     return 0
 

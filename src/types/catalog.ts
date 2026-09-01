@@ -50,10 +50,32 @@ export interface CatalogArtifactMetadata {
   cardCount: number
   rulingsCount: number
   dbFormat: 'sqlite'
-  databaseAssetName: string
-  databaseChecksum: string
-  databaseCompressedBytes: number
-  databaseUncompressedBytes: number
+  // Legacy fields (for backward compatibility)
+  databaseAssetName?: string
+  databaseChecksum?: string
+  databaseCompressedBytes?: number
+  databaseUncompressedBytes?: number
+  // New structure: multiple databases
+  databases?: {
+    full?: {
+      assetName: string
+      cardCount: number
+      rulingsCount: number
+      checksum: string
+      compressedBytes: number
+      uncompressedBytes: number
+    }
+    recent?: {
+      assetName: string
+      cardCount: number
+      rulingsCount: number
+      checksum: string
+      compressedBytes: number
+      uncompressedBytes: number
+      description?: string
+      cutoffDate?: string
+    }
+  }
 }
 
 export interface CatalogQuery {

@@ -9,7 +9,7 @@ const RELEASE_API_URL =
   'https://api.github.com/repos/laisolizq/magic_catalog/releases/tags/card-database-latest'
 const BOOTSTRAP_BASE_URL = `${import.meta.env.BASE_URL}card-database/bootstrap`
 const BOOTSTRAP_DATABASE_URL =
-  import.meta.env.VITE_CATALOG_BOOTSTRAP_DATABASE_URL || `${BOOTSTRAP_BASE_URL}/catalog.sqlite.gz`
+  import.meta.env.VITE_CATALOG_BOOTSTRAP_DATABASE_URL || `${BOOTSTRAP_BASE_URL}/catalog-recent.sqlite.gz`
 const BOOTSTRAP_METADATA_URL =
   import.meta.env.VITE_CATALOG_BOOTSTRAP_METADATA_URL || `${BOOTSTRAP_BASE_URL}/metadata.json`
 const PAGES_ARTIFACT_BASE_URL = 'https://laisolizq.github.io/magic_catalog/card-database'
@@ -184,7 +184,10 @@ export async function updateCatalogFromLatestRelease(
     const metadataBlob = await fetchReleaseAssetBlob(metadataAsset)
     logCompleted('metadata download', metadataStartedAt)
     const metadata = JSON.parse(await metadataBlob.text()) as CatalogArtifactMetadata
-    const databaseAsset = findAsset(release, metadata.databaseAssetName || 'catalog.sqlite.gz')
+    
+    // Prefer full database, fall back to legacy databaseAssetName
+    const databaseAssetName = metadata.databases?.full?.assetName || metadata.databaseAssetName || 'catalog.sqlite.gz'
+    const databaseAsset = findAsset(release, databaseAssetName)
     if (!databaseAsset) return 'unavailable'
     const local = await getCatalogMetadata()
 

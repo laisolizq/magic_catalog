@@ -21,11 +21,9 @@ build/
 # Logs
 *.log
 
-# Cache
-.cache/
-vite-cache/
-package-lock.json
-scripts/__pycache__/*
+# Artifacts and bootstrap (generated files)
 artifacts/*
 artifacts_catalog.sqlite
 bootstrap_catalog.sqlite
+# Old bootstrap database file (deprecated - replaced by catalog-recent.sqlite.gz via CI/CD)
+public/card-database/bootstrap/catalog.sqlite.gz
