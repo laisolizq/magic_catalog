@@ -13,7 +13,7 @@
   width: min(100%, 420px);
   max-height: calc(100dvh - 1.5rem);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 0.5rem;
   touch-action: pan-y;
 }
@@ -95,6 +95,12 @@
 .rulling-comment {
   font-size: 0.9rem;
   white-space: pre-wrap;
+}
+
+.rulling-empty {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  margin: 0;
 }
 
 .card-modal-controls {
@@ -184,8 +190,7 @@
 }
 
 .rulings-modal-body {
-  max-height: calc(100dvh - 8rem);
-  overflow: auto;
+  margin-top: 0.25rem;
 }
 
 @media (max-width: 480px) {

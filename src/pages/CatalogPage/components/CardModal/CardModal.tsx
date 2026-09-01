@@ -5,7 +5,6 @@ import { getCardRulings } from '../../../../services/rulings'
 import './CardModal.css'
 import { ControlsBar } from './ControlsBar'
 import { RulingsModal } from './RulingsModal'
-import { CardLegalities } from './CardLegalities'
 
 interface CardModalProps {
   card: Card
@@ -229,8 +228,6 @@ export function CardModal({
 
   const face = card.faces?.[currentFaceIndex]
 
-  const hasRulings = rulings.length > 0
-
   const toggleRulings = () => {
     setRulingsOpen((v) => !v)
   }
@@ -259,15 +256,12 @@ export function CardModal({
           touchStartRef.current = null
         }}
       >
-        <CardLegalities key={card.id} card={card} />
-
         <div className="card-modal-image-wrap">
           <img className="card-modal-image" src={face?.imageUrl} alt={face?.name} />
         </div>
 
         <ControlsBar
           card={card}
-          hasRulings={hasRulings}
           rulingsOpen={rulingsOpen}
           onToggleRulings={toggleRulings}
           onShowPrevious={handlePrev}
@@ -280,8 +274,9 @@ export function CardModal({
           hasNext={hasNext}
         />
 
-        {rulingsOpen && hasRulings && (
+        {rulingsOpen && (
           <RulingsModal
+            card={card}
             rulings={rulings}
             onClose={toggleRulings}
           />

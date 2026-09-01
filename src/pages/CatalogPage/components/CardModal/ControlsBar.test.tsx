@@ -28,7 +28,6 @@ describe('ControlsBar', () => {
     render(
       <ControlsBar
         card={mockCard}
-        hasRulings={true}
         rulingsOpen={false}
         onToggleRulings={vi.fn()}
         onShowPrevious={vi.fn()}
@@ -48,7 +47,7 @@ describe('ControlsBar', () => {
     // 1. Scryfall
     expect(children[0]).toHaveAttribute('aria-label', 'Open card on Scryfall')
     // 2. Rulings
-    expect(children[1]).toHaveAttribute('aria-label', 'Toggle rulings')
+    expect(children[1]).toHaveAttribute('aria-label', 'Toggle card details')
     // 3. Up (Previous)
     expect(children[2]).toHaveAttribute('aria-label', 'Previous')
     expect(children[2].textContent?.trim()).toBe('▲')

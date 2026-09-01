@@ -4,7 +4,6 @@ import bookIcon from '../../../../assets/icons/book.svg'
 
 interface ControlsBarProps {
   card: Card
-  hasRulings: boolean
   rulingsOpen: boolean
   onToggleRulings: () => void
   onShowPrevious: () => void
@@ -16,7 +15,6 @@ interface ControlsBarProps {
 
 export function ControlsBar({
   card,
-  hasRulings,
   rulingsOpen,
   onToggleRulings,
   onShowPrevious,
@@ -51,11 +49,10 @@ export function ControlsBar({
       
       <button
         type="button"
-        className={`controls-button ${!hasRulings ? 'disabled' : ''} ${rulingsOpen ? 'active' : ''}`}
+        className={`controls-button ${rulingsOpen ? 'active' : ''}`}
         onClick={onToggleRulings}
         aria-pressed={rulingsOpen}
-        aria-label="Toggle rulings"
-        disabled={!hasRulings && !rulingsOpen}
+        aria-label="Toggle card details"
       >
         <img
           className="book-icon"

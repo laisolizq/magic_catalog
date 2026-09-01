@@ -166,7 +166,17 @@
 
 .set-rarity {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+}
 
+.set-code-label {
+  font-size: 0.6em;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink-soft);
+  white-space: nowrap;
 }
 
 .card-face-group {

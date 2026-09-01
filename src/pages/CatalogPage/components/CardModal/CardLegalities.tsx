@@ -1,5 +1,8 @@
-import { useState } from 'react'
 import type { Card, LegalityStatus, MagicFormat } from '../../../../types/card'
+import legalIcon from '../../../../assets/icons/legal.svg'
+import bannedIcon from '../../../../assets/icons/banned.svg'
+import notLegalIcon from '../../../../assets/icons/not-legal.svg'
+import restrictedIcon from '../../../../assets/icons/restricted.svg'
 import './CardLegalities.css'
 
 interface CardLegalitiesProps {
@@ -16,11 +19,11 @@ const FORMAT_LABELS: Record<MagicFormat, string> = {
   commander: 'Commander',
 }
 
-const LEGALITY_CLASS: Record<LegalityStatus, string> = {
-  legal: 'legal',
-  not_legal: 'not-legal',
-  restricted: 'restricted',
-  banned: 'banned',
+const LEGALITY_ICON: Record<LegalityStatus, string> = {
+  legal: legalIcon,
+  not_legal: notLegalIcon,
+  restricted: restrictedIcon,
+  banned: bannedIcon,
 }
 
 const LEGALITY_LABEL: Record<LegalityStatus, string> = {
@@ -31,7 +34,6 @@ const LEGALITY_LABEL: Record<LegalityStatus, string> = {
 }
 
 export function CardLegalities({ card }: CardLegalitiesProps) {
-  const [setIconFailed, setSetIconFailed] = useState(false)
   const legalities = card.legalities
   if (!legalities) return null
 
@@ -55,24 +57,10 @@ export function CardLegalities({ card }: CardLegalitiesProps) {
             className={`legality-item`}
             title={`${label}: ${LEGALITY_LABEL[status]}`}
           >
-            <div className={`legality-icon legality-${LEGALITY_CLASS[status]}`} />
+            <img className="legality-icon" src={LEGALITY_ICON[status]} alt="" />
             <div className="legality-format-name">{label}</div>
           </div>
         ))}
-        <div className="legality-item" title={`Set: ${card.set.toUpperCase()}`}>
-          {setIconFailed ? (
-            <div className="legality-set-icon legality-set-icon-placeholder" />
-          ) : (
-            <img
-              className="legality-set-icon"
-              src={`https://svgs.scryfall.io/sets/${card.set.toLowerCase()}.svg`}
-              alt=""
-              referrerPolicy="no-referrer"
-              onError={() => setSetIconFailed(true)}
-            />
-          )}
-          <div className="legality-format-name">{card.set.toUpperCase()}</div>
-        </div>
       </div>
     </div>
   )

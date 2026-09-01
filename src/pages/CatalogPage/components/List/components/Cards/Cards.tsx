@@ -92,6 +92,37 @@ function SetSymbol({
   )
 }
 
+// Set code is hidden until tapped, since hover tooltips aren't reachable on
+// touch devices; tapping toggles the code without opening the card modal.
+function SetBadge({
+  setCode,
+  rarity,
+}: {
+  setCode: string
+  rarity: Card['rarity']
+}) {
+  const [codeVisible, setCodeVisible] = useState(false)
+
+  return (
+    <span
+      className={`set-rarity rarity-${rarity}`}
+      aria-label={`${setCode?.toUpperCase?.() ?? ''} ${rarity ?? ''}`}
+      title={`${setCode?.toUpperCase?.() ?? ''} • ${rarity ?? ''}`}
+      onClick={(event) => {
+        event.stopPropagation()
+        setCodeVisible((v) => !v)
+      }}
+    >
+      <SetSymbol setCode={setCode} rarity={rarity} />
+      {codeVisible && (
+        <span className="set-code-label" aria-hidden="true">
+          {setCode?.toUpperCase?.() ?? ''}
+        </span>
+      )}
+    </span>
+  )
+}
+
 // Shortens the "Legendary" supertype so long type lines take up less room.
 function abbreviateTypeLine(typeLine: string): string {
   return typeLine.replace(/\bLegendary\b/g, 'Lgd.')
@@ -290,17 +321,7 @@ export function Cards({
                   {abbreviateTypeLine(face.typeLine)}
                 </p>
 
-                <span
-                  className={`set-rarity rarity-${card.rarity}`}
-                  aria-label={`${card.set?.toUpperCase?.() ?? ''} ${
-                    card.rarity ?? ''
-                  }`}
-                  title={`${card.set?.toUpperCase?.() ?? ''} • ${
-                    card.rarity ?? ''
-                  }`}
-                >
-                  <SetSymbol setCode={card.set} rarity={card.rarity} />
-                </span>
+                <SetBadge setCode={card.set} rarity={card.rarity} />
               </div>
 
               <p
