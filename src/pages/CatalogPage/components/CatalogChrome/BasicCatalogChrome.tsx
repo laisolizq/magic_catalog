@@ -26,8 +26,13 @@ export function BasicCatalogChrome({ children }: BasicCatalogChromeProps) {
     if (!outer || !inner) return
 
     const hidden = hiddenPxRef.current
-    outer.style.height = `${contentHeightRef.current - hidden}px`
+    const visibleHeight = contentHeightRef.current - hidden
+    outer.style.height = `${visibleHeight}px`
     inner.style.transform = `translateY(-${hidden}px)`
+    document.documentElement.style.setProperty(
+      '--catalog-chrome-visible-height',
+      `${visibleHeight}px`,
+    )
     setIsInteractive(hidden < contentHeightRef.current)
   }
 
@@ -48,7 +53,10 @@ export function BasicCatalogChrome({ children }: BasicCatalogChromeProps) {
     })
     observer.observe(inner)
 
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      document.documentElement.style.removeProperty('--catalog-chrome-visible-height')
+    }
   }, [])
 
   useEffect(() => {

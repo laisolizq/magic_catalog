@@ -897,6 +897,7 @@ export function CatalogPage() {
       ) : (
         <List
           cards={visibleCardsSorted}
+          showAddedDateGroups={sortOption === 'added-desc'}
           expandedOracles={expandedOraclesView}
           onToggleOracle={(cardId) =>
             setExpandedOracles((prev) => ({
