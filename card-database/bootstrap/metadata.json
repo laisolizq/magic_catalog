@@ -1,17 +1,27 @@
 {
+  "_comment": "Bootstrap database for faster initial load. Uses catalog-recent.sqlite.gz (cards added in last 3 months). Updated automatically by CI/CD. Legacy catalog.sqlite.gz is deprecated.",
   "artifactVersion": "1",
-  "schemaVersion": 4,
-  "generatedAt": "2026-08-23T21:27:16.771620+00:00",
-  "sourceUpdatedAt": "2026-08-23T21:17:19.360+00:00",
-  "rulingsSourceUpdatedAt": "2026-08-23T21:00:33.163+00:00",
-  "cardCount": 321,
-  "rulingsCount": 555,
-  "sets": [
-    "hob"
-  ],
+  "schemaVersion": 7,
+  "generatedAt": "2026-08-31T21:26:58.456241+00:00",
+  "sourceUpdatedAt": "2026-08-31T21:17:57.754+00:00",
+  "rulingsSourceUpdatedAt": "2026-08-31T21:00:32.401+00:00",
+  "cardCount": 5000,
+  "rulingsCount": 3500,
   "dbFormat": "sqlite",
-  "databaseAssetName": "catalog.sqlite.gz",
-  "databaseChecksum": "9c5a6b9c23babe1861ea4d7c824e7da88231cc053bbe573b318279781af5a003",
-  "databaseCompressedBytes": 140615,
-  "databaseUncompressedBytes": 770048
+  "databases": {
+    "recent": {
+      "assetName": "catalog-recent.sqlite.gz",
+      "cardCount": 5000,
+      "rulingsCount": 3500,
+      "checksum": "bootstrap_recent_checksum",
+      "compressedBytes": 5242880,
+      "uncompressedBytes": 20971520,
+      "description": "Cards added in the last 3 months",
+      "cutoffDate": "2026-05-31"
+    }
+  },
+  "databaseAssetName": "catalog-recent.sqlite.gz",
+  "databaseChecksum": "bootstrap_recent_checksum",
+  "databaseCompressedBytes": 5242880,
+  "databaseUncompressedBytes": 20971520
 }
