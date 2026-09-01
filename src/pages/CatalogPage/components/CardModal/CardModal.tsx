@@ -5,6 +5,7 @@ import { getCardRulings } from '../../../../services/rulings'
 import './CardModal.css'
 import { ControlsBar } from './ControlsBar'
 import { RulingsModal } from './RulingsModal'
+import { CardLegalities } from './CardLegalities'
 
 interface CardModalProps {
   card: Card
@@ -258,6 +259,8 @@ export function CardModal({
           touchStartRef.current = null
         }}
       >
+        <CardLegalities key={card.id} card={card} />
+
         <div className="card-modal-image-wrap">
           <img className="card-modal-image" src={face?.imageUrl} alt={face?.name} />
         </div>

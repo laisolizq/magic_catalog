@@ -1,0 +1,140 @@
+.card-legalities {
+  padding: 0.6rem 0.5rem;
+  background: rgb(255 250 244 / 80%);
+  border-radius: 8px;
+  margin: 0;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.legalities-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  justify-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+
+.legality-item {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: help;
+  transition: transform 0.2s ease;
+  min-width: 0;
+}
+
+.legality-item:hover {
+  transform: scale(1.05);
+}
+
+.legality-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-soft);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.6rem;
+  line-height: 1;
+  color: var(--paper);
+}
+
+.legality-item:hover .legality-icon {
+  transform: scale(1.15);
+}
+
+.legality-format-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1;
+  min-width: 0;
+  flex-shrink: 1;
+  color: var(--ink-strong);
+}
+
+/* Legal status - filled, no marker */
+.legality-legal {
+  background: var(--ink-strong);
+  border-color: var(--ink-strong);
+}
+
+/* Not legal status - empty outline, de-emphasized */
+.legality-not-legal {
+  background: transparent;
+  border-color: var(--surface-3);
+  opacity: 0.6;
+}
+
+/* Restricted status - dash marker */
+.legality-restricted {
+  background: var(--accent);
+  border-color: var(--accent-strong);
+}
+
+.legality-restricted::after {
+  content: '\2013';
+}
+
+/* Banned status - cross marker */
+.legality-banned {
+  background: var(--ink-soft);
+  border-color: var(--ink-strong);
+}
+
+.legality-banned::after {
+  content: '\00d7';
+}
+
+.legality-set-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.legality-set-icon-placeholder {
+  border-radius: 50%;
+  background: var(--surface-3);
+  opacity: 0.4;
+}
+
+/* Mobile optimization */
+@media (max-width: 480px) {
+  .legalities-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem 0.2rem;
+  }
+
+  .legality-item {
+    grid-template-columns: 14px 1fr;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  .legality-format-name {
+    white-space: normal;
+    text-align: left;
+  }
+
+  .legality-icon {
+    width: 14px;
+    height: 14px;
+    border-width: 1.5px;
+  }
+
+  .legality-set-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .legality-format-name {
+    font-size: 0.75rem;
+    line-height: 1.05;
+  }
+}
