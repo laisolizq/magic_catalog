@@ -229,6 +229,16 @@ def find_bulk_download_url(data_type: str) -> tuple[str, str]:
     raise RuntimeError(f"Scryfall did not provide a {data_type} bulk-data entry.")
 
 
+def load_previous_metadata(path: Path) -> dict | None:
+    """Load metadata from a previous run to check if Scryfall data has changed."""
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", default="artifacts/card-database")
@@ -411,6 +421,34 @@ def main() -> int:
     root_dir = Path(__file__).resolve().parent.parent
     output_dir = (root_dir / args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+    metadata_path = output_dir / "metadata.json"
+    database_path = output_dir / "catalog.sqlite.gz"
+
+    # If no custom options are set and we have a previous database, check if Scryfall data has changed
+    if not args.download_url and not args.sets:
+        previous_metadata = load_previous_metadata(metadata_path)
+        if previous_metadata and database_path.exists():
+            print("Checking if Scryfall data has been updated...", file=sys.stderr)
+            try:
+                _, source_updated_at = find_bulk_download_url("all_cards")
+                _, rulings_updated_at = find_bulk_download_url("rulings")
+                
+                if (
+                    previous_metadata.get("sourceUpdatedAt") == source_updated_at
+                    and previous_metadata.get("rulingsSourceUpdatedAt") == rulings_updated_at
+                ):
+                    print(
+                        f"[generate-card-database] Scryfall data unchanged; skipping download",
+                        file=sys.stderr,
+                    )
+                    return 0
+                else:
+                    print("[generate-card-database] Scryfall data has been updated; regenerating...", file=sys.stderr)
+            except Exception as error:
+                print(
+                    f"Warning: could not check for updates ({error}); proceeding with regeneration.",
+                    file=sys.stderr,
+                )
 
     previous_added_dates: dict[str, str] = {}
     if not args.skip_previous_lookup:
