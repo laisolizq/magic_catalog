@@ -7,11 +7,8 @@ import {
 
 const RELEASE_API_URL =
   'https://api.github.com/repos/laisolizq/magic_catalog/releases/tags/card-database-latest'
-const BOOTSTRAP_BASE_URL = `${import.meta.env.BASE_URL}card-database/bootstrap`
-const BOOTSTRAP_DATABASE_URL =
-  import.meta.env.VITE_CATALOG_BOOTSTRAP_DATABASE_URL || `${BOOTSTRAP_BASE_URL}/catalog-recent.sqlite.gz`
-const BOOTSTRAP_METADATA_URL =
-  import.meta.env.VITE_CATALOG_BOOTSTRAP_METADATA_URL || `${BOOTSTRAP_BASE_URL}/metadata.json`
+const BOOTSTRAP_DATABASE_URL = import.meta.env.VITE_CATALOG_BOOTSTRAP_DATABASE_URL
+const BOOTSTRAP_METADATA_URL = import.meta.env.VITE_CATALOG_BOOTSTRAP_METADATA_URL
 const PAGES_ARTIFACT_BASE_URL = 'https://laisolizq.github.io/magic_catalog/card-database'
 const PAGES_DATABASE_URL = `${PAGES_ARTIFACT_BASE_URL}/catalog.sqlite.gz`
 const PAGES_METADATA_URL = `${PAGES_ARTIFACT_BASE_URL}/metadata.json`
@@ -40,11 +37,26 @@ export async function bootstrapCatalogFromEmbeddedAssets(
   onProgress?: (progress: CatalogImportProgress) => void,
 ): Promise<CatalogUpdateStatus> {
   onProgress?.({ phase: 'Loading starter catalog', percent: 5 })
-  return updateFromLocalArtifact(
-    BOOTSTRAP_DATABASE_URL,
-    BOOTSTRAP_METADATA_URL,
-    onProgress,
-  )
+
+  if (BOOTSTRAP_DATABASE_URL && BOOTSTRAP_METADATA_URL) {
+    return updateFromLocalArtifact(
+      BOOTSTRAP_DATABASE_URL,
+      BOOTSTRAP_METADATA_URL,
+      onProgress,
+    )
+  }
+
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return 'offline'
+
+  try {
+    return await updateFromGitHubRelease(
+      (metadata) => metadata.databases?.recent?.assetName || 'catalog-recent.sqlite.gz',
+      onProgress,
+    )
+  } catch (error) {
+    console.error('[catalog] bootstrap failed', error)
+    return 'failed'
+  }
 }
 
 function findAsset(release: GitHubRelease, name: string): GitHubReleaseAsset | undefined {
@@ -144,6 +156,46 @@ async function updateFromLocalArtifact(
   return 'updated'
 }
 
+async function updateFromGitHubRelease(
+  selectDatabaseAssetName: (metadata: CatalogArtifactMetadata) => string,
+  onProgress?: (progress: CatalogImportProgress) => void,
+): Promise<CatalogUpdateStatus> {
+  const response = await fetch(RELEASE_API_URL, {
+    headers: { Accept: 'application/vnd.github+json' },
+  })
+  if (!response.ok) return 'unavailable'
+
+  const release = (await response.json()) as GitHubRelease
+  const metadataAsset = findAsset(release, 'metadata.json')
+  if (!metadataAsset) return 'unavailable'
+
+  const metadataStartedAt = performance.now()
+  const metadataBlob = await fetchReleaseAssetBlob(metadataAsset)
+  logCompleted('metadata download', metadataStartedAt)
+  const metadata = JSON.parse(await metadataBlob.text()) as CatalogArtifactMetadata
+
+  const databaseAssetName = selectDatabaseAssetName(metadata)
+  const databaseAsset = findAsset(release, databaseAssetName)
+  if (!databaseAsset) return 'unavailable'
+  const local = await getCatalogMetadata()
+
+  if (!isNewer(local, metadata)) return 'up-to-date'
+
+  const databaseStartedAt = performance.now()
+  const databaseBlob = await fetchReleaseAssetBlob(databaseAsset)
+  logCompleted('SQLite database download', databaseStartedAt)
+  onProgress?.({ phase: 'Downloading SQLite database', percent: 15 })
+
+  const importStartedAt = performance.now()
+  await importCatalogArtifact(
+    databaseBlob,
+    { ...metadata, artifactVersion: metadata.artifactVersion || release.tag_name },
+    onProgress,
+  )
+  logCompleted('SQLite catalog import', importStartedAt)
+  return 'updated'
+}
+
 export async function updateCatalogFromLatestRelease(
   onProgress?: (progress: CatalogImportProgress) => void,
 ): Promise<CatalogUpdateStatus> {
@@ -171,43 +223,12 @@ export async function updateCatalogFromLatestRelease(
       return pagesStatus
     }
 
-    const response = await fetch(RELEASE_API_URL, {
-      headers: { Accept: 'application/vnd.github+json' },
-    })
-    if (!response.ok) return 'unavailable'
-
-    const release = (await response.json()) as GitHubRelease
-    const metadataAsset = findAsset(release, 'metadata.json')
-    if (!metadataAsset) return 'unavailable'
-
-    const metadataStartedAt = performance.now()
-    const metadataBlob = await fetchReleaseAssetBlob(metadataAsset)
-    logCompleted('metadata download', metadataStartedAt)
-    const metadata = JSON.parse(await metadataBlob.text()) as CatalogArtifactMetadata
-    
-    // Prefer full database, fall back to legacy databaseAssetName
-    const databaseAssetName = metadata.databases?.full?.assetName || metadata.databaseAssetName || 'catalog.sqlite.gz'
-    const databaseAsset = findAsset(release, databaseAssetName)
-    if (!databaseAsset) return 'unavailable'
-    const local = await getCatalogMetadata()
-
-    if (!isNewer(local, metadata)) return 'up-to-date'
-
-    const databaseStartedAt = performance.now()
-    const databaseBlob = await fetchReleaseAssetBlob(databaseAsset)
-    logCompleted('SQLite database download', databaseStartedAt)
-    onProgress?.({ phase: 'Downloading SQLite database', percent: 15 })
-
-    const importStartedAt = performance.now()
-    await importCatalogArtifact(
-      databaseBlob,
-      { ...metadata, artifactVersion: metadata.artifactVersion || release.tag_name },
+    const status = await updateFromGitHubRelease(
+      (metadata) => metadata.databases?.full?.assetName || metadata.databaseAssetName || 'catalog.sqlite.gz',
       onProgress,
     )
-    logCompleted('SQLite catalog import', importStartedAt)
     logCompleted('catalog update', updateStartedAt)
-
-    return 'updated'
+    return status
   } catch (error) {
     console.error('[catalog] update failed', error)
     return 'failed'

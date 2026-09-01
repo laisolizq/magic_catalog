@@ -48,17 +48,16 @@ flowchart LR
 
 2. **Publishing**: [.github/workflows/card-database.yml](../.github/workflows/card-database.yml)
    runs that script on a scheduled basis (every 30 minutes) and publishes both
-   databases to the `card-database-latest` GitHub Release. It also updates
-   `public/card-database/bootstrap/` with the recent database for faster first-load
-   performance. A separate frozen `card-database-test` release exists purely for
-   integration tests (see [Testing](#testing) below) and is never auto-updated.
+   databases to the `card-database-latest` GitHub Release. A separate frozen
+   `card-database-test` release exists purely for integration tests (see
+   [Testing](#testing) below) and is never auto-updated.
 
 3. **First load / updates**: [catalogUpdates.ts](../src/services/catalogUpdates.ts)
-   bootstraps from a small embedded "starter" database under
-   [public/card-database/bootstrap](../public/card-database/bootstrap) when no
-   local catalog exists yet, then checks `card-database-latest` for a newer
-   database when online (comparing checksums). All of this is optional —
-   once a catalog is stored locally, the app works fully offline.
+   bootstraps from the recent database (`catalog-recent.sqlite.gz`) fetched from
+   the `card-database-latest` GitHub Release when no local catalog exists yet,
+   then checks `card-database-latest` for a newer full database when online
+   (comparing checksums). All of this is optional — once a catalog is stored
+   locally, the app works fully offline.
 4. **Import**: [catalogImport.ts](../src/services/catalogImport.ts) decompresses
    the gzip payload (if needed), verifies its SHA-256 checksum against
    `metadata.json`, and hands the raw SQLite bytes to `sqliteClient.ts`.

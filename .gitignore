@@ -25,5 +25,6 @@ build/
 artifacts/*
 artifacts_catalog.sqlite
 bootstrap_catalog.sqlite
-# Old bootstrap database file (deprecated - replaced by catalog-recent.sqlite.gz via CI/CD)
-public/card-database/bootstrap/catalog.sqlite.gz
+# Bootstrap database is fetched at runtime from GitHub Releases, not committed.
+public/card-database/bootstrap/*.sqlite.gz
+public/card-database/bootstrap/metadata.json
