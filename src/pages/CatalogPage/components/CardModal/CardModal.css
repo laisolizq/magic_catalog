@@ -88,12 +88,14 @@
 
 .rulling-date {
   font-size: 0.75rem;
+  font-weight: 600;
   color: var(--ink-soft);
   margin-bottom: 0.25rem;
 }
 
 .rulling-comment {
   font-size: 0.9rem;
+  font-weight: 600;
   white-space: pre-wrap;
 }
 
