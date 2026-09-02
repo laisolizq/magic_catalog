@@ -1,11 +1,23 @@
 import { NavLink } from 'react-router-dom'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { InstallPopup } from '../InstallPopup/InstallPopup'
+import { readCatalogMetadata } from '../../../db/sqliteClient'
+import type { CatalogArtifactMetadata } from '../../../types/catalog'
 import './AppHeader.css'
 
 const DEVELOPER_MODE_STORAGE_KEY = 'magic-catalog-developer-mode'
+
+function formatDatabaseGeneratedAt(generatedAt: string): string | null {
+  const date = new Date(generatedAt)
+  if (Number.isNaN(date.getTime())) return null
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date)
+}
 
 export function AppHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -17,6 +29,25 @@ export function AppHeader() {
     }
   })
   const menuCopyTapCount = useRef(0)
+
+  const [databaseGeneratedAt, setDatabaseGeneratedAt] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isMenuOpen) return
+
+    let cancelled = false
+
+    readCatalogMetadata<CatalogArtifactMetadata>().then((metadata) => {
+      if (cancelled) return
+      setDatabaseGeneratedAt(metadata?.generatedAt ? formatDatabaseGeneratedAt(metadata.generatedAt) : null)
+    }).catch(() => {
+      if (!cancelled) setDatabaseGeneratedAt(null)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isMenuOpen])
 
   const closeMenu = () => {
     setIsMenuOpen(false)
@@ -174,7 +205,12 @@ export function AppHeader() {
             </p>
 
             <div className="menu-version">
-              <span>Version {__APP_VERSION__}</span>
+              <div className="menu-version-text">
+                <span>Version {__APP_VERSION__}</span>
+                {databaseGeneratedAt && (
+                  <span>Database: {databaseGeneratedAt}</span>
+                )}
+              </div>
               <button
                 type="button"
                 className="menu-refresh"

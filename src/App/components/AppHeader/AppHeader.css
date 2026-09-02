@@ -249,6 +249,12 @@
   opacity: 0.85;
 }
 
+.menu-version-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
 .menu-refresh {
   width: 2rem;
   height: 2rem;
