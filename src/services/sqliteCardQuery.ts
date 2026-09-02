@@ -480,9 +480,15 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   // (schema v8+); older cached databases fall through to the legacy path
   // unchanged. Dedup (showAllPrints: false) additionally needs the schema
   // v9+ is_preferred_printing column - without it we fall through to the
-  // legacy path's JS selectLatestPrintings instead.
+  // legacy path's JS selectLatestPrintings instead. Filtered queries also
+  // use the legacy path when deduping because the preferred-printing flag is
+  // global to the catalog, while deduplication must be scoped to this query's
+  // candidate printings (for example, s:tsr).
   const showAllPrints = query.showAllPrints ?? true
-  const canRunInSql = !hasText && supportsSortColumns(database) && (showAllPrints || supportsPreferredPrinting(database))
+  const hasAnyFilter = hasSetFilter || hasRarityFilter || hasTypeFilter ||
+    hasColorFilter || hasColorCountFilter || hasOracleFilter || hasCardIdsFilter
+  const canRunInSql = !hasText && supportsSortColumns(database) &&
+    (showAllPrints || (!hasAnyFilter && supportsPreferredPrinting(database)))
   if (canRunInSql) {
     const whereCondition = buildWhereConditions(query, {
       hasCardIdsFilter,

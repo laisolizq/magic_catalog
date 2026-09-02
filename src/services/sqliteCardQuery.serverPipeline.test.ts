@@ -26,6 +26,40 @@ function makeCard(overrides: Partial<Card> & { id: string; faceName: string }): 
 }
 
 describe('queryCards server-side dedup (showAllPrints: false)', () => {
+  it('deduplicates within a filtered query instead of requiring the global preferred printing', async () => {
+    const cards: Card[] = [
+      makeCard({
+        id: 'tsr-printing',
+        faceName: 'Shared Card',
+        set: 'tsr',
+        setType: 'expansion',
+        releasedAt: '2023-01-01',
+      }),
+      makeCard({
+        id: 'other-printing',
+        faceName: 'Shared Card',
+        set: 'other',
+        setType: 'expansion',
+        releasedAt: '2024-01-01',
+      }),
+    ]
+
+    await seedCards(cards)
+
+    const result = await queryCards({
+      text: '',
+      sets: ['tsr'],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+      showAllPrints: false,
+    })
+
+    expect(result.cards.map((card) => card.id)).toEqual(['tsr-printing'])
+    expect(result.total).toBe(1)
+  })
+
   it('matches selectLatestPrintings for the same tier/promo/collector-number scenarios', async () => {
     const cards: Card[] = [
       // Scenario 1: newest core/expansion printing beats an even-newer non-major reprint.
