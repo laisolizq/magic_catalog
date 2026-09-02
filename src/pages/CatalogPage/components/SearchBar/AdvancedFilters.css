@@ -63,6 +63,38 @@
   gap: 0.45rem;
 }
 
+.legality-status-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
+.legality-format-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.legality-format-options .filter-option {
+  min-width: 0;
+  padding-inline: 0.45rem;
+}
+
+.legality-status-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.legality-filter-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
 .color-options {
   /* Shrink to its own content so its rendered width can be measured and
      mirrored by the color-filter-modes bar below it. */

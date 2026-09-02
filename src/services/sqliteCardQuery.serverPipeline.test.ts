@@ -134,6 +134,58 @@ describe('queryCards server-side sort (matches CatalogPage sortCards)', () => {
   })
 })
 
+describe('queryCards legality filtering', () => {
+  const cards: Card[] = [
+    makeCard({ id: 'modern-legal', faceName: 'Modern Legal', legalities: { modern: 'legal' } }),
+    makeCard({ id: 'modern-banned', faceName: 'Modern Banned', legalities: { modern: 'banned' } }),
+    makeCard({ id: 'modern-restricted', faceName: 'Modern Restricted', legalities: { modern: 'restricted' } }),
+    makeCard({ id: 'modern-not-legal', faceName: 'Modern Not Legal', legalities: { modern: 'not_legal' } }),
+  ]
+
+  it.each([
+    ['legal', 'modern-legal'],
+    ['banned', 'modern-banned'],
+    ['restricted', 'modern-restricted'],
+    ['not_legal', 'modern-not-legal'],
+  ] as const)('returns only %s cards', async (status, expectedId) => {
+    await seedCards(cards)
+
+    const result = await queryCards({
+      text: '',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+      legality: { format: 'modern', status },
+      showAllPrints: true,
+      sortOption: 'name-asc',
+    })
+
+    expect(result.cards.map((card) => card.id)).toEqual([expectedId])
+  })
+
+  it('keeps banned and not-legal distinct in the legacy text-search path', async () => {
+    const textCards = cards.map((card) => ({
+      ...card,
+      faces: [{ ...card.faces[0], name: `Modern ${card.faces[0].name}` }],
+    }))
+    await seedCards(textCards)
+
+    const result = await queryCards({
+      text: 'Modern',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+      legality: { format: 'modern', status: 'banned' },
+    })
+
+    expect(result.cards.map((card) => card.id)).toEqual(['modern-banned'])
+  })
+})
+
 describe('queryCards server-side pagination', () => {
   it('slices results with limit/offset while reporting the untruncated total', async () => {
     const cards: Card[] = Array.from({ length: 5 }, (_, index) =>

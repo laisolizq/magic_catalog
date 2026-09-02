@@ -319,6 +319,8 @@ function buildWhereConditions(
     hasRarityFilter: boolean
     hasTypeFilter: boolean
     hasColorFilter: boolean
+    hasLegalityFilter: boolean
+    hasLegalitiesColumn: boolean
     hasOracleFilter: boolean
     oracle: string
     preferredPrintingOnly: boolean
@@ -326,6 +328,15 @@ function buildWhereConditions(
 ): SqlCondition {
   const conditions: string[] = []
   const parameters: string[] = []
+
+  if (flags.hasLegalityFilter && query.legality) {
+    conditions.push(
+      flags.hasLegalitiesColumn
+        ? `lower(COALESCE(json_extract(cards.legalities_json, '$.${query.legality.format}'), '')) = ?`
+        : '0',
+    )
+    if (flags.hasLegalitiesColumn) parameters.push(query.legality.status)
+  }
 
   if (flags.preferredPrintingOnly) {
     conditions.push('is_preferred_printing = 1')
@@ -470,6 +481,8 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   const hasColorFilter = hasFilterValues(query.colors)
   const hasColorCountFilter = query.colorCount != null
   const hasCardIdsFilter = (query.cardIds?.length ?? 0) > 0
+  const hasLegalityFilter = query.legality != null
+  const hasLegalitiesColumn = getCardsTableColumns(database).has('legalities_json')
   const text = query.text.trim()
   const oracle = query.oracle?.trim() ?? ''
   const hasText = text.length > 0
@@ -486,12 +499,15 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   // candidate printings (for example, s:tsr).
   const showAllPrints = query.showAllPrints ?? true
   const hasAnyFilter = hasSetFilter || hasRarityFilter || hasTypeFilter ||
-    hasColorFilter || hasColorCountFilter || hasOracleFilter || hasCardIdsFilter
+    hasColorFilter || hasColorCountFilter || hasOracleFilter || hasCardIdsFilter ||
+    hasLegalityFilter
   const canRunInSql = !hasText && supportsSortColumns(database) &&
     (showAllPrints || (!hasAnyFilter && supportsPreferredPrinting(database)))
   if (canRunInSql) {
     const whereCondition = buildWhereConditions(query, {
       hasCardIdsFilter,
+      hasLegalityFilter,
+      hasLegalitiesColumn,
       hasSetFilter,
       hasRarityFilter,
       hasTypeFilter,
@@ -503,7 +519,7 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
     return runServerPaginatedQuery(database, whereCondition, query)
   }
 
-  if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter && !hasColorCountFilter && !hasOracleFilter && !hasCardIdsFilter) {
+  if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter && !hasColorCountFilter && !hasOracleFilter && !hasCardIdsFilter && !hasLegalityFilter) {
     const cards = await getAllCards(database)
     const fuse = getAllCardsFuse(cards)
     if (!hasText) return { cards, total: cards.length }
@@ -521,6 +537,7 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
     colors: query.colors,
     colorMode: query.colorMode,
     colorCount: query.colorCount,
+    legality: query.legality,
     oracle,
     cardIds: query.cardIds,
   })
@@ -535,6 +552,15 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
     const names = query.cardIds!.map(() => '?')
     query.cardIds!.forEach((id) => parameters.push(id))
     conditions.push(`id IN (${names.join(', ')})`)
+  }
+
+  if (hasLegalityFilter) {
+    conditions.push(
+      hasLegalitiesColumn
+        ? `lower(COALESCE(json_extract(legalities_json, '$.${query.legality!.format}'), '')) = ?`
+        : '0',
+    )
+    if (hasLegalitiesColumn) parameters.push(query.legality!.status)
   }
 
   if (hasSetFilter) {

@@ -8,6 +8,7 @@ import './SearchBar.css'
 
 import {
   type ColorFilterMode,
+  type LegalityFilter,
 } from '../../../../utils/scryfallQuery'
 import { symbolUrl } from '../../../../utils/utils.ts'
 import type { SetOption } from '../../../../types/catalog'
@@ -235,6 +236,7 @@ interface SearchBarProps {
   query: string
   typeValue: string[]
   rarityValue: string[]
+  legalityValue: LegalityFilter | null
   colorValue: string[]
   colorMode: ColorFilterMode
   oracleValue: string
@@ -253,6 +255,7 @@ interface SearchBarProps {
 
   onTypeChange: (value: string[]) => void
   onRarityChange: (value: string[]) => void
+  onLegalityChange: (value: LegalityFilter | null) => void
   onColorChange: (value: string[]) => void
   onColorModeChange: (value: ColorFilterMode) => void
   onOracleChange: (value: string) => void
@@ -264,6 +267,7 @@ export function SearchBar({
   query,
   typeValue,
   rarityValue,
+  legalityValue,
   colorValue,
   colorMode,
   oracleValue,
@@ -280,6 +284,7 @@ export function SearchBar({
   onQueryChange,
   onTypeChange,
   onRarityChange,
+  onLegalityChange,
   onColorChange,
   onColorModeChange,
   onOracleChange,
@@ -499,6 +504,7 @@ export function SearchBar({
         oracleValue={oracleValue}
         typeValue={typeValue}
         rarityValue={rarityValue}
+        legalityValue={legalityValue}
         typeOptions={typeOptions}
         setValue={setValue}
         setOptions={setOptions}
@@ -510,6 +516,7 @@ export function SearchBar({
         onOracleChange={onOracleChange}
         onTypeChange={onTypeChange}
         onRarityChange={onRarityChange}
+        onLegalityChange={onLegalityChange}
         onSetsChange={onSetsChange}
         onShowAllPrintsChange={onShowAllPrintsChange}
         onClose={() => onAdvancedOpenChange(false)}

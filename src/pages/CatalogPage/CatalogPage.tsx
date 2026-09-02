@@ -446,6 +446,7 @@ export function CatalogPage() {
           sets: setValue,
           types: typeValue,
           rarities: rarityValue,
+          legality: parsedQuery.legality,
           colors: colorValue,
           colorMode,
           colorCount: parsedQuery.colorCount,
@@ -769,6 +770,7 @@ export function CatalogPage() {
       rarities: string[]
       sets: string[]
       oracle: string
+      legality: typeof parsedQuery.legality
     }>,
   ) => {
     handleFilterChange(() =>
@@ -785,6 +787,7 @@ export function CatalogPage() {
           types: prevParsed.types,
           rarities: prevParsed.rarities,
           sets: prevParsed.sets,
+          legality: prevParsed.legality,
           ...updates,
         })
       }),
@@ -824,6 +827,7 @@ export function CatalogPage() {
           types: parsed.types,
           rarities: parsed.rarities,
           sets: parsed.sets,
+          legality: parsed.legality,
         })
       }),
     )
@@ -862,6 +866,7 @@ export function CatalogPage() {
           query={query}
           typeValue={typeValue}
           rarityValue={rarityValue}
+          legalityValue={parsedQuery.legality}
           colorValue={colorValue}
           colorMode={colorMode}
           oracleValue={parsedQuery.oracle}
@@ -889,6 +894,9 @@ export function CatalogPage() {
           }
           onRarityChange={(value) =>
             updateQueryFilters({ rarities: value })
+          }
+          onLegalityChange={(value) =>
+            updateQueryFilters({ legality: value })
           }
           onColorChange={(value) =>
             updateQueryFilters({ colors: value })

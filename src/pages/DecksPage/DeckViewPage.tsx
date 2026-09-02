@@ -75,6 +75,7 @@ export function DeckViewPage() {
       sets: parsedQuery.sets,
       types: parsedQuery.types.map((type) => type.toLowerCase()),
       rarities: parsedQuery.rarities,
+      legality: parsedQuery.legality,
       colors: parsedQuery.colors,
       colorMode: parsedQuery.colorMode,
       colorCount: parsedQuery.colorCount,
@@ -103,6 +104,7 @@ export function DeckViewPage() {
     colorCount: parsedQuery.colorCount,
     types: parsedQuery.types,
     rarities: parsedQuery.rarities,
+    legality: parsedQuery.legality,
     sets: parsedQuery.sets,
   }
   const updateFilters = (changes: Partial<typeof filters>) => setQuery(buildScryfallQuery({ ...filters, ...changes }))
@@ -114,6 +116,7 @@ export function DeckViewPage() {
     query={query}
     typeValue={parsedQuery.types.map((type) => type.toLowerCase())}
     rarityValue={parsedQuery.rarities}
+    legalityValue={parsedQuery.legality}
     colorValue={parsedQuery.colors}
     colorMode={parsedQuery.colorMode}
     oracleValue={parsedQuery.oracle}
@@ -130,6 +133,7 @@ export function DeckViewPage() {
     onQueryChange={setQuery}
     onTypeChange={(value) => updateFilters({ types: value })}
     onRarityChange={(value) => updateFilters({ rarities: value })}
+    onLegalityChange={(value) => updateFilters({ legality: value })}
     onColorChange={(value) => updateFilters({ colors: value })}
     onColorModeChange={(value: ColorFilterMode) => updateFilters({ colorMode: value })}
     onOracleChange={(value) => updateFilters({ oracle: value })}

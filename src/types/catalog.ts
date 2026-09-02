@@ -1,5 +1,5 @@
 import type { Card, CardColor } from './card'
-import type { ColorCountFilter, ColorFilterMode } from '../utils/scryfallQuery'
+import type { ColorCountFilter, ColorFilterMode, LegalityFilter } from '../utils/scryfallQuery'
 
 export const CATALOG_SCHEMA_VERSION = 5
 export const CATALOG_METADATA_ID = 'catalog'
@@ -88,6 +88,7 @@ export interface CatalogQuery {
   colorMode: ColorFilterMode
   colorCount?: ColorCountFilter | null
   cardIds?: string[]
+  legality?: LegalityFilter | null
   // Opt-in SQL-side sort/dedup/pagination (see sqliteCardQuery.ts). Ignored
   // (falls back to returning every matching row) when text is non-empty or
   // the loaded database predates the sort/dedup columns.

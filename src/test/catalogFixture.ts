@@ -61,7 +61,7 @@ export async function seedCards(
   })
   const database = new SQL.Database()
   database.exec(`
-    CREATE TABLE cards (id TEXT PRIMARY KEY, set_code TEXT NOT NULL, set_type TEXT NOT NULL DEFAULT '', released_at TEXT NOT NULL DEFAULT '', collector_number TEXT, oracle_id TEXT, rarity TEXT NOT NULL, faces_json TEXT NOT NULL, added_at TEXT NOT NULL DEFAULT '', primary_face_name TEXT NOT NULL DEFAULT '', primary_mana_value REAL NOT NULL DEFAULT 0, collector_number_numeric INTEGER NOT NULL DEFAULT 9007199254740991, collector_number_suffix TEXT NOT NULL DEFAULT '', is_preferred_printing INTEGER NOT NULL DEFAULT 0);
+    CREATE TABLE cards (id TEXT PRIMARY KEY, set_code TEXT NOT NULL, set_type TEXT NOT NULL DEFAULT '', released_at TEXT NOT NULL DEFAULT '', collector_number TEXT, oracle_id TEXT, rarity TEXT NOT NULL, faces_json TEXT NOT NULL, added_at TEXT NOT NULL DEFAULT '', legalities_json TEXT NOT NULL DEFAULT '', primary_face_name TEXT NOT NULL DEFAULT '', primary_mana_value REAL NOT NULL DEFAULT 0, collector_number_numeric INTEGER NOT NULL DEFAULT 9007199254740991, collector_number_suffix TEXT NOT NULL DEFAULT '', is_preferred_printing INTEGER NOT NULL DEFAULT 0);
     CREATE TABLE face_types (card_id TEXT, face_index INTEGER, type_name TEXT, PRIMARY KEY (card_id, face_index, type_name));
     CREATE TABLE face_subtypes (card_id TEXT, face_index INTEGER, subtype_name TEXT, PRIMARY KEY (card_id, face_index, subtype_name));
     CREATE TABLE face_colors (card_id TEXT, face_index INTEGER, color TEXT, PRIMARY KEY (card_id, face_index, color));
@@ -77,7 +77,7 @@ export async function seedCards(
     CREATE INDEX sets_released_at_idx ON sets(released_at);
   `)
 
-  const insertCard = database.prepare('INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+  const insertCard = database.prepare('INSERT INTO cards (id, set_code, set_type, released_at, collector_number, oracle_id, rarity, faces_json, added_at, legalities_json, primary_face_name, primary_mana_value, collector_number_numeric, collector_number_suffix, is_preferred_printing) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
   const insertType = database.prepare('INSERT OR IGNORE INTO face_types VALUES (?, ?, ?)')
   const insertSubtype = database.prepare('INSERT OR IGNORE INTO face_subtypes VALUES (?, ?, ?)')
   const insertColor = database.prepare('INSERT OR IGNORE INTO face_colors VALUES (?, ?, ?)')
@@ -100,6 +100,7 @@ export async function seedCards(
       card.rarity,
       JSON.stringify(card.faces),
       card.addedAt ?? '',
+      JSON.stringify(card.legalities ?? {}),
       primaryFace?.name ?? '',
       manaValueFromCost(primaryFace?.manaCost ?? ''),
       collectorNumeric,

@@ -4,8 +4,11 @@
 //   "dragon c<=wu"
 //   "dragon c>=2"
 //   "dragon c!=1"
+
+import type { LegalityStatus, MagicFormat } from '../types/card'
 //
 // Supported prefixes: c=/color=, t:/type:, r:/rarity:, s:/set:, o:/oracle:
+// Legality prefixes: f:/format:, legal:/legality:, not:, restricted:, banned:
 //
 // Color operators:
 //   c=   -> exactly
@@ -60,6 +63,11 @@ export interface ColorCountFilter {
   value: number
 }
 
+export interface LegalityFilter {
+  format: MagicFormat
+  status: LegalityStatus
+}
+
 export interface ParsedQuery {
   text: string
   oracle: string
@@ -69,6 +77,7 @@ export interface ParsedQuery {
   types: string[]
   rarities: string[]
   sets: string[]
+  legality: LegalityFilter | null
 }
 
 export interface QueryFilters {
@@ -80,6 +89,7 @@ export interface QueryFilters {
   types: string[]
   rarities: string[]
   sets: string[]
+  legality?: LegalityFilter | null
 }
 
 const COLOR_LETTERS: Record<string, string> = {
@@ -113,6 +123,20 @@ const RARITY_ABBREVIATIONS: Record<string, string> = {
   uncommon: 'u',
   rare: 'r',
   mythic: 'm',
+}
+
+const MAGIC_FORMATS = new Set<MagicFormat>([
+  'standard', 'pioneer', 'modern', 'pauper', 'legacy', 'vintage', 'commander',
+])
+
+const LEGALITY_PREFIXES: Record<string, LegalityStatus | 'legal'> = {
+  f: 'legal',
+  format: 'legal',
+  legal: 'legal',
+  legality: 'legal',
+  not: 'not_legal',
+  restricted: 'restricted',
+  banned: 'banned',
 }
 
 const TOKEN_REGEX =
@@ -171,6 +195,7 @@ export function parseScryfallQuery(input: string): ParsedQuery {
   const types: string[] = []
   const rarities: string[] = []
   const sets: string[] = []
+  let legality: LegalityFilter | null = null
 
   let colorMode: ColorFilterMode =
     'exactly'
@@ -187,6 +212,15 @@ export function parseScryfallQuery(input: string): ParsedQuery {
       const field = FIELD_ALIASES[match[1].toLowerCase()]
       const operator = match[2]
       const rawValue = stripQuotes(match[3])
+      const legalityStatus = LEGALITY_PREFIXES[match[1].toLowerCase()]
+
+      if (legalityStatus) {
+        const format = rawValue.toLowerCase() as MagicFormat
+        if (MAGIC_FORMATS.has(format) && (operator === ':' || operator === '=')) {
+          legality = { format, status: legalityStatus }
+          continue
+        }
+      }
 
       if (field === 'colors') {
         /*
@@ -299,6 +333,7 @@ export function parseScryfallQuery(input: string): ParsedQuery {
     types,
     rarities,
     sets,
+    legality,
   }
 }
 
@@ -409,6 +444,15 @@ export function buildScryfallQuery(
     parts.push(`r:${RARITY_ABBREVIATIONS[lowered] ?? lowered}`)
   })
   filters.sets.forEach((set) => parts.push(`s:${set}`))
+
+  if (filters.legality) {
+    const prefix = filters.legality.status === 'legal'
+      ? 'f'
+      : filters.legality.status === 'not_legal'
+        ? 'not'
+        : filters.legality.status
+    parts.push(`${prefix}:${filters.legality.format}`)
+  }
 
   return parts.filter((part) => part.length > 0).join(' ')
 }

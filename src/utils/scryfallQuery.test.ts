@@ -13,6 +13,7 @@ describe('parseScryfallQuery', () => {
       types: [],
       rarities: [],
       sets: [],
+      legality: null,
     })
   })
 
@@ -26,6 +27,7 @@ describe('parseScryfallQuery', () => {
       types: [],
       rarities: [],
       sets: [],
+      legality: null,
     })
   })
 
@@ -114,6 +116,32 @@ describe('parseScryfallQuery', () => {
     expect(parsed.sets).toEqual(['tla'])
   })
 
+  it('parses Scryfall legality aliases and statuses', () => {
+    expect(parseScryfallQuery('f:modern').legality).toEqual({ format: 'modern', status: 'legal' })
+    expect(parseScryfallQuery('format:commander').legality).toEqual({ format: 'commander', status: 'legal' })
+    expect(parseScryfallQuery('legality:pioneer').legality).toEqual({ format: 'pioneer', status: 'legal' })
+    expect(parseScryfallQuery('not:standard').legality).toEqual({ format: 'standard', status: 'not_legal' })
+    expect(parseScryfallQuery('restricted:vintage').legality).toEqual({ format: 'vintage', status: 'restricted' })
+    expect(parseScryfallQuery('banned:legacy').legality).toEqual({ format: 'legacy', status: 'banned' })
+  })
+
+  it('builds and round-trips legality filters', () => {
+    const built = buildScryfallQuery({
+      text: '',
+      colors: [],
+      types: [],
+      rarities: [],
+      sets: [],
+      legality: { format: 'modern', status: 'banned' },
+    })
+
+    expect(built).toBe('banned:modern')
+    expect(parseScryfallQuery(built).legality).toEqual({
+      format: 'modern',
+      status: 'banned',
+    })
+  })
+
   it('parses oracle text tokens and quoted phrases', () => {
     expect(parseScryfallQuery('o:draw')).toMatchObject({
       text: '',
@@ -157,6 +185,7 @@ describe('parseScryfallQuery', () => {
       types: ['Creature'],
       rarities: ['rare'],
       sets: ['tla'],
+      legality: null,
     })
   })
 })
@@ -172,6 +201,7 @@ describe('buildScryfallQuery', () => {
       types: ['Creature', 'Instant'],
       rarities: ['rare', 'mythic'],
       sets: ['tla', 'hob'],
+      legality: null,
     }
 
     const built = buildScryfallQuery(filters)

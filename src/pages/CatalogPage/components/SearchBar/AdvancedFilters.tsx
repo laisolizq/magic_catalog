@@ -5,6 +5,12 @@ import {
 } from '../../../../utils/scryfallQuery'
 import { symbolUrl } from '../../../../utils/utils.ts'
 import type { SetOption } from '../../../../types/catalog'
+import type { LegalityStatus, MagicFormat } from '../../../../types/card'
+import type { LegalityFilter } from '../../../../utils/scryfallQuery'
+import legalIcon from '../../../../assets/icons/legal.svg'
+import bannedIcon from '../../../../assets/icons/banned.svg'
+import notLegalIcon from '../../../../assets/icons/not-legal.svg'
+import restrictedIcon from '../../../../assets/icons/restricted.svg'
 import './AdvancedFilters.css'
 
 interface AdvancedFiltersProps {
@@ -14,6 +20,7 @@ interface AdvancedFiltersProps {
 
   typeValue: string[]
   rarityValue: string[]
+  legalityValue: LegalityFilter | null
   typeOptions: string[]
   setValue: string[]
   setOptions: SetOption[]
@@ -27,6 +34,7 @@ interface AdvancedFiltersProps {
 
   onTypeChange: (value: string[]) => void
   onRarityChange: (value: string[]) => void
+  onLegalityChange: (value: LegalityFilter | null) => void
   onSetsChange: (value: string[]) => void
   onShowAllPrintsChange: (value: boolean) => void
 
@@ -48,6 +56,23 @@ const rarities = [
   'uncommon',
   'rare',
   'mythic',
+]
+
+const legalityFormats: { value: MagicFormat; label: string }[] = [
+  { value: 'standard', label: 'Standard' },
+  { value: 'pioneer', label: 'Pioneer' },
+  { value: 'modern', label: 'Modern' },
+  { value: 'pauper', label: 'Pauper' },
+  { value: 'legacy', label: 'Legacy' },
+  { value: 'vintage', label: 'Vintage' },
+  { value: 'commander', label: 'Commander' },
+]
+
+const legalityStatuses: { value: LegalityStatus; label: string; icon: string }[] = [
+  { value: 'legal', label: 'Legal', icon: legalIcon },
+  { value: 'not_legal', label: 'Not legal', icon: notLegalIcon },
+  { value: 'restricted', label: 'Restricted', icon: restrictedIcon },
+  { value: 'banned', label: 'Banned', icon: bannedIcon },
 ]
 
 const colorModes: {
@@ -80,6 +105,7 @@ export function AdvancedFilters({
   oracleValue,
   typeValue,
   rarityValue,
+  legalityValue,
   typeOptions,
   setValue,
   setOptions,
@@ -89,6 +115,7 @@ export function AdvancedFilters({
   onOracleChange,
   onTypeChange,
   onRarityChange,
+  onLegalityChange,
   onSetsChange,
   onShowAllPrintsChange,
   onClose,
@@ -116,6 +143,9 @@ export function AdvancedFilters({
 
   const [selectedRarities, setSelectedRarities] =
     useState<string[]>(rarityValue)
+
+  const [selectedLegality, setSelectedLegality] =
+    useState<LegalityFilter | null>(legalityValue)
 
   const [selectedSets, setSelectedSets] =
     useState<string[]>(setValue)
@@ -224,6 +254,7 @@ export function AdvancedFilters({
 
     onTypeChange(selectedTypes)
     onRarityChange(selectedRarities)
+    onLegalityChange(selectedLegality)
     onSetsChange(selectedSets)
     onShowAllPrintsChange(selectedShowAllPrints)
 
@@ -485,6 +516,56 @@ export function AdvancedFilters({
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="advanced-filter-section">
+        <h3>Legality</h3>
+
+        <div className="legality-format-options" role="group" aria-label="Legality format">
+          {legalityFormats.map((format) => (
+            <button
+              key={format.value}
+              type="button"
+              className={`filter-option ${selectedLegality?.format === format.value ? 'is-selected' : ''}`}
+              aria-pressed={selectedLegality?.format === format.value}
+              onClick={() => {
+                if (selectedLegality?.format === format.value) {
+                  setSelectedLegality(null)
+                  return
+                }
+
+                setSelectedLegality({
+                  format: format.value,
+                  status: selectedLegality?.status === 'restricted' && format.value !== 'vintage'
+                    ? 'legal'
+                    : selectedLegality?.status ?? 'legal',
+                })
+              }}
+            >
+              {format.label}
+            </button>
+          ))}
+        </div>
+
+        {selectedLegality && (
+          <div className="legality-status-options" role="group" aria-label="Legality status">
+            {legalityStatuses
+              .filter((status) => status.value !== 'restricted' || selectedLegality.format === 'vintage')
+              .map((status) => (
+              <button
+                key={status.value}
+                type="button"
+                className={`filter-option legality-status-option ${selectedLegality.status === status.value ? 'is-selected' : ''}`}
+                aria-pressed={selectedLegality.status === status.value}
+                onClick={() => setSelectedLegality({ ...selectedLegality, status: status.value })}
+              >
+                <img className="legality-filter-icon" src={status.icon} alt="" aria-hidden="true" />
+                {status.label}
+              </button>
+            ))}
+          </div>
+        )}
+
       </div>
 
       {/* =========================
