@@ -37,7 +37,7 @@ const SYMBOL_TYPE_FILTERS = [
   'sorcery',
 ] as const
 
-type SortOption =
+export type SortOption =
   | 'set-asc'
   | 'set-desc'
   | 'name-asc'
@@ -124,7 +124,7 @@ function compareSetOrder(left: Card, right: Card): number {
   )
 }
 
-function sortCards(
+export function sortCards(
   cards: Card[],
   sortOption: SortOption,
 ): Card[] {
@@ -264,6 +264,11 @@ export function CatalogPage() {
     useState<SortOption>(urlParams.sortOption || 'added-desc')
 
   const [displayCards, setDisplayCards] = useState<Card[]>([])
+  // Set when queryCards ran the SQL sort/dedup/pagination path (schema v8+,
+  // no free-text search) - displayCards is then already deduped/sorted/paged,
+  // so the sortedFilteredCards memo below skips the legacy JS pipeline.
+  const [isServerPaginated, setIsServerPaginated] = useState(false)
+  const [catalogTotal, setCatalogTotal] = useState(0)
   const [typeOptions, setTypeOptions] = useState<string[]>([])
   const [setOptions, setSetOptions] = useState<SetOption[]>([])
   const [isCatalogLoading, setIsCatalogLoading] = useState(false)
@@ -408,11 +413,16 @@ export function CatalogPage() {
           colors: colorValue,
           colorMode,
           colorCount: parsedQuery.colorCount,
+          sortOption,
+          showAllPrints,
+          limit: visibleCount,
         })
         console.log(`[catalog] card query ${JSON.stringify(parsedQuery)} completed in ${(performance.now() - queryStartedAt).toFixed(0)}ms`)
 
         if (cancelled) return
         setDisplayCards(result.cards)
+        setIsServerPaginated(Boolean(result.serverPaginated))
+        setCatalogTotal(result.total)
         hasLoadedCatalogRef.current = true
       } catch (error) {
         if (cancelled) return
@@ -430,7 +440,7 @@ export function CatalogPage() {
     return () => {
       cancelled = true
     }
-  }, [parsedQuery, setValue, typeValue, rarityValue, colorValue, colorMode, isCatalogReady])
+  }, [parsedQuery, setValue, typeValue, rarityValue, colorValue, colorMode, isCatalogReady, sortOption, showAllPrints, visibleCount])
 
   useEffect(() => {
     if (!isCatalogReady) return
@@ -472,6 +482,9 @@ export function CatalogPage() {
   const filteredCards = displayCards
 
   const sortedFilteredCards = useMemo(() => {
+    // SQL already applied dedup/sort/pagination for this result set.
+    if (isServerPaginated) return filteredCards
+
     const cardsToDisplay = showAllPrints
       ? filteredCards
       : selectLatestPrintings(filteredCards)
@@ -479,7 +492,7 @@ export function CatalogPage() {
     return parsedQuery.text.trim()
       ? cardsToDisplay
       : sortCards(cardsToDisplay, sortOption)
-  }, [filteredCards, sortOption, showAllPrints])
+  }, [filteredCards, sortOption, showAllPrints, isServerPaginated, parsedQuery.text])
 
   /*
    * SCROLL
@@ -512,7 +525,7 @@ export function CatalogPage() {
             setVisibleCount((prev) =>
               Math.min(
                 prev + BATCH_SIZE,
-                sortedFilteredCards.length,
+                isServerPaginated ? catalogTotal : sortedFilteredCards.length,
               ),
             )
           }
@@ -523,7 +536,7 @@ export function CatalogPage() {
     observer.observe(sentinel)
 
     return () => observer.disconnect()
-  }, [sortedFilteredCards.length])
+  }, [sortedFilteredCards.length, isServerPaginated, catalogTotal])
 
   /*
    * Visible cards

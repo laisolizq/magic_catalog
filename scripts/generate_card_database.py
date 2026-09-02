@@ -8,6 +8,7 @@ import gzip
 import hashlib
 import json
 import os
+import re
 import sqlite3
 import sys
 import tempfile
@@ -19,7 +20,13 @@ from typing import Any
 
 USER_AGENT = "magic_catalog/1.0 (card database generator)"
 BULK_DATA_URL = "https://api.scryfall.com/bulk-data"
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 9
+# Matches JS Number.MAX_SAFE_INTEGER, used as the sort key for collector
+# numbers that don't start with a digit (mirrors collectorSortKey in
+# CatalogPage.tsx/selectLatestPrintings.ts).
+MAX_SAFE_INTEGER = 9007199254740991
+MANA_SYMBOL_RE = re.compile(r"\{([^}]+)\}")
+COLLECTOR_NUMBER_RE = re.compile(r"^(\d+)(.*)$")
 ARTIFACT_VERSION = "1"
 VALID_RARITIES = {"common", "uncommon", "rare", "mythic"}
 VALID_COLORS = {"W", "U", "B", "R", "G"}
@@ -119,6 +126,38 @@ def is_unreleased(data: dict[str, Any], reference_date: str) -> bool:
     return isinstance(released_at, str) and released_at > reference_date
 
 
+# Mirrors manaValueFromCost in CatalogPage.tsx, precomputed here so SQL can
+# ORDER BY it directly instead of re-parsing mana costs in JS at query time.
+def mana_value_from_cost(cost: str) -> float:
+    if not cost:
+        return 0.0
+
+    total = 0.0
+    for symbol in MANA_SYMBOL_RE.findall(cost):
+        if symbol.isdigit():
+            total += int(symbol)
+        elif symbol in ("X", "Y", "Z"):
+            continue
+        elif "/" in symbol:
+            total += 2 if symbol.startswith("2/") else 1
+        elif symbol == "H":
+            total += 1
+        elif re.fullmatch(r"H[WUBRG]", symbol):
+            total += 0.5
+        elif re.fullmatch(r"[WUBRGCSPL]", symbol):
+            total += 1
+
+    return total
+
+
+# Mirrors collectorSortKey in CatalogPage.tsx/selectLatestPrintings.ts.
+def collector_sort_key(value: str | None) -> tuple[int, str]:
+    match = COLLECTOR_NUMBER_RE.match(value) if value else None
+    if not match:
+        return (MAX_SAFE_INTEGER, value or "")
+    return (int(match.group(1)), match.group(2).lower())
+
+
 def normalize_card(
     data: dict[str, Any],
     reference_date: str,
@@ -164,6 +203,8 @@ def normalize_card(
     if rarity not in VALID_RARITIES:
         rarity = "common"
 
+    collector_number_numeric, collector_number_suffix = collector_sort_key(collector_number)
+
     return {
         "id": card_id,
         "set": set_code,
@@ -175,6 +216,10 @@ def normalize_card(
         "rarity": rarity,
         "faces": faces,
         "legalities": legalities,
+        "primaryFaceName": faces[0]["name"],
+        "primaryManaValue": mana_value_from_cost(faces[0].get("manaCost", "")),
+        "collectorNumberNumeric": collector_number_numeric,
+        "collectorNumberSuffix": collector_number_suffix,
     }
 
 
@@ -295,6 +340,98 @@ def default_added_at(card: dict[str, Any], generation_date: str) -> str:
     return generation_date
 
 
+# Mirrors selectLatestPrintings.ts's SET_TYPE_TIERS/tierIndexForSetType: a
+# core/expansion printing (tier 0) always wins over any other set type (tier 1).
+SET_TYPE_TIERS: tuple[tuple[str, ...], ...] = (("core", "expansion"),)
+
+
+def tier_index_for_set_type(set_type: str | None) -> int:
+    for index, set_types in enumerate(SET_TYPE_TIERS):
+        if set_type is not None and set_type in set_types:
+            return index
+    return len(SET_TYPE_TIERS)
+
+
+# Mirrors comparePrintingPreference in selectLatestPrintings.ts: returns >0 if
+# `left` should be preferred over `right`. `left`/`right` are the lightweight
+# per-card dicts read back from cards.jsonl.gz (id/set/setType/releasedAt/
+# collectorNumberNumeric/collectorNumberSuffix).
+def compare_printing_preference(left: dict[str, Any], right: dict[str, Any], prefer_oldest: bool) -> int:
+    if left["set"] != right["set"]:
+        left_is_promo = left.get("setType") == "promo"
+        right_is_promo = right.get("setType") == "promo"
+        if left_is_promo != right_is_promo:
+            return -1 if left_is_promo else 1
+
+        left_released = left.get("releasedAt") or ""
+        right_released = right.get("releasedAt") or ""
+        if left_released != right_released:
+            release_delta = -1 if left_released < right_released else 1
+            return -release_delta if prefer_oldest else release_delta
+
+        return -1 if left["set"] < right["set"] else 1
+
+    left_number, left_suffix = left["collectorNumberNumeric"], left["collectorNumberSuffix"]
+    right_number, right_suffix = right["collectorNumberNumeric"], right["collectorNumberSuffix"]
+    if right_number != left_number:
+        return right_number - left_number
+    if right_suffix != left_suffix:
+        return 1 if right_suffix < left_suffix else -1
+    if right["id"] != left["id"]:
+        return 1 if right["id"] < left["id"] else -1
+    return 0
+
+
+def iter_included_cards(
+    cards_path: Path,
+    previous_added_dates: dict[str, str],
+    generation_date: str,
+    recent_only: bool,
+    cutoff_date: str,
+):
+    """Yields (card, card_added_at) for each normalized card that belongs in
+    this database, applying the same added_at/cutoff_date filter used when
+    building the 'recent' database - shared so the preferred-printing
+    computation below sees exactly the same card set as the insertion loop."""
+    with gzip.open(cards_path, 'rt', encoding='utf-8') as cards_file:
+        for line in cards_file:
+            card = json.loads(line)
+            card_added_at = previous_added_dates.get(card['id']) or default_added_at(card, generation_date)
+            if recent_only and card_added_at < cutoff_date:
+                continue
+            yield card, card_added_at
+
+
+def compute_preferred_printings(
+    cards_path: Path,
+    previous_added_dates: dict[str, str],
+    generation_date: str,
+    recent_only: bool,
+    cutoff_date: str,
+) -> set[str]:
+    """Precomputes, for each card name, which single printing is the
+    'preferred' one (selectLatestPrintings.ts's dedup logic), so the app can
+    filter on a plain indexed column instead of running that computation as a
+    SQL window-function query at browse time."""
+    printings_by_name: dict[str, list[dict[str, Any]]] = {}
+    for card, _ in iter_included_cards(cards_path, previous_added_dates, generation_date, recent_only, cutoff_date):
+        printings_by_name.setdefault(card["primaryFaceName"], []).append(card)
+
+    preferred_ids: set[str] = set()
+    for printings in printings_by_name.values():
+        best_tier = min(tier_index_for_set_type(card.get("setType")) for card in printings)
+        candidates = [card for card in printings if tier_index_for_set_type(card.get("setType")) == best_tier]
+        prefer_oldest = best_tier != 0
+
+        preferred = candidates[0]
+        for card in candidates[1:]:
+            if compare_printing_preference(card, preferred, prefer_oldest) > 0:
+                preferred = card
+        preferred_ids.add(preferred["id"])
+
+    return preferred_ids
+
+
 def build_sqlite_database(
     cards_path: Path,
     rulings_path: Path,
@@ -330,7 +467,12 @@ def build_sqlite_database(
             rarity TEXT NOT NULL,
             faces_json TEXT NOT NULL,
             added_at TEXT NOT NULL DEFAULT '',
-            legalities_json TEXT NOT NULL DEFAULT '{}'
+            legalities_json TEXT NOT NULL DEFAULT '{}',
+            primary_face_name TEXT NOT NULL DEFAULT '',
+            primary_mana_value REAL NOT NULL DEFAULT 0,
+            collector_number_numeric INTEGER NOT NULL DEFAULT 9007199254740991,
+            collector_number_suffix TEXT NOT NULL DEFAULT '',
+            is_preferred_printing INTEGER NOT NULL DEFAULT 0
         );
         CREATE TABLE face_types (
             card_id TEXT NOT NULL,
@@ -370,61 +512,68 @@ def build_sqlite_database(
     uncompressed_bytes = 0
     oracle_ids: set[str] = set()
 
-    with gzip.open(cards_path, 'rt', encoding='utf-8') as cards_file:
-        for line in cards_file:
-            card = json.loads(line)
-            card_added_at = previous_added_dates.get(card['id']) or default_added_at(card, generation_date)
-            
-            # Filter by date if recent_only is True
-            if recent_only and card_added_at < cutoff_date:
-                continue
-            
-            database.execute(
-                'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                (
-                    card['id'], card['set'], card.get('setType', ''),
-                    card.get('releasedAt', ''),
-                    card['collectorNumber'],
-                    card.get('oracleId'), card['rarity'],
-                    json.dumps(card['faces'], ensure_ascii=True, separators=(',', ':')),
-                    card_added_at,
-                    json.dumps(card.get('legalities', {}), ensure_ascii=True, separators=(',', ':')),
-                ),
-            )
-            card_count += 1
-            
-            # Track oracle IDs for rulings
-            oracle_id = card.get('oracleId')
-            if isinstance(oracle_id, str) and oracle_id:
-                oracle_ids.add(oracle_id)
-            
-            # Track set info
-            sets_seen.setdefault(
-                card['set'],
-                (card.get('setName', ''), card.get('setType', ''), card.get('releasedAt', '')),
-            )
-            
-            # Build face indices
-            for face_index, face in enumerate(card['faces']):
-                type_line = face.get('typeLine', '')
-                main_part, _, subtype_part = type_line.partition('\u2014')
-                main_types = main_part.strip().lower().split()
-                for type_name in main_types:
-                    if type_name not in {'legendary', 'basic', 'snow', 'world', 'ongoing'}:
-                        database.execute(
-                            'INSERT OR IGNORE INTO face_types VALUES (?, ?, ?)',
-                            (card['id'], face_index, type_name),
-                        )
-                for subtype_name in subtype_part.strip().lower().split():
+    # Precomputed once (mirrors selectLatestPrintings.ts) so "show all prints
+    # off" is a plain `WHERE is_preferred_printing = 1` filter instead of a
+    # SQL window-function query at browse time - benchmarking found the
+    # latter never wins against fetch-everything-then-JS-dedupe in sql.js.
+    preferred_ids = compute_preferred_printings(
+        cards_path, previous_added_dates, generation_date, recent_only, cutoff_date,
+    )
+
+    for card, card_added_at in iter_included_cards(
+        cards_path, previous_added_dates, generation_date, recent_only, cutoff_date,
+    ):
+        database.execute(
+            'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                card['id'], card['set'], card.get('setType', ''),
+                card.get('releasedAt', ''),
+                card['collectorNumber'],
+                card.get('oracleId'), card['rarity'],
+                json.dumps(card['faces'], ensure_ascii=True, separators=(',', ':')),
+                card_added_at,
+                json.dumps(card.get('legalities', {}), ensure_ascii=True, separators=(',', ':')),
+                card['primaryFaceName'],
+                card['primaryManaValue'],
+                card['collectorNumberNumeric'],
+                card['collectorNumberSuffix'],
+                1 if card['id'] in preferred_ids else 0,
+            ),
+        )
+        card_count += 1
+
+        # Track oracle IDs for rulings
+        oracle_id = card.get('oracleId')
+        if isinstance(oracle_id, str) and oracle_id:
+            oracle_ids.add(oracle_id)
+
+        # Track set info
+        sets_seen.setdefault(
+            card['set'],
+            (card.get('setName', ''), card.get('setType', ''), card.get('releasedAt', '')),
+        )
+
+        # Build face indices
+        for face_index, face in enumerate(card['faces']):
+            type_line = face.get('typeLine', '')
+            main_part, _, subtype_part = type_line.partition('\u2014')
+            main_types = main_part.strip().lower().split()
+            for type_name in main_types:
+                if type_name not in {'legendary', 'basic', 'snow', 'world', 'ongoing'}:
                     database.execute(
-                        'INSERT OR IGNORE INTO face_subtypes VALUES (?, ?, ?)',
-                        (card['id'], face_index, subtype_name),
+                        'INSERT OR IGNORE INTO face_types VALUES (?, ?, ?)',
+                        (card['id'], face_index, type_name),
                     )
-                for color in face.get('colors', []):
-                    database.execute(
-                        'INSERT OR IGNORE INTO face_colors VALUES (?, ?, ?)',
-                        (card['id'], face_index, color),
-                    )
+            for subtype_name in subtype_part.strip().lower().split():
+                database.execute(
+                    'INSERT OR IGNORE INTO face_subtypes VALUES (?, ?, ?)',
+                    (card['id'], face_index, subtype_name),
+                )
+            for color in face.get('colors', []):
+                database.execute(
+                    'INSERT OR IGNORE INTO face_colors VALUES (?, ?, ?)',
+                    (card['id'], face_index, color),
+                )
 
     for set_code, (set_name, set_type, released_at) in sets_seen.items():
         database.execute(
@@ -454,6 +603,10 @@ def build_sqlite_database(
         CREATE INDEX cards_set_idx ON cards(set_code);
         CREATE INDEX cards_rarity_idx ON cards(rarity);
         CREATE INDEX cards_added_at_idx ON cards(added_at);
+        CREATE INDEX cards_primary_face_name_idx ON cards(primary_face_name);
+        CREATE INDEX cards_primary_mana_value_idx ON cards(primary_mana_value);
+        CREATE INDEX cards_collector_idx ON cards(set_code, collector_number_numeric, collector_number_suffix);
+        CREATE INDEX cards_preferred_idx ON cards(is_preferred_printing);
         CREATE INDEX face_types_name_idx ON face_types(type_name);
         CREATE INDEX face_types_card_idx ON face_types(card_id);
         CREATE INDEX face_subtypes_name_idx ON face_subtypes(subtype_name);

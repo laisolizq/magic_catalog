@@ -25,11 +25,11 @@ async function seedDuplicatePrintings(): Promise<void> {
   ])
 
   database.run(
-    'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO cards (id, set_code, set_type, released_at, collector_number, oracle_id, rarity, faces_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     ['dup-old', 'seta', 'expansion', '2020-01-01', '1', 'dup-oracle', 'common', faces],
   )
   database.run(
-    'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO cards (id, set_code, set_type, released_at, collector_number, oracle_id, rarity, faces_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     ['dup-new', 'setb', 'expansion', '2024-01-01', '2', 'dup-oracle', 'common', faces],
   )
 

@@ -2,7 +2,7 @@ import Fuse from 'fuse.js'
 
 import { getCatalogDatabase } from '../db/sqliteClient'
 import type { Card } from '../types/card'
-import type { CatalogQuery, CatalogQueryResult, SetOption } from '../types/catalog'
+import type { CatalogQuery, CatalogQueryResult, CatalogSortOption, SetOption } from '../types/catalog'
 import type { ColorCountOperator, ColorFilterMode } from '../utils/scryfallQuery'
 
 let cachedDatabaseRef: object | null = null
@@ -31,14 +31,37 @@ function rowToCard(row: unknown[]): Card {
   }
 }
 
+function getCardsTableColumns(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): Set<string> {
+  const rows = database.exec('PRAGMA table_info(cards)')[0]?.values ?? []
+  return new Set(rows.map((row) => String(row[1])))
+}
+
+function cardColumnsSql(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>, tableAlias = ''): string {
+  const prefix = tableAlias ? `${tableAlias}.` : ''
+  const columns = getCardsTableColumns(database)
+  const hasSetType = columns.has('set_type')
+  const hasReleaseDate = columns.has('released_at')
+  const hasAddedDate = columns.has('added_at')
+  const hasLegalities = columns.has('legalities_json')
+  return `${prefix}id, ${prefix}set_code, ${hasSetType ? `${prefix}set_type` : "''"}, ${hasReleaseDate ? `${prefix}released_at` : "''"}, ${prefix}collector_number, ${prefix}oracle_id, ${prefix}rarity, ${prefix}faces_json, ${hasAddedDate ? `${prefix}added_at` : "''"}, ${hasLegalities ? `${prefix}legalities_json` : "''"}`
+}
+
 function cardSelectSql(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): string {
-  const columns = database.exec('PRAGMA table_info(cards)')[0]?.values ?? []
-  const hasSetType = columns.some((column) => column[1] === 'set_type')
-  const hasReleaseDate = columns.some((column) => column[1] === 'released_at')
-  const hasAddedDate = columns.some((column) => column[1] === 'added_at')
-  const hasLegalities = columns.some((column) => column[1] === 'legalities_json')
-  return `SELECT id, set_code, ${hasSetType ? 'set_type' : "''"}, ${hasReleaseDate ? 'released_at' : "''"}, collector_number, oracle_id, rarity, faces_json, ${hasAddedDate ? 'added_at' : "''"}, ${hasLegalities ? 'legalities_json' : "''"}
-     FROM cards`
+  return `SELECT ${cardColumnsSql(database)} FROM cards`
+}
+
+// The sort/dedup/pagination columns (schema v8+) are all added together, so
+// checking one is enough to know the others are present too.
+function supportsSortColumns(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): boolean {
+  return getCardsTableColumns(database).has('primary_face_name')
+}
+
+// Schema v9+: "preferred printing" per card name is precomputed at generation
+// time (generate_card_database.py's compute_preferred_printings, mirroring
+// selectLatestPrintings.ts), so dedup is a plain indexed column filter
+// instead of a SQL window-function query at browse time.
+function supportsPreferredPrinting(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): boolean {
+  return getCardsTableColumns(database).has('is_preferred_printing')
 }
 
 interface SqlCondition {
@@ -246,6 +269,167 @@ function escapeLikePattern(value: string): string {
   return value.replace(/[\\%_]/g, '\\$&')
 }
 
+interface SortColumnRefs {
+  setCode: string
+  collectorNumeric: string
+  collectorSuffix: string
+  id: string
+  primaryFaceName: string
+  primaryManaValue: string
+  addedAt: string
+}
+
+// Mirrors sortCards/compareSetOrder in CatalogPage.tsx, expressed as an ORDER
+// BY clause instead of a JS comparator. COLLATE NOCASE is a byte-wise
+// approximation of localeCompare - fine for the overwhelmingly-ASCII card
+// name set, but not fully locale-accurate for accented names.
+function buildOrderBySql(sortOption: CatalogSortOption | undefined, columns: SortColumnRefs): string {
+  switch (sortOption) {
+    case 'set-asc':
+      return `${columns.setCode} ASC, ${columns.collectorNumeric} ASC, ${columns.collectorSuffix} ASC, ${columns.id} ASC`
+    case 'set-desc':
+      return `${columns.setCode} DESC, ${columns.collectorNumeric} DESC, ${columns.collectorSuffix} DESC, ${columns.id} DESC`
+    case 'name-asc':
+      return `${columns.primaryFaceName} COLLATE NOCASE ASC`
+    case 'name-desc':
+      return `${columns.primaryFaceName} COLLATE NOCASE DESC`
+    case 'cmc-asc':
+      return `${columns.primaryManaValue} ASC, ${columns.primaryFaceName} COLLATE NOCASE ASC`
+    case 'cmc-desc':
+      return `${columns.primaryManaValue} DESC, ${columns.primaryFaceName} COLLATE NOCASE ASC`
+    case 'added-asc':
+      return `${columns.addedAt} ASC, ${columns.primaryFaceName} COLLATE NOCASE ASC`
+    case 'added-desc':
+      return `${columns.addedAt} DESC, ${columns.primaryFaceName} COLLATE NOCASE ASC`
+    default:
+      return `${columns.id} ASC`
+  }
+}
+
+function sanitizeNonNegativeInt(value: number | undefined): number | undefined {
+  if (value == null || !Number.isFinite(value)) return undefined
+  return Math.max(0, Math.floor(value))
+}
+
+function buildWhereConditions(
+  query: CatalogQuery,
+  flags: {
+    hasCardIdsFilter: boolean
+    hasSetFilter: boolean
+    hasRarityFilter: boolean
+    hasTypeFilter: boolean
+    hasColorFilter: boolean
+    hasOracleFilter: boolean
+    oracle: string
+    preferredPrintingOnly: boolean
+  },
+): SqlCondition {
+  const conditions: string[] = []
+  const parameters: string[] = []
+
+  if (flags.preferredPrintingOnly) {
+    conditions.push('is_preferred_printing = 1')
+  }
+
+  if (flags.hasCardIdsFilter) {
+    const names = query.cardIds!.map(() => '?')
+    query.cardIds!.forEach((id) => parameters.push(id))
+    conditions.push(`id IN (${names.join(', ')})`)
+  }
+
+  if (flags.hasSetFilter) {
+    const names = query.sets.map(() => '?')
+    query.sets.forEach((set) => parameters.push(set))
+    conditions.push(`set_code IN (${names.join(', ')})`)
+  }
+
+  if (flags.hasRarityFilter) {
+    const names = query.rarities.map(() => '?')
+    query.rarities.forEach((rarity) => parameters.push(rarity))
+    conditions.push(`rarity IN (${names.join(', ')})`)
+  }
+
+  if (flags.hasTypeFilter) {
+    const typeCondition = buildTypeCondition(query.types)
+    conditions.push(typeCondition.sql)
+    parameters.push(...typeCondition.params)
+  }
+
+  if (flags.hasColorFilter) {
+    const colorCondition = buildColorCondition(query.colors, query.colorMode ?? 'exactly')
+    if (colorCondition) {
+      conditions.push(colorCondition.sql)
+      parameters.push(...colorCondition.params)
+    }
+  }
+
+  if (query.colorCount) {
+    const colorCountCondition = buildColorCountCondition(query.colorCount.operator, query.colorCount.value)
+    conditions.push(colorCountCondition.sql)
+    parameters.push(...colorCountCondition.params)
+  }
+
+  if (flags.hasOracleFilter) {
+    conditions.push(`EXISTS (
+      SELECT 1
+      FROM json_each(cards.faces_json) AS face
+      WHERE lower(COALESCE(json_extract(face.value, '$.oracleText'), ''))
+        LIKE '%' || lower(?) || '%' ESCAPE '\\'
+    )`)
+    parameters.push(escapeLikePattern(flags.oracle))
+  }
+
+  return { sql: conditions.join(' AND '), params: parameters }
+}
+
+// Runs sort + pagination (and, when the database has the schema v9+
+// is_preferred_printing column, dedup) entirely in SQL, so only the final
+// page of rows is ever parsed out of faces_json - the dominant cost
+// identified by benchmarking the old fetch-everything path
+// (src/pages/CatalogPage/catalogPipeline.integration.test.ts). "Preferred
+// printing" is precomputed at generation time (generate_card_database.py's
+// compute_preferred_printings), so unlike an earlier attempt at a SQL
+// window-function dedup query (which never beat the legacy JS pipeline at
+// any tested scale), dedup here is just another indexed WHERE condition.
+async function runServerPaginatedQuery(
+  database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>,
+  whereCondition: SqlCondition,
+  query: CatalogQuery,
+): Promise<CatalogQueryResult> {
+  const whereSql = whereCondition.sql ? `WHERE ${whereCondition.sql}` : ''
+  const orderBy = buildOrderBySql(query.sortOption, {
+    setCode: 'set_code',
+    collectorNumeric: 'collector_number_numeric',
+    collectorSuffix: 'collector_number_suffix',
+    id: 'id',
+    primaryFaceName: 'primary_face_name',
+    primaryManaValue: 'primary_mana_value',
+    addedAt: 'added_at',
+  })
+
+  const limit = sanitizeNonNegativeInt(query.limit)
+  const offset = sanitizeNonNegativeInt(query.offset)
+  const limitParams: number[] = []
+  let limitSql = ''
+  if (limit != null) {
+    limitSql += ' LIMIT ?'
+    limitParams.push(limit)
+    if (offset != null) {
+      limitSql += ' OFFSET ?'
+      limitParams.push(offset)
+    }
+  }
+
+  const countResult = database.exec(`SELECT COUNT(*) FROM cards ${whereSql}`, whereCondition.params)
+  const total = Number(countResult[0]?.values?.[0]?.[0] ?? 0)
+
+  const result = database.exec(
+    `SELECT ${cardColumnsSql(database)} FROM cards ${whereSql} ORDER BY ${orderBy}${limitSql}`,
+    [...whereCondition.params, ...limitParams],
+  )
+  return { cards: (result[0]?.values ?? []).map(rowToCard), total, serverPaginated: true }
+}
+
 function searchCards(
   fuse: Fuse<SearchIndexEntry>,
   cards: Card[],
@@ -290,6 +474,28 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   const oracle = query.oracle?.trim() ?? ''
   const hasText = text.length > 0
   const hasOracleFilter = oracle.length > 0
+
+  // Free-text search still needs Fuse (see below), so this fast path only
+  // applies to non-text queries against a database with the sort columns
+  // (schema v8+); older cached databases fall through to the legacy path
+  // unchanged. Dedup (showAllPrints: false) additionally needs the schema
+  // v9+ is_preferred_printing column - without it we fall through to the
+  // legacy path's JS selectLatestPrintings instead.
+  const showAllPrints = query.showAllPrints ?? true
+  const canRunInSql = !hasText && supportsSortColumns(database) && (showAllPrints || supportsPreferredPrinting(database))
+  if (canRunInSql) {
+    const whereCondition = buildWhereConditions(query, {
+      hasCardIdsFilter,
+      hasSetFilter,
+      hasRarityFilter,
+      hasTypeFilter,
+      hasColorFilter,
+      hasOracleFilter,
+      oracle,
+      preferredPrintingOnly: !showAllPrints,
+    })
+    return runServerPaginatedQuery(database, whereCondition, query)
+  }
 
   if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter && !hasColorCountFilter && !hasOracleFilter && !hasCardIdsFilter) {
     const cards = await getAllCards(database)
