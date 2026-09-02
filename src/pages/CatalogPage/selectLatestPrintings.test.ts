@@ -132,4 +132,22 @@ describe('selectLatestPrintings', () => {
 
     expect(result).toEqual([original])
   })
+
+  it('prefers the parent set over its promo printing even when the promo released earlier (e.g. Fury in MH2 vs prerelease PMH2)', () => {
+    const mh2 = makeCard({
+      id: 'mh2-fury',
+      set: 'mh2',
+      setType: 'draft_innovation',
+      releasedAt: '2021-06-18',
+    })
+    const pmh2 = makeCard({
+      id: 'pmh2-fury',
+      set: 'pmh2',
+      setType: 'promo',
+      releasedAt: '2021-05-06',
+    })
+
+    expect(selectLatestPrintings([mh2, pmh2])).toEqual([mh2])
+    expect(selectLatestPrintings([pmh2, mh2])).toEqual([mh2])
+  })
 })

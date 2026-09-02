@@ -36,6 +36,14 @@ function comparePrintingPreference(
   // later release date purely for the reprint batch, so falling through to
   // release date here would wrongly prefer those over the original numbering.
   if (left.set !== right.set) {
+    // Promo sets (e.g. PMH2) are sometimes released *before* their parent set
+    // (prerelease promos), so a plain release-date comparison would wrongly
+    // treat the promo as the original printing. Always prefer the non-promo
+    // printing (e.g. MH2) regardless of preferOldest or release date.
+    const leftIsPromo = left.setType === 'promo'
+    const rightIsPromo = right.setType === 'promo'
+    if (leftIsPromo !== rightIsPromo) return leftIsPromo ? -1 : 1
+
     const releaseDelta = (left.releasedAt ?? '').localeCompare(right.releasedAt ?? '')
     if (releaseDelta !== 0) return preferOldest ? -releaseDelta : releaseDelta
 
