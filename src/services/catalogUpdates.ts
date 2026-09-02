@@ -14,6 +14,8 @@ const PAGES_DATABASE_URL = `${PAGES_ARTIFACT_BASE_URL}/catalog.sqlite.gz`
 const PAGES_METADATA_URL = `${PAGES_ARTIFACT_BASE_URL}/metadata.json`
 const LOCAL_DATABASE_URL = import.meta.env.VITE_CATALOG_DATABASE_URL
 const LOCAL_METADATA_URL = import.meta.env.VITE_CATALOG_METADATA_URL
+const LOCAL_BOOTSTRAP_DATABASE_URL = import.meta.env.VITE_CATALOG_BOOTSTRAP_DATABASE_URL
+const LOCAL_BOOTSTRAP_METADATA_URL = import.meta.env.VITE_CATALOG_BOOTSTRAP_METADATA_URL
 
 interface GitHubReleaseAsset {
   id?: number
@@ -43,6 +45,16 @@ export async function bootstrapCatalogFromEmbeddedAssets(
       BOOTSTRAP_DATABASE_URL,
       BOOTSTRAP_METADATA_URL,
       onProgress,
+      'recent',
+    )
+  }
+
+  if (LOCAL_BOOTSTRAP_DATABASE_URL && LOCAL_BOOTSTRAP_METADATA_URL) {
+    return updateFromLocalArtifact(
+      LOCAL_BOOTSTRAP_DATABASE_URL,
+      LOCAL_BOOTSTRAP_METADATA_URL,
+      onProgress,
+      'recent',
     )
   }
 
@@ -72,6 +84,24 @@ function isNewer(
 
 function logCompleted(label: string, startedAt: number): void {
   console.log(`[catalog] ${label} completed in ${(performance.now() - startedAt).toFixed(0)}ms`)
+}
+
+function metadataForDatabase(
+  metadata: CatalogArtifactMetadata,
+  database: 'full' | 'recent',
+): CatalogArtifactMetadata {
+  const selected = metadata.databases?.[database]
+  if (!selected) return metadata
+
+  return {
+    ...metadata,
+    cardCount: selected.cardCount,
+    rulingsCount: selected.rulingsCount,
+    databaseAssetName: selected.assetName,
+    databaseChecksum: selected.checksum,
+    databaseCompressedBytes: selected.compressedBytes,
+    databaseUncompressedBytes: selected.uncompressedBytes,
+  }
 }
 
 async function fetchArtifactBlob(url: string): Promise<Blob> {
@@ -129,6 +159,7 @@ async function updateFromLocalArtifact(
   databaseUrl: string,
   metadataUrl: string,
   onProgress?: (progress: CatalogImportProgress) => void,
+  database: 'full' | 'recent' = 'full',
 ): Promise<CatalogUpdateStatus> {
   const updateStartedAt = performance.now()
   const metadataStartedAt = performance.now()
@@ -136,7 +167,10 @@ async function updateFromLocalArtifact(
   if (!metadataResponse.ok) return 'unavailable'
   logCompleted('metadata download', metadataStartedAt)
 
-  const metadata = (await metadataResponse.json()) as CatalogArtifactMetadata
+  const metadata = metadataForDatabase(
+    (await metadataResponse.json()) as CatalogArtifactMetadata,
+    database,
+  )
   const local = await getCatalogMetadata()
   if (!isNewer(local, metadata)) return 'up-to-date'
 
