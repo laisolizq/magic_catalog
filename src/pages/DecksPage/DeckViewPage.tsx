@@ -5,6 +5,7 @@ import { AdvancedCatalogChrome } from '../CatalogPage/components/CatalogChrome/A
 import { BasicCatalogChrome } from '../CatalogPage/components/CatalogChrome/BasicCatalogChrome'
 import { CardModal } from '../CatalogPage/components/CardModal/CardModal'
 import { List } from '../CatalogPage/components/List/List'
+import { resolveDefaultSort } from '../CatalogPage/CatalogPage'
 import { SearchBar } from '../CatalogPage/components/SearchBar/SearchBar'
 import { getCatalogSetOptions, getCatalogTypes, queryCards } from '../../services/sqliteCardQuery'
 import { getDeck } from '../../services/deckService'
@@ -14,7 +15,7 @@ import type { SetOption } from '../../types/catalog'
 import { buildScryfallQuery, parseScryfallQuery, type ColorFilterMode } from '../../utils/scryfallQuery'
 import './DeckViewPage.css'
 
-type SortOption = 'set-asc' | 'set-desc' | 'name-asc' | 'name-desc' | 'cmc-asc' | 'cmc-desc' | 'added-asc' | 'added-desc'
+type SortOption = 'default' | 'set-asc' | 'set-desc' | 'name-asc' | 'name-desc' | 'cmc-asc' | 'cmc-desc' | 'added-asc' | 'added-desc'
 
 const typeFilters = ['artifact', 'battle', 'creature', 'enchantment', 'instant', 'land', 'planeswalker', 'sorcery']
 
@@ -88,7 +89,10 @@ export function DeckViewPage() {
     return () => { cancelled = true }
   }, [deck, parsedQuery])
 
-  const displayedCards = useMemo(() => sortCards(cards, sortOption), [cards, sortOption])
+  const effectiveSortOption = sortOption === 'default'
+    ? resolveDefaultSort(parsedQuery, setOptions)
+    : sortOption
+  const displayedCards = useMemo(() => sortCards(cards, effectiveSortOption), [cards, effectiveSortOption])
   const quantities = useMemo(() => Object.fromEntries(deck?.cards.map((entry) => [entry.cardId, entry.quantity]) ?? []), [deck])
   const selectedIndex = selectedCard ? displayedCards.findIndex((card) => card.id === selectedCard.id) : -1
   const filters = {

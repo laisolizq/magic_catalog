@@ -12,6 +12,7 @@ import {
   buildScryfallQuery,
   parseScryfallQuery,
   type ColorFilterMode,
+  type ParsedQuery,
 } from '../../utils/scryfallQuery'
 import { queryCards, getCatalogTypes, getCatalogSetOptions } from '../../services/sqliteCardQuery'
 import {
@@ -38,6 +39,7 @@ const SYMBOL_TYPE_FILTERS = [
 ] as const
 
 export type SortOption =
+  | 'default'
   | 'set-asc'
   | 'set-desc'
   | 'name-asc'
@@ -122,6 +124,32 @@ function compareSetOrder(left: Card, right: Card): number {
     leftSuffix.localeCompare(rightSuffix) ||
     left.id.localeCompare(right.id)
   )
+}
+
+export function resolveDefaultSort(
+  query: ParsedQuery,
+  setOptions: SetOption[],
+): Exclude<SortOption, 'default'> {
+  if (!query.text.trim() && query.sets.length === 0 &&
+      query.types.length === 0 && query.rarities.length === 0 &&
+      query.colors.length === 0 && !query.oracle.trim()) {
+    return 'added-desc'
+  }
+
+  if (query.sets.length > 0) {
+    const today = new Date().toISOString().slice(0, 10)
+    const releasedSets = new Set(
+      setOptions
+        .filter((set) => set.releasedAt && set.releasedAt <= today)
+        .map((set) => set.code.toLowerCase()),
+    )
+
+    return query.sets.some((set) => releasedSets.has(set.toLowerCase()))
+      ? 'set-asc'
+      : 'added-desc'
+  }
+
+  return 'name-asc'
 }
 
 export function sortCards(
@@ -278,6 +306,14 @@ export function CatalogPage() {
     phase: '',
     percent: 0,
   })
+
+  const effectiveSortOption = useMemo(
+    () => sortOption === 'default'
+      ? resolveDefaultSort(parsedQuery, setOptions)
+      : sortOption,
+    [sortOption, parsedQuery, setOptions],
+  )
+
   const catalogBootstrapRef = useRef<Promise<CatalogUpdateStatus> | null>(null)
 
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -413,7 +449,7 @@ export function CatalogPage() {
           colors: colorValue,
           colorMode,
           colorCount: parsedQuery.colorCount,
-          sortOption,
+          sortOption: effectiveSortOption,
           showAllPrints,
           limit: visibleCount,
         })
@@ -440,7 +476,7 @@ export function CatalogPage() {
     return () => {
       cancelled = true
     }
-  }, [parsedQuery, setValue, typeValue, rarityValue, colorValue, colorMode, isCatalogReady, sortOption, showAllPrints, visibleCount])
+  }, [parsedQuery, setValue, typeValue, rarityValue, colorValue, colorMode, isCatalogReady, effectiveSortOption, showAllPrints, visibleCount])
 
   useEffect(() => {
     if (!isCatalogReady) return
@@ -491,8 +527,8 @@ export function CatalogPage() {
 
     return parsedQuery.text.trim()
       ? cardsToDisplay
-      : sortCards(cardsToDisplay, sortOption)
-  }, [filteredCards, sortOption, showAllPrints, isServerPaginated, parsedQuery.text])
+        : sortCards(cardsToDisplay, effectiveSortOption)
+      }, [filteredCards, effectiveSortOption, showAllPrints, isServerPaginated, parsedQuery.text])
 
   /*
    * SCROLL
@@ -910,7 +946,7 @@ export function CatalogPage() {
       ) : (
         <List
           cards={visibleCardsSorted}
-          showAddedDateGroups={sortOption === 'added-desc' && !parsedQuery.text.trim()}
+          showAddedDateGroups={effectiveSortOption === 'added-desc' && !parsedQuery.text.trim()}
           expandedOracles={expandedOraclesView}
           onToggleOracle={(cardId) =>
             setExpandedOracles((prev) => ({

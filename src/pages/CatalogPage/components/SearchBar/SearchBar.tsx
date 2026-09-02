@@ -13,6 +13,7 @@ import { symbolUrl } from '../../../../utils/utils.ts'
 import type { SetOption } from '../../../../types/catalog'
 
 type SortOption =
+  | 'default'
   | 'set-asc'
   | 'set-desc'
   | 'name-asc'
@@ -22,10 +23,11 @@ type SortOption =
   | 'added-asc'
   | 'added-desc'
 
-type SortCategory = 'set' | 'name' | 'cmc' | 'added'
+type SortCategory = 'set' | 'name' | 'cmc' | 'added' | 'default'
 const SEARCH_DEBOUNCE_MS = 300
 
 const SORT_CATEGORIES: Array<{ value: SortCategory; label: string }> = [
+  { value: 'default', label: 'Default' },
   { value: 'set', label: 'Set' },
   { value: 'name', label: 'Name' },
   { value: 'cmc', label: 'Mana Value' },
@@ -35,6 +37,7 @@ const SORT_CATEGORIES: Array<{ value: SortCategory; label: string }> = [
 // Default direction the first time a category is selected; repeat clicks
 // toggle between asc/desc. 'added' defaults to newest-first.
 const DEFAULT_SORT_DIRECTION: Record<SortCategory, 'asc' | 'desc'> = {
+  default: 'asc',
   set: 'asc',
   name: 'asc',
   cmc: 'asc',
@@ -444,6 +447,12 @@ export function SearchBar({
   }
 
   const handleSortSelect = (category: SortCategory) => {
+    if (category === 'default') {
+      onSortChange('default')
+      closePanel()
+      return
+    }
+
     const [activeCategory, activeDirection] = sortOption.split('-') as [
       SortCategory,
       'asc' | 'desc',
@@ -655,8 +664,8 @@ export function SearchBar({
                     onClick={() => handleSortSelect(value)}
                     >
                     <span className="sort-menu-label">{label}</span>
-                      {isActive && ' '}
-                      {isActive && (
+                      {isActive && value !== 'default' && ' '}
+                      {isActive && value !== 'default' && (
                         <span className="sort-menu-arrows">
                           <span
                             className={

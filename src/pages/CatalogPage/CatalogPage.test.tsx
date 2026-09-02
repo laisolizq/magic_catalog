@@ -3,10 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { CatalogPage } from './CatalogPage'
+import { CatalogPage, resolveDefaultSort } from './CatalogPage'
 import { mockCards } from '../../data/mockCards'
 import { clearCatalogDatabase } from '../../db/sqliteClient'
 import { seedCatalogFixture } from '../../test/catalogFixture'
+import { parseScryfallQuery } from '../../utils/scryfallQuery'
 
 afterEach(() => cleanup())
 beforeEach(async () => seedCatalogFixture())
@@ -15,6 +16,20 @@ afterEach(async () => {
 })
 
 describe('CatalogPage', () => {
+  it('resolves Default sorting from the query and set release date', () => {
+    const setOptions = [
+      { code: 'released', name: 'Released Set', releasedAt: '2025-01-01', setType: 'expansion' },
+      { code: 'future', name: 'Future Set', releasedAt: '2999-01-01', setType: 'expansion' },
+    ]
+
+    expect(resolveDefaultSort(parseScryfallQuery(''), setOptions)).toBe('added-desc')
+    expect(resolveDefaultSort(parseScryfallQuery('s:released'), setOptions)).toBe('set-asc')
+    expect(resolveDefaultSort(parseScryfallQuery('s:future'), setOptions)).toBe('added-desc')
+    expect(resolveDefaultSort(parseScryfallQuery('s:unknown'), setOptions)).toBe('added-desc')
+    expect(resolveDefaultSort(parseScryfallQuery('c=w t:enchantment'), setOptions)).toBe('name-asc')
+    expect(resolveDefaultSort(parseScryfallQuery('angel'), setOptions)).toBe('name-asc')
+  })
+
   it('filters, expands oracle, and opens details modal', async () => {
     const user = userEvent.setup()
     render(

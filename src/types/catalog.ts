@@ -102,6 +102,7 @@ export interface CatalogQuery {
 // Structurally identical to (but intentionally decoupled from) the SortOption
 // unions in CatalogPage.tsx/SearchBar.tsx/DeckViewPage.tsx.
 export type CatalogSortOption =
+  | 'default'
   | 'set-asc'
   | 'set-desc'
   | 'name-asc'
