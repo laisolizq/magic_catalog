@@ -44,10 +44,9 @@ The browser checks the latest release metadata when online. Queries never requir
 ### Bootstrap Database
 
 On first load, the app downloads and caches `catalog-recent.sqlite.gz` from the
-`card-database-latest` GitHub Release (fetched over the network, never committed
-to the repo). This recent database is much smaller and loads faster. After the
-bootstrap completes, the app checks for updates and optionally downloads the
-full `catalog.sqlite.gz` for comprehensive access to all cards.
+deployed GitHub Pages artifact. This recent database is much smaller and loads
+faster. After the bootstrap completes, the app checks for updates and optionally
+downloads the full `catalog.sqlite.gz` for comprehensive access to all cards.
 
 ## Test locally
 

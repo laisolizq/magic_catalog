@@ -12,6 +12,7 @@ const BOOTSTRAP_METADATA_URL = import.meta.env.VITE_CATALOG_BOOTSTRAP_METADATA_U
 const PAGES_ARTIFACT_BASE_URL = 'https://laisolizq.github.io/magic_catalog/card-database'
 const PAGES_DATABASE_URL = `${PAGES_ARTIFACT_BASE_URL}/catalog.sqlite.gz`
 const PAGES_METADATA_URL = `${PAGES_ARTIFACT_BASE_URL}/metadata.json`
+const PAGES_BOOTSTRAP_DATABASE_URL = `${PAGES_ARTIFACT_BASE_URL}/catalog-recent.sqlite.gz`
 const LOCAL_DATABASE_URL = import.meta.env.VITE_CATALOG_DATABASE_URL
 const LOCAL_METADATA_URL = import.meta.env.VITE_CATALOG_METADATA_URL
 const LOCAL_BOOTSTRAP_DATABASE_URL = import.meta.env.VITE_CATALOG_BOOTSTRAP_DATABASE_URL
@@ -61,6 +62,14 @@ export async function bootstrapCatalogFromEmbeddedAssets(
   if (typeof navigator !== 'undefined' && !navigator.onLine) return 'offline'
 
   try {
+    const pagesStatus = await updateFromLocalArtifact(
+      PAGES_BOOTSTRAP_DATABASE_URL,
+      PAGES_METADATA_URL,
+      onProgress,
+      'recent',
+    )
+    if (pagesStatus !== 'unavailable') return pagesStatus
+
     return await updateFromGitHubRelease(
       (metadata) => metadata.databases?.recent?.assetName || 'catalog-recent.sqlite.gz',
       onProgress,
