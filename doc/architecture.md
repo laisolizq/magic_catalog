@@ -39,7 +39,7 @@ flowchart LR
 
 1. **Generation (offline, not part of the running app)**:
    [scripts/generate_card_database.py](../scripts/generate_card_database.py)
-   pulls Scryfall's bulk `all_cards`/rulings data and writes two normalized
+  pulls Scryfall's bulk `default_cards`/rulings data and writes two normalized
    SQLite databases to `artifacts/card-database/`:
    - `catalog.sqlite.gz`: Full database with all cards
    - `catalog-recent.sqlite.gz`: Recent database with cards added in the last 3 months (used for bootstrap)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the compressed offline card catalog from Scryfall all_cards data."""
+"""Generate the compressed offline card catalog from Scryfall default_cards data."""
 
 from __future__ import annotations
 
@@ -645,7 +645,7 @@ def main() -> int:
         if previous_metadata and database_path.exists():
             print("Checking if Scryfall data has been updated...", file=sys.stderr)
             try:
-                _, source_updated_at = find_bulk_download_url("all_cards")
+                _, source_updated_at = find_bulk_download_url("default_cards")
                 _, rulings_updated_at = find_bulk_download_url("rulings")
                 
                 if (
@@ -688,7 +688,7 @@ def main() -> int:
         source_updated_at = ""
     else:
         print("Fetching Scryfall bulk-data metadata...", file=sys.stderr)
-        download_url, source_updated_at = find_bulk_download_url("all_cards")
+        download_url, source_updated_at = find_bulk_download_url("default_cards")
 
     if args.download_url:
         rulings_download_url = args.download_url

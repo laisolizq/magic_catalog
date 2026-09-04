@@ -4,7 +4,7 @@ The application stores normalized Scryfall card data in a prebuilt SQLite databa
 
 ## Generate the artifact
 
-Generate the English-only full-print catalog from Scryfall's `all_cards` bulk data:
+Generate the English-only full-print catalog from Scryfall's `default_cards` bulk data:
 
 ```sh
 npm run data:database
