@@ -95,6 +95,19 @@ function logCompleted(label: string, startedAt: number): void {
   console.log(`[catalog] ${label} completed in ${(performance.now() - startedAt).toFixed(0)}ms`)
 }
 
+function logDatabaseDownload(
+  metadata: CatalogArtifactMetadata,
+  source: string,
+): void {
+  console.info('[catalog] downloading SQLite database', {
+    assetName: metadata.databaseAssetName,
+    artifactVersion: metadata.artifactVersion,
+    generatedAt: metadata.generatedAt,
+    checksum: metadata.databaseChecksum?.slice(0, 12),
+    source,
+  })
+}
+
 function metadataForDatabase(
   metadata: CatalogArtifactMetadata,
   database: 'full' | 'recent',
@@ -183,6 +196,7 @@ async function updateFromLocalArtifact(
   const local = await getCatalogMetadata()
   if (!isNewer(local, metadata)) return 'up-to-date'
 
+  logDatabaseDownload(metadata, databaseUrl)
   const databaseStartedAt = performance.now()
   const databaseBlob = await fetchArtifactBlob(databaseUrl)
   logCompleted('SQLite database download', databaseStartedAt)
@@ -224,6 +238,7 @@ async function updateFromGitHubRelease(
 
   if (!isNewer(local, metadata)) return 'up-to-date'
 
+  logDatabaseDownload(metadata, databaseAsset.browser_download_url)
   const databaseStartedAt = performance.now()
   const databaseBlob = await fetchReleaseAssetBlob(databaseAsset)
   logCompleted('SQLite database download', databaseStartedAt)

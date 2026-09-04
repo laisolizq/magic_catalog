@@ -46,6 +46,14 @@ export async function importCatalogArtifact(
     throw new Error('Catalog SQLite database checksum mismatch.')
   }
 
+  console.info('[catalog] initializing SQLite database', {
+    assetName: artifact.databaseAssetName,
+    artifactVersion: artifact.artifactVersion,
+    schemaVersion: artifact.schemaVersion,
+    generatedAt: artifact.generatedAt,
+    cardCount: artifact.cardCount,
+    checksum: artifact.databaseChecksum.slice(0, 12),
+  })
   onProgress?.({ phase: 'Validating SQLite database', percent: 50 })
   await replaceCatalogDatabase(bytes)
   await persistCatalogMetadata({
@@ -59,6 +67,11 @@ export async function importCatalogArtifact(
     cardCount: artifact.cardCount,
     importedAt: new Date().toISOString(),
   } satisfies CatalogMetadata)
+  console.info('[catalog] SQLite database initialized', {
+    assetName: artifact.databaseAssetName,
+    artifactVersion: artifact.artifactVersion,
+    cardCount: artifact.cardCount,
+  })
   onProgress?.({ phase: 'Catalog ready', percent: 100 })
 }
 

@@ -302,6 +302,7 @@ export function CatalogPage() {
   const [isCatalogLoading, setIsCatalogLoading] = useState(false)
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [isCatalogReady, setIsCatalogReady] = useState(false)
+  const [catalogRevision, setCatalogRevision] = useState(0)
   const [catalogProgress, setCatalogProgress] = useState<CatalogImportProgress>({
     phase: '',
     percent: 0,
@@ -319,6 +320,13 @@ export function CatalogPage() {
   const sentinelRef = useRef<HTMLDivElement>(null)
   const ignoreScrollRef = useRef(false)
   const hasLoadedCatalogRef = useRef(false)
+
+  const refreshAfterCatalogUpdate = useCallback(
+    (status: CatalogUpdateStatus) => {
+      if (status === 'updated') setCatalogRevision((revision) => revision + 1)
+    },
+    [],
+  )
 
   /*
    * SYNC STATE TO URL
@@ -365,9 +373,11 @@ export function CatalogPage() {
           catalogBootstrapRef.current = updateCatalogFromLatestRelease(setCatalogProgress)
         }
 
-        void catalogBootstrapRef.current.catch((error) => {
-          console.error('[catalog] background update failed', error)
-        })
+        void catalogBootstrapRef.current
+          .then(refreshAfterCatalogUpdate)
+          .catch((error) => {
+            console.error('[catalog] background update failed', error)
+          })
         return
       }
 
@@ -384,9 +394,11 @@ export function CatalogPage() {
           catalogBootstrapRef.current = updateCatalogFromLatestRelease(setCatalogProgress)
         }
 
-        void catalogBootstrapRef.current.catch((error) => {
-          console.error('[catalog] background update failed', error)
-        })
+        void catalogBootstrapRef.current
+          .then(refreshAfterCatalogUpdate)
+          .catch((error) => {
+            console.error('[catalog] background update failed', error)
+          })
         return
       }
 
@@ -425,7 +437,7 @@ export function CatalogPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [refreshAfterCatalogUpdate])
 
   useEffect(() => {
     if (!isCatalogReady) return
@@ -477,7 +489,7 @@ export function CatalogPage() {
     return () => {
       cancelled = true
     }
-  }, [parsedQuery, setValue, typeValue, rarityValue, colorValue, colorMode, isCatalogReady, effectiveSortOption, showAllPrints, visibleCount])
+  }, [parsedQuery, setValue, typeValue, rarityValue, colorValue, colorMode, isCatalogReady, catalogRevision, effectiveSortOption, showAllPrints, visibleCount])
 
   useEffect(() => {
     if (!isCatalogReady) return
@@ -497,7 +509,7 @@ export function CatalogPage() {
     return () => {
       cancelled = true
     }
-  }, [isCatalogReady])
+  }, [isCatalogReady, catalogRevision])
 
   useEffect(() => {
     if (!isCatalogReady) return
@@ -514,7 +526,7 @@ export function CatalogPage() {
     return () => {
       cancelled = true
     }
-  }, [isCatalogReady])
+  }, [isCatalogReady, catalogRevision])
 
   const filteredCards = displayCards
 
