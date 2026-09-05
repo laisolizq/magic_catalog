@@ -1,7 +1,7 @@
 {
   "artifactVersion": "1",
   "schemaVersion": 9,
-  "generatedAt": "2026-09-04T21:28:03.358248+00:00",
+  "generatedAt": "2026-09-05T00:04:42.903755+00:00",
   "sourceUpdatedAt": "2026-09-04T21:05:28.810+00:00",
   "rulingsSourceUpdatedAt": "2026-09-04T21:00:33.146+00:00",
   "cardCount": 105172,
@@ -19,13 +19,13 @@
     },
     "recent": {
       "assetName": "catalog-recent.sqlite.gz",
-      "cardCount": 3254,
+      "cardCount": 3249,
       "rulingsCount": 3947,
-      "checksum": "4f1bece2e01816a18412188e892c7c530731b391d1d7a1945c92c902a03d22e2",
-      "compressedBytes": 1640664,
-      "uncompressedBytes": 6832128,
+      "checksum": "b7989cb119f93edf77d41cb986e6ab893ea59033e8bd0130312867d66fbeda98",
+      "compressedBytes": 1635150,
+      "uncompressedBytes": 6828032,
       "description": "Cards added in the last 3 months",
-      "cutoffDate": "2026-06-06"
+      "cutoffDate": "2026-06-07"
     }
   },
   "databaseAssetName": "catalog.sqlite.gz",
