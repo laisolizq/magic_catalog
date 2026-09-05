@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cardscade Logo Generator</title>
+  <style>
+    :root {
+      --ink: #17211f;
+      --muted: #63706c;
+      --paper: #e9eee9;
+      --panel: rgba(255, 255, 255, .88);
+      --line: #cbd5ce;
+      --accent: #e15d36;
+      --accent-dark: #b84425;
+      --shadow: 0 24px 70px rgba(28, 47, 39, .15);
+      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      margin: 0;
+      background: radial-gradient(circle at 78% 8%, #fff8e9 0 12rem, transparent 32rem),
+        linear-gradient(135deg, #e5ece6 0%, #f7f2e9 52%, #e9e5dc 100%);
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .page { width: min(1480px, 100%); margin: 0 auto; padding: 32px; }
+    .masthead { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 24px; }
+    .eyebrow { margin: 0 0 8px; color: var(--accent-dark); font-size: .75rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(2.2rem, 5vw, 4.8rem); line-height: .94; letter-spacing: -.04em; }
+    .intro { max-width: 440px; margin: 0; color: var(--muted); font-size: .98rem; }
+    .workspace { display: grid; grid-template-columns: minmax(265px, 320px) minmax(0, 1fr); gap: 24px; align-items: start; }
+    .panel, .preview { border: 1px solid rgba(203, 213, 206, .88); background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(16px); }
+    .panel { padding: 20px; border-radius: 14px; }
+    .panel-section + .panel-section { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 18px; }
+    .section-title { margin: 0 0 12px; color: var(--muted); font-size: .72rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .control { display: grid; grid-template-columns: 1fr 84px; gap: 10px; align-items: center; margin: 11px 0; }
+    .control label { font-size: .86rem; }
+    .control output { color: var(--accent-dark); font-variant-numeric: tabular-nums; font-size: .78rem; text-align: right; }
+    .control input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+    .control input[type="number"] { width: 84px; padding: 6px 7px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: #fff; }
+    .color-control { display: grid; grid-template-columns: 1fr 48px; gap: 12px; align-items: center; margin: 11px 0; font-size: .86rem; }
+    .color-control input { width: 48px; height: 32px; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+    .switch-row { display: flex; justify-content: space-between; gap: 16px; align-items: center; font-size: .86rem; }
+    .switch { position: relative; width: 44px; height: 24px; flex: 0 0 auto; }
+    .switch input { width: 0; height: 0; opacity: 0; }
+    .slider { position: absolute; inset: 0; border-radius: 999px; background: #bdc8c0; transition: .2s ease; }
+    .slider::before { position: absolute; content: ""; width: 18px; height: 18px; left: 3px; top: 3px; border-radius: 50%; background: white; transition: .2s ease; box-shadow: 0 2px 5px #0002; }
+    .switch input:checked + .slider { background: var(--accent); }
+    .switch input:checked + .slider::before { transform: translateX(20px); }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
+    button { min-height: 42px; padding: 9px 12px; border: 1px solid var(--ink); border-radius: 7px; color: white; background: var(--ink); font-weight: 800; font-size: .8rem; }
+    button.secondary { color: var(--ink); background: transparent; }
+    button:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+    button.secondary:hover { color: white; }
+    .hint { margin: 13px 0 0; color: var(--muted); font-size: .74rem; line-height: 1.45; }
+    .preview { min-height: 650px; padding: 20px; border-radius: 20px; overflow: hidden; }
+    .preview-header { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 14px; }
+    .preview-header h2 { margin: 0; font-size: .8rem; letter-spacing: .13em; text-transform: uppercase; }
+    .readout { color: var(--muted); font-size: .75rem; font-variant-numeric: tabular-nums; }
+    .canvas-wrap { display: grid; min-height: 570px; place-items: center; padding: 18px; border: 1px dashed #bdc9c0; border-radius: 12px; background-color: #f7f9f6; background-image: linear-gradient(45deg, #e7ece7 25%, transparent 25%), linear-gradient(-45deg, #e7ece7 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e7ece7 75%), linear-gradient(-45deg, transparent 75%, #e7ece7 75%); background-size: 24px 24px; background-position: 0 0, 0 12px, 12px -12px, -12px 0; }
+    canvas { display: block; width: min(100%, 1000px); height: auto; max-height: 72vh; object-fit: contain; box-shadow: 0 18px 34px #1a2a2220; }
+    .phi-note { display: none; margin-top: 12px; padding: 10px 12px; border-left: 3px solid var(--accent); color: var(--muted); background: #fff5e9; font-size: .74rem; line-height: 1.4; }
+    .phi-note.visible { display: block; }
+    @media (max-width: 850px) {
+      .page { padding: 22px 16px 30px; }
+      .masthead { display: block; }
+      .intro { margin-top: 14px; }
+      .workspace { grid-template-columns: 1fr; }
+      .panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+      .panel-section + .panel-section { margin-top: 0; padding-top: 0; border-top: 0; }
+      .panel-section:last-of-type { grid-column: 1 / -1; }
+      .button-row, .hint { grid-column: 1 / -1; }
+      .preview { min-height: auto; }
+      .canvas-wrap { min-height: 400px; }
+    }
+    @media (max-width: 520px) {
+      .panel { display: block; }
+      .panel-section + .panel-section { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 18px; }
+      .preview { padding: 12px; }
+      .canvas-wrap { min-height: 280px; padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Cardscade / mark laboratory</p>
+        <h1>Shape the cascade.</h1>
+      </div>
+      <p class="intro">A live vector sketchpad for the cascading-card logo. Tune the motion, weight, and proportion, then take the result with you as an SVG.</p>
+    </header>
+
+    <div class="workspace">
+      <form class="panel" id="controls">
+        <section class="panel-section">
+          <h2 class="section-title">Canvas</h2>
+          <div class="control"><label for="canvasWidth">Width</label><input id="canvasWidth" data-key="canvasWidth" type="number" min="320" max="3000" step="10"><span></span></div>
+          <div class="control"><label for="canvasHeight">Height</label><input id="canvasHeight" data-key="canvasHeight" type="number" min="240" max="2400" step="10"><span></span></div>
+          <div class="switch-row"><span>Square logo export</span><label class="switch"><input id="squareLogo" data-key="squareLogo" type="checkbox"><span class="slider"></span></label></div>
+          <div class="color-control"><label for="backgroundColor">Background</label><input id="backgroundColor" data-key="backgroundColor" type="color"></div>
+          <div class="switch-row"><span>Transparent background</span><label class="switch"><input id="transparent" data-key="transparent" type="checkbox"><span class="slider"></span></label></div>
+        </section>
+
+        <section class="panel-section">
+          <h2 class="section-title">Cards</h2>
+          <div class="control"><label for="stackCount">Stack cards</label><input id="stackCount" data-key="stackCount" type="range" min="2" max="20" step="1"><output data-output="stackCount"></output></div>
+          <div class="control"><label for="fanCount">Fan cards</label><input id="fanCount" data-key="fanCount" type="range" min="2" max="40" step="1"><output data-output="fanCount"></output></div>
+          <div class="control"><label for="cardLength">Card length</label><input id="cardLength" data-key="cardLength" type="range" min="40" max="520" step="1"><output data-output="cardLength"></output></div>
+          <div class="control"><label for="cardWidth">Card width</label><input id="cardWidth" data-key="cardWidth" type="range" min="4" max="100" step="1"><output data-output="cardWidth"></output></div>
+          <div class="control"><label for="separation">Card separation</label><input id="separation" data-key="separation" type="range" min="0" max="120" step="1"><output data-output="separation"></output></div>
+          <div class="color-control"><label for="stackColor">Stack color</label><input id="stackColor" data-key="stackColor" type="color"></div>
+          <div class="color-control"><label for="fanColor">Fan color</label><input id="fanColor" data-key="fanColor" type="color"></div>
+        </section>
+
+        <section class="panel-section">
+          <h2 class="section-title">Trajectory</h2>
+          <div class="control"><label for="centerDistance">Center distance / rising radius</label><input id="centerDistance" data-key="centerDistance" type="range" min="10" max="420" step="1"><output data-output="centerDistance"></output></div>
+          <div class="control"><label for="fallCenterX">Falling arc center X</label><input id="fallCenterX" data-key="fallCenterX" type="range" min="0" max="100" step="1"><output data-output="fallCenterX"></output></div>
+          <div class="switch-row"><span>Force golden ratio <strong>φ</strong></span><label class="switch"><input id="forceGoldenRatio" data-key="forceGoldenRatio" type="checkbox"><span class="slider"></span></label></div>
+          <div class="switch-row"><span>Radius 2 / radius 1</span><output id="radiusRatio">-</output></div>
+          <div class="switch-row"><span>Show arc overlay</span><label class="switch"><input id="showOverlay" data-key="showOverlay" type="checkbox"><span class="slider"></span></label></div>
+          <p class="phi-note" id="overlayNote">Overlay: rising and falling arcs, shared contact point, tangent, centers, and radial guides.</p>
+        </section>
+
+        <div class="button-row">
+          <button class="secondary" id="reset" type="button">Reset defaults</button>
+          <button id="download" type="button">Download SVG</button>
+        </div>
+        <p class="hint">The transparent mode exports a transparent SVG background. Canvas dimensions are the SVG viewBox, so the mark stays crisp at any scale.</p>
+      </form>
+
+      <section class="preview" aria-labelledby="preview-title">
+        <div class="preview-header"><h2 id="preview-title">Live canvas</h2><span class="readout" id="readout"></span></div>
+        <div class="canvas-wrap"><canvas id="logoCanvas" role="img" aria-label="Generated cascading card logo preview"></canvas></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+      const PHI = (1 + Math.sqrt(5)) / 2;
+      const defaults = {
+        canvasWidth: 832, canvasHeight: 510, stackCount: 6, fanCount: 11, cardLength: 215, cardWidth: 20, separation: 3,
+        centerDistance: 96, fallCenterX: 0, forceGoldenRatio: false,
+        stackColor: "#E04832", fanColor: "#111513", backgroundColor: "#f7f3ea",
+        transparent: true, squareLogo: true, showOverlay: false
+      };
+      let state = { ...defaults };
+      const canvas = document.getElementById("logoCanvas");
+      const context = canvas.getContext("2d");
+      const form = document.getElementById("controls");
+      const readout = document.getElementById("readout");
+
+      const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+      const number = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+      const hexToRgba = (hex, alpha = 1) => {
+        const value = hex.replace("#", "");
+        const full = value.length === 3 ? value.split("").map((part) => part + part).join("") : value;
+        return `rgba(${parseInt(full.slice(0, 2), 16)}, ${parseInt(full.slice(2, 4), 16)}, ${parseInt(full.slice(4, 6), 16)}, ${alpha})`;
+      };
+      const point = (x, y) => ({ x, y });
+      const lerp = (a, b, amount) => a + (b - a) * amount;
+      const bezier = (p0, p1, p2, p3, t) => ({
+        x: Math.pow(1 - t, 3) * p0.x + 3 * Math.pow(1 - t, 2) * t * p1.x + 3 * (1 - t) * Math.pow(t, 2) * p2.x + Math.pow(t, 3) * p3.x,
+        y: Math.pow(1 - t, 3) * p0.y + 3 * Math.pow(1 - t, 2) * t * p1.y + 3 * (1 - t) * Math.pow(t, 2) * p2.y + Math.pow(t, 3) * p3.y
+      });
+      const bezierTangent = (p0, p1, p2, p3, t) => ({
+        x: 3 * Math.pow(1 - t, 2) * (p1.x - p0.x) + 6 * (1 - t) * t * (p2.x - p1.x) + 3 * Math.pow(t, 2) * (p3.x - p2.x),
+        y: 3 * Math.pow(1 - t, 2) * (p1.y - p0.y) + 6 * (1 - t) * t * (p2.y - p1.y) + 3 * Math.pow(t, 2) * (p3.y - p2.y)
+      });
+
+      function getCurve() {
+        const width = state.canvasWidth;
+        const height = state.canvasHeight;
+        const stackCount = state.stackCount;
+        const stackStep = state.cardWidth + state.separation;
+        const baseline = height * 0.96;
+        const transitionX = Math.min(width * 0.37, state.cardLength);
+        const stackEnd = Math.min(width * 0.37, state.cardLength);
+        const stackTop = baseline - Math.max(0, stackCount - 1) * stackStep;
+        const riseRadius = state.centerDistance;
+        const risingCenter = point(stackEnd + state.centerDistance, stackTop);
+        const verticalCenterDistance = baseline - risingCenter.y;
+        const forcedFallRadius = riseRadius * PHI;
+        const forcedCenterDistance = Math.max(0, forcedFallRadius - riseRadius);
+        const forcedHorizontalDistance = Math.sqrt(
+          Math.max(0, forcedCenterDistance * forcedCenterDistance - verticalCenterDistance * verticalCenterDistance)
+        );
+        const fallingCenterX = state.forceGoldenRatio
+          ? risingCenter.x - forcedHorizontalDistance
+          : width * state.fallCenterX / 100;
+        const fallingCenter = point(fallingCenterX, baseline);
+        const centerVectorX = risingCenter.x - fallingCenter.x;
+        const centerVectorY = risingCenter.y - fallingCenter.y;
+        const centerDistance = Math.hypot(centerVectorX, centerVectorY) || 1;
+        const normalX = centerVectorX / centerDistance;
+        const normalY = centerVectorY / centerDistance;
+        const radialAngle = Math.atan2(normalY, normalX);
+        const fallRadius = state.forceGoldenRatio
+          ? forcedFallRadius
+          : Math.max(20, centerDistance + riseRadius);
+        const contact = point(
+          risingCenter.x + normalX * riseRadius,
+          risingCenter.y + normalY * riseRadius
+        );
+        return {
+          startX: transitionX * 0.86,
+          endX: width * 0.64,
+          topY: stackTop,
+          bottomY: baseline,
+          contact,
+          riseRadius,
+          fallRadius,
+          radialAngle,
+          radiusRatio: fallRadius / riseRadius,
+          risingCenter,
+          fallingCenter
+        };
+      }
+
+      function trajectorySample(curve, t) {
+        const metrics = getArcMetrics(curve);
+        const distance = t * metrics.totalLength;
+        if (distance <= metrics.riseLength) {
+          const arcT = metrics.riseLength === 0 ? 1 : distance / metrics.riseLength;
+          const angle = lerp(metrics.riseStartAngle, metrics.riseEndAngle, arcT);
+          return {
+            center: point(
+              curve.risingCenter.x + curve.riseRadius * Math.cos(angle),
+              curve.risingCenter.y + curve.riseRadius * Math.sin(angle)
+            ),
+            radialAngle: angle,
+            segment: "rising"
+          };
+        }
+
+        const fallDistance = distance - metrics.riseLength;
+        const arcT = metrics.fallLength === 0 ? 1 : fallDistance / metrics.fallLength;
+        const angle = lerp(metrics.fallStartAngle, metrics.fallEndAngle, arcT);
+        return {
+          center: point(
+            curve.fallingCenter.x + curve.fallRadius * Math.cos(angle),
+            curve.fallingCenter.y + curve.fallRadius * Math.sin(angle)
+          ),
+          radialAngle: angle,
+          segment: "falling"
+        };
+      }
+
+      function getArcMetrics(curve) {
+        const riseLevel = clamp((curve.topY - curve.risingCenter.y) / curve.riseRadius, -1, 1);
+        const fallLevel = clamp((curve.bottomY - curve.fallingCenter.y) / curve.fallRadius, -1, 1);
+        const riseStartAngle = closestAngle([Math.asin(riseLevel), Math.PI - Math.asin(riseLevel)], curve.radialAngle - Math.PI / 2);
+        const riseEndAngle = curve.radialAngle;
+        const fallStartAngle = curve.radialAngle;
+        const fallEndAngle = closestAngle([Math.asin(fallLevel), Math.PI - Math.asin(fallLevel)], curve.radialAngle + Math.PI / 2);
+        const riseLength = Math.abs(riseEndAngle - riseStartAngle) * curve.riseRadius;
+        const fallLength = Math.abs(fallEndAngle - fallStartAngle) * curve.fallRadius;
+        return {
+          riseStartAngle,
+          riseEndAngle,
+          fallStartAngle,
+          fallEndAngle,
+          riseLength,
+          fallLength,
+          totalLength: riseLength + fallLength
+        };
+      }
+
+      function closestAngle(candidates, target) {
+        return candidates.reduce((best, candidate) => {
+          const options = [candidate - Math.PI * 2, candidate, candidate + Math.PI * 2];
+          const candidateBest = options.reduce((a, b) => Math.abs(a - target) < Math.abs(b - target) ? a : b);
+          return Math.abs(candidateBest - target) < Math.abs(best - target) ? candidateBest : best;
+        }, candidates[0]);
+      }
+
+      function getStackCount() {
+        return clamp(Math.round(state.stackCount), 2, 20);
+      }
+
+      function makePolygon(start, end, halfWidth) {
+        const directionX = end.x - start.x;
+        const directionY = end.y - start.y;
+        const length = Math.hypot(directionX, directionY) || 1;
+        const normalX = -directionY / length;
+        const normalY = directionX / length;
+        return [
+          point(start.x - normalX * halfWidth, start.y - normalY * halfWidth),
+          point(start.x + normalX * halfWidth, start.y + normalY * halfWidth),
+          point(end.x + normalX * halfWidth, end.y + normalY * halfWidth),
+          point(end.x - normalX * halfWidth, end.y - normalY * halfWidth)
+        ];
+      }
+
+      // The first cards form the horizontal stack from the sketch; the rest follow the curve.
+      function getCards() {
+        const curve = getCurve();
+        const cards = [];
+        const stackCount = getStackCount();
+        const curveCount = Math.max(2, Math.round(state.fanCount));
+        const stackStep = state.cardWidth + state.separation;
+        const baseline = state.canvasHeight * 0.96;
+        const stackEnd = Math.min(state.canvasWidth * 0.37, state.cardLength);
+        const halfWidth = state.cardWidth / 2;
+        for (let index = 0; index < stackCount; index += 1) {
+          const y = baseline - index * stackStep;
+          cards.push({ polygon: makePolygon(point(-state.cardWidth, y), point(stackEnd, y), halfWidth), type: "stack" });
+        }
+        for (let index = 1; index < curveCount; index += 1) {
+          const t = index / (curveCount - 1);
+          const sample = trajectorySample(curve, t);
+          const center = sample.center;
+          const rotation = sample.radialAngle;
+          const unitX = Math.cos(rotation);
+          const unitY = Math.sin(rotation);
+          const normalX = -unitY;
+          const normalY = unitX;
+          const length = state.cardLength;
+          const start = center;
+          const end = { x: start.x + unitX * length, y: start.y + unitY * length };
+          cards.push({ polygon: makePolygon(start, end, halfWidth), type: "fan" });
+        }
+        return cards;
+      }
+
+      function polygonPath(target, polygon) {
+        target.beginPath();
+        target.moveTo(polygon[0].x, polygon[0].y);
+        polygon.slice(1).forEach((corner) => target.lineTo(corner.x, corner.y));
+        target.closePath();
+      }
+
+      function getOutputFrame() {
+        const size = state.squareLogo ? Math.max(state.canvasWidth, state.canvasHeight) : null;
+        const width = size || state.canvasWidth;
+        const height = size || state.canvasHeight;
+        const curve = getCurve();
+        const offsetX = state.squareLogo ? width / 2 - curve.risingCenter.x : 0;
+        const offsetY = state.squareLogo ? height / 2 - curve.risingCenter.y : 0;
+        return { width, height, offsetX, offsetY };
+      }
+
+      function translatePolygon(polygon, frame) {
+        return polygon.map((corner) => point(corner.x + frame.offsetX, corner.y + frame.offsetY));
+      }
+
+      function drawArcPath(target, curve, start, end, color) {
+        target.save();
+        target.strokeStyle = color;
+        target.lineWidth = 2;
+        target.setLineDash([8, 6]);
+        target.beginPath();
+        for (let index = 0; index <= 48; index += 1) {
+          const t = lerp(start, end, index / 48);
+          const sample = trajectorySample(curve, t).center;
+          if (index === 0) target.moveTo(sample.x, sample.y);
+          else target.lineTo(sample.x, sample.y);
+        }
+        target.stroke();
+        target.restore();
+      }
+
+      function drawOverlay(target, curve) {
+        const risingCenter = curve.risingCenter;
+        const fallingCenter = curve.fallingCenter;
+        const contact = curve.contact;
+
+        const metrics = getArcMetrics(curve);
+        const risingEnd = metrics.riseLength / metrics.totalLength;
+        drawArcPath(target, curve, 0, risingEnd, "#d84a36");
+        drawArcPath(target, curve, risingEnd, 1, "#2d70b3");
+
+        target.save();
+        target.lineWidth = 1;
+        target.setLineDash([5, 7]);
+        target.strokeStyle = "rgba(40, 49, 48, .55)";
+        target.beginPath();
+        target.moveTo(contact.x, Math.max(0, Math.min(curve.topY, contact.y) - 32));
+        target.lineTo(contact.x, Math.min(state.canvasHeight, curve.bottomY + 32));
+        target.stroke();
+
+        target.setLineDash([]);
+        target.strokeStyle = "rgba(216, 74, 54, .7)";
+        target.beginPath();
+        target.moveTo(risingCenter.x, risingCenter.y);
+        target.lineTo(contact.x, contact.y);
+        target.stroke();
+        target.strokeStyle = "rgba(45, 112, 179, .7)";
+        target.beginPath();
+        target.moveTo(fallingCenter.x, fallingCenter.y);
+        target.lineTo(contact.x, contact.y);
+        target.stroke();
+
+        [risingCenter, fallingCenter].forEach((center, index) => {
+          target.fillStyle = index === 0 ? "#d84a36" : "#2d70b3";
+          target.beginPath();
+          target.arc(center.x, center.y, 5, 0, Math.PI * 2);
+          target.fill();
+        });
+        target.fillStyle = "#252d2a";
+        target.beginPath();
+        target.arc(contact.x, contact.y, 4, 0, Math.PI * 2);
+        target.fill();
+        target.restore();
+      }
+
+      function render() {
+        const frame = getOutputFrame();
+        const scale = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+        canvas.width = Math.round(frame.width * scale);
+        canvas.height = Math.round(frame.height * scale);
+        context.setTransform(scale, 0, 0, scale, 0, 0);
+        context.clearRect(0, 0, frame.width, frame.height);
+        if (!state.transparent) {
+          context.fillStyle = state.backgroundColor;
+          context.fillRect(0, 0, frame.width, frame.height);
+        }
+        getCards().forEach((card) => {
+          context.fillStyle = card.type === "stack" ? state.stackColor : state.fanColor;
+          polygonPath(context, translatePolygon(card.polygon, frame));
+          context.fill();
+        });
+        if (state.showOverlay) {
+          context.save();
+          context.translate(frame.offsetX, frame.offsetY);
+          drawOverlay(context, getCurve());
+          context.restore();
+        }
+        document.getElementById("overlayNote").classList.toggle("visible", state.showOverlay);
+        const curve = getCurve();
+        document.getElementById("fallCenterX").disabled = state.forceGoldenRatio;
+        document.getElementById("radiusRatio").textContent = `${curve.radiusRatio.toFixed(3)}${state.forceGoldenRatio ? " · φ" : ""}`;
+        readout.textContent = `${frame.width} × ${frame.height} · ${getStackCount() + Math.max(2, Math.round(state.fanCount))} cards (${getStackCount()} stack · ${Math.max(2, Math.round(state.fanCount))} fan)`;
+      }
+
+      function svgPoints(polygon) {
+        return polygon.map((corner) => `${corner.x.toFixed(2)},${corner.y.toFixed(2)}`).join(" ");
+      }
+
+      function createSvg() {
+        const frame = getOutputFrame();
+        const background = state.transparent ? "" : `<rect width="100%" height="100%" fill="${state.backgroundColor}"/>`;
+        const polygons = getCards().map((card) => `<polygon points="${svgPoints(translatePolygon(card.polygon, frame))}" fill="${card.type === "stack" ? state.stackColor : state.fanColor}"/>`).join("");
+        return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${frame.width}" height="${frame.height}" viewBox="0 0 ${frame.width} ${frame.height}"><title>Cardscade cascading card logo</title>${background}${polygons}</svg>`;
+      }
+
+      function updateControlValues() {
+        form.querySelectorAll("[data-key]").forEach((control) => {
+          const key = control.dataset.key;
+          if (control.type === "checkbox") control.checked = Boolean(state[key]);
+          else control.value = state[key];
+        });
+        form.querySelectorAll("[data-output]").forEach((output) => {
+          const key = output.dataset.output;
+          output.value = state[key];
+          output.textContent = `${state[key]}${key === "curve" ? "" : key === "rise" ? "" : " px"}`;
+        });
+      }
+
+      function readControl(control) {
+        const key = control.dataset.key;
+        if (control.type === "checkbox") state[key] = control.checked;
+        else if (control.type === "color") state[key] = control.value;
+        else state[key] = number(control.value, defaults[key]);
+        if (key === "canvasWidth") state[key] = clamp(state[key], 320, 3000);
+        if (key === "canvasHeight") state[key] = clamp(state[key], 240, 2400);
+        render();
+        updateControlValues();
+      }
+
+      form.addEventListener("input", (event) => {
+        if (event.target.matches("[data-key]")) readControl(event.target);
+      });
+      document.getElementById("reset").addEventListener("click", () => {
+        state = { ...defaults };
+        updateControlValues();
+        render();
+      });
+      document.getElementById("download").addEventListener("click", () => {
+        const blob = new Blob([createSvg()], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "cardscade-logo.svg";
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+      window.addEventListener("resize", render);
+      updateControlValues();
+      render();
+    })();
+  </script>
+</body>
+</html>
