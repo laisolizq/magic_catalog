@@ -7,7 +7,7 @@ import { CardModal } from './components/CardModal/CardModal'
 import { BasicCatalogChrome } from './components/CatalogChrome/BasicCatalogChrome'
 import { AdvancedCatalogChrome } from './components/CatalogChrome/AdvancedCatalogChrome'
 import type { Card } from '../../types/card'
-import type { SetOption } from '../../types/catalog'
+import { CATALOG_SCHEMA_VERSION, type SetOption } from '../../types/catalog'
 import {
   buildScryfallQuery,
   parseScryfallQuery,
@@ -21,7 +21,12 @@ import {
   type CatalogUpdateStatus,
 } from '../../services/catalogUpdates'
 import { hasLocalCatalog, type CatalogImportProgress } from '../../services/catalogImport'
-import { getCatalogDatabase } from '../../db/sqliteClient'
+import {
+  clearCatalogDatabase,
+  getCatalogDatabase,
+  hasCompatibleCatalogDatabase,
+  readCatalogMetadata,
+} from '../../db/sqliteClient'
 import { CardSkeleton } from './components/List/components/CardSkeleton/CardSkeleton'
 import { selectLatestPrintings } from './selectLatestPrintings'
 import './CatalogPage.css'
@@ -357,7 +362,15 @@ export function CatalogPage() {
     let cancelled = false
 
     async function bootstrapCatalog() {
-      const hasCatalogBeforeUpdate = await hasLocalCatalog()
+      const metadata = await readCatalogMetadata<{ schemaVersion?: number }>()
+      const hasCompatibleDatabase = await hasCompatibleCatalogDatabase()
+      const hasStaleCatalog = !hasCompatibleDatabase || metadata?.schemaVersion == null
+        || metadata.schemaVersion < CATALOG_SCHEMA_VERSION
+      if (hasStaleCatalog) {
+        await clearCatalogDatabase()
+      }
+
+      const hasCatalogBeforeUpdate = !hasStaleCatalog && await hasLocalCatalog()
 
       if (hasCatalogBeforeUpdate) {
         void getCatalogDatabase().catch((error) => {

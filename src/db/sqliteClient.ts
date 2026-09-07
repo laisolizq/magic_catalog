@@ -8,6 +8,13 @@ const DATABASE_VERSION = 2
 const DATABASE_STORE = 'database'
 const DATABASE_KEY = 'catalog'
 const DECKS_STORE = 'decks'
+const REQUIRED_CATALOG_COLUMNS = [
+  'primary_face_name',
+  'primary_mana_value',
+  'collector_number_numeric',
+  'collector_number_suffix',
+  'printing_preference_rank',
+] as const
 
 let databasePromise: Promise<Database | null> | null = null
 
@@ -87,10 +94,12 @@ export async function clearCatalogDatabase(): Promise<void> {
   const storage = await openStorage()
   await new Promise<void>((resolve, reject) => {
     const request = storage.transaction(DATABASE_STORE, 'readwrite')
-      .objectStore(DATABASE_STORE)
-      .delete(DATABASE_KEY)
-    request.onsuccess = () => resolve()
+    const databaseStore = request.objectStore(DATABASE_STORE)
+    databaseStore.delete(DATABASE_KEY)
+    databaseStore.delete('metadata')
+    request.oncomplete = () => resolve()
     request.onerror = () => reject(request.error)
+    request.onabort = () => reject(request.error)
   })
   storage.close()
 }
@@ -120,6 +129,17 @@ export async function replaceCatalogDatabase(bytes: Uint8Array): Promise<void> {
 
 export async function hasLocalCatalog(): Promise<boolean> {
   return Boolean(await readStoredDatabase())
+}
+
+export async function hasCompatibleCatalogDatabase(): Promise<boolean> {
+  const database = await getCatalogDatabase()
+  if (!database) return false
+
+  const columns = new Set(
+    (database.exec('PRAGMA table_info(cards)')[0]?.values ?? [])
+      .map((row) => String(row[1])),
+  )
+  return REQUIRED_CATALOG_COLUMNS.every((column) => columns.has(column))
 }
 
 export async function listDecks(): Promise<Deck[]> {

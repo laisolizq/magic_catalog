@@ -50,18 +50,38 @@ function cardSelectSql(database: NonNullable<Awaited<ReturnType<typeof getCatalo
   return `SELECT ${cardColumnsSql(database)} FROM cards`
 }
 
-// The sort/dedup/pagination columns (schema v8+) are all added together, so
-// checking one is enough to know the others are present too.
-function supportsSortColumns(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): boolean {
-  return getCardsTableColumns(database).has('primary_face_name')
+// Older/cached databases can be missing some of the generated helper columns,
+// so validate exactly what the requested SQL sort needs.
+function supportsSqlSortOption(
+  database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>,
+  sortOption: CatalogSortOption | undefined,
+): boolean {
+  const columns = getCardsTableColumns(database)
+
+  switch (sortOption) {
+    case 'set-asc':
+    case 'set-desc':
+      return columns.has('collector_number_numeric') && columns.has('collector_number_suffix')
+    case 'name-asc':
+    case 'name-desc':
+      return columns.has('primary_face_name')
+    case 'cmc-asc':
+    case 'cmc-desc':
+      return columns.has('primary_mana_value') && columns.has('primary_face_name')
+    case 'added-asc':
+    case 'added-desc':
+      return columns.has('added_at') && columns.has('primary_face_name')
+    default:
+      return true
+  }
 }
 
 // Schema v9+: "preferred printing" per card name is precomputed at generation
 // time (generate_card_database.py's compute_preferred_printings, mirroring
 // selectLatestPrintings.ts), so dedup is a plain indexed column filter
 // instead of a SQL window-function query at browse time.
-function supportsPreferredPrinting(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): boolean {
-  return getCardsTableColumns(database).has('is_preferred_printing')
+function supportsPreferenceRank(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): boolean {
+  return getCardsTableColumns(database).has('printing_preference_rank')
 }
 
 interface SqlCondition {
@@ -338,10 +358,6 @@ function buildWhereConditions(
     if (flags.hasLegalitiesColumn) parameters.push(query.legality.status)
   }
 
-  if (flags.preferredPrintingOnly) {
-    conditions.push('is_preferred_printing = 1')
-  }
-
   if (flags.hasCardIdsFilter) {
     const names = query.cardIds!.map(() => '?')
     query.cardIds!.forEach((id) => parameters.push(id))
@@ -393,21 +409,31 @@ function buildWhereConditions(
   return { sql: conditions.join(' AND '), params: parameters }
 }
 
-// Runs sort + pagination (and, when the database has the schema v9+
-// is_preferred_printing column, dedup) entirely in SQL, so only the final
-// page of rows is ever parsed out of faces_json - the dominant cost
-// identified by benchmarking the old fetch-everything path
-// (src/pages/CatalogPage/catalogPipeline.integration.test.ts). "Preferred
-// printing" is precomputed at generation time (generate_card_database.py's
-// compute_preferred_printings), so unlike an earlier attempt at a SQL
-// window-function dedup query (which never beat the legacy JS pipeline at
-// any tested scale), dedup here is just another indexed WHERE condition.
+// Runs structured filtering, preference-ranked deduplication, sorting, and
+// pagination in SQL. Text searches use the same filtered result as the Fuse
+// candidate set, so Fuse remains responsible for fuzzy matching and ranking.
 async function runServerPaginatedQuery(
   database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>,
   whereCondition: SqlCondition,
   query: CatalogQuery,
+  deduplicate: boolean,
 ): Promise<CatalogQueryResult> {
   const whereSql = whereCondition.sql ? `WHERE ${whereCondition.sql}` : ''
+  const columns = cardColumnsSql(database)
+  const rankingColumns = `${columns}, primary_face_name, primary_mana_value, printing_preference_rank, collector_number_numeric, collector_number_suffix`
+  const sourceSql = deduplicate
+    ? `WITH filtered_cards AS (
+        SELECT ${rankingColumns} FROM cards ${whereSql}
+      ), ranked_cards AS (
+        SELECT filtered_cards.*,
+          ROW_NUMBER() OVER (
+            PARTITION BY filtered_cards.primary_face_name
+            ORDER BY filtered_cards.printing_preference_rank ASC, filtered_cards.id ASC
+          ) AS printing_rank
+        FROM filtered_cards
+      )
+      SELECT ranked_cards.* FROM ranked_cards WHERE printing_rank = 1`
+    : `SELECT ${columns} FROM cards ${whereSql}`
   const orderBy = buildOrderBySql(query.sortOption, {
     setCode: 'set_code',
     collectorNumeric: 'collector_number_numeric',
@@ -431,14 +457,57 @@ async function runServerPaginatedQuery(
     }
   }
 
-  const countResult = database.exec(`SELECT COUNT(*) FROM cards ${whereSql}`, whereCondition.params)
+  const countResult = database.exec(
+    deduplicate
+      ? `WITH filtered_cards AS (
+          SELECT ${rankingColumns} FROM cards ${whereSql}
+        ), ranked_cards AS (
+          SELECT primary_face_name,
+            ROW_NUMBER() OVER (
+              PARTITION BY filtered_cards.primary_face_name
+              ORDER BY filtered_cards.printing_preference_rank ASC, filtered_cards.id ASC
+            ) AS printing_rank
+          FROM filtered_cards
+        )
+        SELECT COUNT(*) FROM ranked_cards WHERE printing_rank = 1`
+      : `SELECT COUNT(*) FROM cards ${whereSql}`,
+    whereCondition.params,
+  )
   const total = Number(countResult[0]?.values?.[0]?.[0] ?? 0)
 
   const result = database.exec(
-    `SELECT ${cardColumnsSql(database)} FROM cards ${whereSql} ORDER BY ${orderBy}${limitSql}`,
+    `${sourceSql} ORDER BY ${orderBy}${limitSql}`,
     [...whereCondition.params, ...limitParams],
   )
   return { cards: (result[0]?.values ?? []).map(rowToCard), total, serverPaginated: true }
+}
+
+async function runFilteredCandidateQuery(
+  database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>,
+  whereCondition: SqlCondition,
+  deduplicate: boolean,
+): Promise<CatalogQueryResult> {
+  const whereSql = whereCondition.sql ? `WHERE ${whereCondition.sql}` : ''
+  const columns = cardColumnsSql(database)
+  const rankingColumns = `${columns}, primary_face_name, printing_preference_rank`
+  const query = deduplicate
+    ? `WITH filtered_cards AS (
+        SELECT ${rankingColumns} FROM cards ${whereSql}
+      ), ranked_cards AS (
+        SELECT filtered_cards.*,
+          ROW_NUMBER() OVER (
+            PARTITION BY primary_face_name
+            ORDER BY printing_preference_rank ASC, id ASC
+          ) AS printing_rank
+        FROM filtered_cards
+      )
+      SELECT ${cardColumnsSql(database, 'ranked_cards')}
+      FROM ranked_cards
+      WHERE printing_rank = 1`
+    : `SELECT ${columns} FROM cards ${whereSql}`
+  const result = database.exec(query, whereCondition.params)
+  const cards = (result[0]?.values ?? []).map(rowToCard)
+  return { cards, total: cards.length }
 }
 
 function searchCards(
@@ -488,21 +557,12 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   const hasText = text.length > 0
   const hasOracleFilter = oracle.length > 0
 
-  // Free-text search still needs Fuse (see below), so this fast path only
-  // applies to non-text queries against a database with the sort columns
-  // (schema v8+); older cached databases fall through to the legacy path
-  // unchanged. Dedup (showAllPrints: false) additionally needs the schema
-  // v9+ is_preferred_printing column - without it we fall through to the
-  // legacy path's JS selectLatestPrintings instead. Filtered queries also
-  // use the legacy path when deduping because the preferred-printing flag is
-  // global to the catalog, while deduplication must be scoped to this query's
-  // candidate printings (for example, s:tsr).
+  // Free-text search still needs Fuse. When the generated preference rank is
+  // available, structured filters are applied before deduplication so Fuse
+  // indexes the best remaining printing for each card name.
   const showAllPrints = query.showAllPrints ?? true
-  const hasAnyFilter = hasSetFilter || hasRarityFilter || hasTypeFilter ||
-    hasColorFilter || hasColorCountFilter || hasOracleFilter || hasCardIdsFilter ||
-    hasLegalityFilter
-  const canRunInSql = !hasText && supportsSortColumns(database) &&
-    (showAllPrints || (!hasAnyFilter && supportsPreferredPrinting(database)))
+  const canRunInSql = !hasText && supportsSqlSortOption(database, query.sortOption) &&
+    (showAllPrints || supportsPreferenceRank(database))
   if (canRunInSql) {
     const whereCondition = buildWhereConditions(query, {
       hasCardIdsFilter,
@@ -514,9 +574,40 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
       hasColorFilter,
       hasOracleFilter,
       oracle,
-      preferredPrintingOnly: !showAllPrints,
+      preferredPrintingOnly: false,
     })
-    return runServerPaginatedQuery(database, whereCondition, query)
+    return runServerPaginatedQuery(database, whereCondition, query, !showAllPrints)
+  }
+
+  if (hasText && !showAllPrints && supportsPreferenceRank(database)) {
+    const whereCondition = buildWhereConditions(query, {
+      hasCardIdsFilter,
+      hasLegalityFilter,
+      hasLegalitiesColumn,
+      hasSetFilter,
+      hasRarityFilter,
+      hasTypeFilter,
+      hasColorFilter,
+      hasOracleFilter,
+      oracle,
+      preferredPrintingOnly: false,
+    })
+    const result = await runFilteredCandidateQuery(database, whereCondition, true)
+    const filterKey = JSON.stringify({
+      deduplicated: true,
+      sets: query.sets,
+      rarities: query.rarities,
+      types: query.types,
+      colors: query.colors,
+      colorMode: query.colorMode,
+      colorCount: query.colorCount,
+      legality: query.legality,
+      oracle,
+      cardIds: query.cardIds,
+    })
+    const fuse = getFilterFuse(filterKey, result.cards)
+    const searchedCards = searchCards(fuse, result.cards, text)
+    return { cards: searchedCards, total: searchedCards.length }
   }
 
   if (!hasSetFilter && !hasRarityFilter && !hasTypeFilter && !hasColorFilter && !hasColorCountFilter && !hasOracleFilter && !hasCardIdsFilter && !hasLegalityFilter) {

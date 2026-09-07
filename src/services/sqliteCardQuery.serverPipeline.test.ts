@@ -103,6 +103,40 @@ describe('queryCards server-side dedup (showAllPrints: false)', () => {
     expect(new Set(result.cards.map((card) => card.id))).toEqual(expectedIds)
     expect(result.cards.length).toBe(expectedIds.size)
   })
+
+  it('deduplicates structured candidates before Fuse when text search is enabled', async () => {
+    const cards: Card[] = [
+      makeCard({
+        id: 'global-preferred',
+        faceName: 'Shared Card',
+        set: 'new',
+        setType: 'expansion',
+        releasedAt: '2024-01-01',
+      }),
+      makeCard({
+        id: 'filtered-candidate',
+        faceName: 'Shared Card',
+        set: 'old',
+        setType: 'expansion',
+        releasedAt: '2023-01-01',
+      }),
+    ]
+
+    await seedCards(cards)
+
+    const result = await queryCards({
+      text: 'Shared',
+      sets: ['old'],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+      showAllPrints: false,
+    })
+
+    expect(result.cards.map((card) => card.id)).toEqual(['filtered-candidate'])
+    expect(result.total).toBe(1)
+  })
 })
 
 describe('queryCards server-side sort (matches CatalogPage sortCards)', () => {
@@ -131,6 +165,26 @@ describe('queryCards server-side sort (matches CatalogPage sortCards)', () => {
     const expectedOrder = sortCards(cards, sortOption).map((card) => card.id)
     expect(result.serverPaginated).toBe(true)
     expect(result.cards.map((card) => card.id)).toEqual(expectedOrder)
+  })
+
+  it.each(options)('orders deduplicated results by %s the same as the JS sortCards comparator', async (sortOption) => {
+    await seedCards(cards)
+
+    const result = await queryCards({
+      text: '',
+      sets: [],
+      types: [],
+      rarities: [],
+      colors: [],
+      colorMode: 'exactly',
+      showAllPrints: false,
+      sortOption,
+    })
+
+    expect(result.serverPaginated).toBe(true)
+    expect(result.cards.map((card) => card.id)).toEqual(
+      sortCards(cards, sortOption).map((card) => card.id),
+    )
   })
 })
 

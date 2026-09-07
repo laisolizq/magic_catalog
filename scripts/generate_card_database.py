@@ -11,6 +11,7 @@ import os
 import re
 import sqlite3
 import sys
+from functools import cmp_to_key
 import tempfile
 import time
 import urllib.request
@@ -20,7 +21,7 @@ from typing import Any
 
 USER_AGENT = "magic_catalog/1.0 (card database generator)"
 BULK_DATA_URL = "https://api.scryfall.com/bulk-data"
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 # Matches JS Number.MAX_SAFE_INTEGER, used as the sort key for collector
 # numbers that don't start with a digit (mirrors collectorSortKey in
 # CatalogPage.tsx/selectLatestPrintings.ts).
@@ -156,6 +157,30 @@ def collector_sort_key(value: str | None) -> tuple[int, str]:
     if not match:
         return (MAX_SAFE_INTEGER, value or "")
     return (int(match.group(1)), match.group(2).lower())
+
+
+def printing_preference_key(card: dict[str, Any]) -> tuple[Any, ...]:
+    """Return the same preference ordering used by selectLatestPrintings.ts."""
+    set_type = card.get("setType") or ""
+    tier = 0 if set_type in {"core", "expansion"} else 1
+    release_date = card.get("releasedAt") or ""
+    release_key = _reverse_string(release_date) if tier == 0 else release_date
+    promo_key = 1 if set_type == "promo" else 0
+    collector_numeric, collector_suffix = collector_sort_key(card.get("collectorNumber"))
+    return (
+        tier,
+        promo_key,
+        release_key,
+        card.get("set") or "",
+        collector_numeric,
+        collector_suffix,
+        card.get("id") or "",
+    )
+
+
+def _reverse_string(value: str) -> tuple[int, ...]:
+    """Make lexicographic ascending order prefer a later ISO date."""
+    return tuple(255 - byte for byte in value.encode("utf-8"))
 
 
 def normalize_card(
@@ -432,6 +457,37 @@ def compute_preferred_printings(
     return preferred_ids
 
 
+def compute_printing_preference_ranks(
+    cards_path: Path,
+    previous_added_dates: dict[str, str],
+    generation_date: str,
+    recent_only: bool,
+    cutoff_date: str,
+) -> dict[str, int]:
+    """Rank every printing so filtered SQL queries can choose a local winner."""
+    printings_by_name: dict[str, list[dict[str, Any]]] = {}
+    for card, _ in iter_included_cards(cards_path, previous_added_dates, generation_date, recent_only, cutoff_date):
+        printings_by_name.setdefault(card["primaryFaceName"], []).append(card)
+
+    ranks: dict[str, int] = {}
+    for printings in printings_by_name.values():
+        def compare(left: dict[str, Any], right: dict[str, Any]) -> int:
+            left_tier = tier_index_for_set_type(left.get("setType"))
+            right_tier = tier_index_for_set_type(right.get("setType"))
+            if left_tier != right_tier:
+                return -1 if left_tier < right_tier else 1
+            return -compare_printing_preference(
+                left,
+                right,
+                left_tier != 0,
+            )
+
+        for rank, card in enumerate(sorted(printings, key=cmp_to_key(compare))):
+            ranks[card["id"]] = rank
+
+    return ranks
+
+
 def build_sqlite_database(
     cards_path: Path,
     rulings_path: Path,
@@ -472,7 +528,8 @@ def build_sqlite_database(
             primary_mana_value REAL NOT NULL DEFAULT 0,
             collector_number_numeric INTEGER NOT NULL DEFAULT 9007199254740991,
             collector_number_suffix TEXT NOT NULL DEFAULT '',
-            is_preferred_printing INTEGER NOT NULL DEFAULT 0
+            is_preferred_printing INTEGER NOT NULL DEFAULT 0,
+            printing_preference_rank INTEGER NOT NULL DEFAULT 0
         );
         CREATE TABLE face_types (
             card_id TEXT NOT NULL,
@@ -519,12 +576,15 @@ def build_sqlite_database(
     preferred_ids = compute_preferred_printings(
         cards_path, previous_added_dates, generation_date, recent_only, cutoff_date,
     )
+    preference_ranks = compute_printing_preference_ranks(
+        cards_path, previous_added_dates, generation_date, recent_only, cutoff_date,
+    )
 
     for card, card_added_at in iter_included_cards(
         cards_path, previous_added_dates, generation_date, recent_only, cutoff_date,
     ):
         database.execute(
-            'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             (
                 card['id'], card['set'], card.get('setType', ''),
                 card.get('releasedAt', ''),
@@ -538,6 +598,7 @@ def build_sqlite_database(
                 card['collectorNumberNumeric'],
                 card['collectorNumberSuffix'],
                 1 if card['id'] in preferred_ids else 0,
+                preference_ranks[card['id']],
             ),
         )
         card_count += 1
@@ -607,6 +668,7 @@ def build_sqlite_database(
         CREATE INDEX cards_primary_mana_value_idx ON cards(primary_mana_value);
         CREATE INDEX cards_collector_idx ON cards(set_code, collector_number_numeric, collector_number_suffix);
         CREATE INDEX cards_preferred_idx ON cards(is_preferred_printing);
+        CREATE INDEX cards_preference_rank_idx ON cards(primary_face_name, printing_preference_rank);
         CREATE INDEX face_types_name_idx ON face_types(type_name);
         CREATE INDEX face_types_card_idx ON face_types(card_id);
         CREATE INDEX face_subtypes_name_idx ON face_subtypes(subtype_name);
@@ -658,7 +720,22 @@ def main() -> int:
                     )
                     return 0
                 else:
-                    print("[generate-card-database] Scryfall data has been updated; regenerating...", file=sys.stderr)
+                    updated_sources = []
+                    previous_source_updated_at = previous_metadata.get("sourceUpdatedAt")
+                    if previous_source_updated_at != source_updated_at:
+                        updated_sources.append(
+                            f"card data ({previous_source_updated_at or 'unknown'} -> {source_updated_at})"
+                        )
+                    previous_rulings_updated_at = previous_metadata.get("rulingsSourceUpdatedAt")
+                    if previous_rulings_updated_at != rulings_updated_at:
+                        updated_sources.append(
+                            f"rulings ({previous_rulings_updated_at or 'unknown'} -> {rulings_updated_at})"
+                        )
+                    print(
+                        "[generate-card-database] Scryfall data updated: "
+                        f"{'; '.join(updated_sources)}; regenerating...",
+                        file=sys.stderr,
+                    )
             except Exception as error:
                 print(
                     f"Warning: could not check for updates ({error}); proceeding with regeneration.",
