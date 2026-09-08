@@ -2,13 +2,15 @@ import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 
 import { AppHeader } from '../../../../App/components/AppHeader/AppHeader'
+import type { CatalogImportProgress } from '../../../../services/catalogImport'
 import './CatalogChrome.css'
 
 interface BasicCatalogChromeProps {
   children: ReactNode
+  catalogProgress?: CatalogImportProgress
 }
 
-export function BasicCatalogChrome({ children }: BasicCatalogChromeProps) {
+export function BasicCatalogChrome({ children, catalogProgress }: BasicCatalogChromeProps) {
   const outerRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
   const contentHeightRef = useRef(0)
@@ -99,7 +101,7 @@ export function BasicCatalogChrome({ children }: BasicCatalogChromeProps) {
         className="catalog-chrome-inner"
         ref={innerRef}
       >
-        <AppHeader />
+        <AppHeader catalogProgress={catalogProgress} />
         {children}
       </div>
     </div>

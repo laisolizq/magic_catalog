@@ -15,6 +15,7 @@
     "test:integration": "npm run test:integration:fetch-db && vitest run --config vitest.integration.config.ts",
     "data:database": "python3 scripts/generate_card_database.py",
     "data:serve": "python3 scripts/serve_card_database.py",
+    "serve": "npm run data:serve",
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",

@@ -7,6 +7,7 @@ import {
 } from '../db/sqliteClient'
 
 export interface CatalogImportProgress {
+  database: 'full' | 'recent'
   phase: string
   percent: number
 }
@@ -34,12 +35,13 @@ export async function importCatalogArtifact(
   source: Blob | ArrayBuffer,
   artifact: CatalogArtifactMetadata,
   onProgress?: (progress: CatalogImportProgress) => void,
+  database: CatalogImportProgress['database'] = 'full',
 ): Promise<void> {
   if (artifact.dbFormat !== 'sqlite') {
     throw new Error('The catalog artifact is not a SQLite database.')
   }
 
-  onProgress?.({ phase: 'Reading SQLite database', percent: 10 })
+  onProgress?.({ database, phase: 'Initializing: reading SQLite database', percent: 0 })
   const bytes = await readDatabaseBytes(source)
   const checksum = await sha256(bytes)
   if (checksum !== artifact.databaseChecksum) {
@@ -54,8 +56,9 @@ export async function importCatalogArtifact(
     cardCount: artifact.cardCount,
     checksum: artifact.databaseChecksum.slice(0, 12),
   })
-  onProgress?.({ phase: 'Validating SQLite database', percent: 50 })
+  onProgress?.({ database, phase: 'Initializing: saving SQLite database', percent: 25 })
   await replaceCatalogDatabase(bytes)
+  onProgress?.({ database, phase: 'Initializing: database saved', percent: 75 })
   await persistCatalogMetadata({
     id: 'catalog',
     schemaVersion: artifact.schemaVersion,
@@ -72,7 +75,7 @@ export async function importCatalogArtifact(
     artifactVersion: artifact.artifactVersion,
     cardCount: artifact.cardCount,
   })
-  onProgress?.({ phase: 'Catalog ready', percent: 100 })
+  onProgress?.({ database, phase: 'Initializing: catalog ready', percent: 100 })
 }
 
 export async function hasLocalCatalog(): Promise<boolean> {

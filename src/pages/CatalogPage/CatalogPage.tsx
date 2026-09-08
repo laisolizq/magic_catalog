@@ -309,6 +309,7 @@ export function CatalogPage() {
   const [isCatalogReady, setIsCatalogReady] = useState(false)
   const [catalogRevision, setCatalogRevision] = useState(0)
   const [catalogProgress, setCatalogProgress] = useState<CatalogImportProgress>({
+    database: 'recent',
     phase: '',
     percent: 0,
   })
@@ -947,13 +948,13 @@ export function CatalogPage() {
       aria-label="Catalog Page"
     >
       {isAdvancedOpen ? (
-        <AdvancedCatalogChrome>
+        <AdvancedCatalogChrome catalogProgress={catalogProgress}>
           <div className="search-bar-wrapper">
             {catalogSearchBar}
           </div>
         </AdvancedCatalogChrome>
       ) : (
-        <BasicCatalogChrome>
+        <BasicCatalogChrome catalogProgress={catalogProgress}>
           <div className="search-bar-wrapper">
             {catalogSearchBar}
           </div>

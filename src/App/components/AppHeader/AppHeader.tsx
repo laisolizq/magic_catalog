@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 
 import { InstallPopup } from '../InstallPopup/InstallPopup'
 import { readCatalogMetadata } from '../../../db/sqliteClient'
+import type { CatalogImportProgress } from '../../../services/catalogImport'
 import type { CatalogArtifactMetadata } from '../../../types/catalog'
 import './AppHeader.css'
 
@@ -19,7 +20,24 @@ function formatDatabaseGeneratedAt(generatedAt: string): string | null {
   }).format(date)
 }
 
-export function AppHeader() {
+function formatCatalogProgress(progress: CatalogImportProgress): string {
+  const databaseLabel = `${progress.database} database`
+  if (progress.phase === 'Downloading database') {
+    return `Downloading ${databaseLabel}`
+  }
+
+  if (progress.phase.startsWith('Initializing: ')) {
+    return `Initializing ${databaseLabel}: ${progress.phase.slice('Initializing: '.length)}`
+  }
+
+  return progress.phase
+}
+
+interface AppHeaderProps {
+  catalogProgress?: CatalogImportProgress
+}
+
+export function AppHeader({ catalogProgress }: AppHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isDeveloperMode, setIsDeveloperMode] = useState(() => {
     try {
@@ -209,6 +227,11 @@ export function AppHeader() {
                 <span>Version {__APP_VERSION__}</span>
                 {databaseGeneratedAt && (
                   <span>Database: {databaseGeneratedAt}</span>
+                )}
+                {catalogProgress?.phase && (
+                  <span>
+                    {formatCatalogProgress(catalogProgress)} ({catalogProgress.percent}%)
+                  </span>
                 )}
               </div>
               <button

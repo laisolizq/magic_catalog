@@ -4,9 +4,10 @@ import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
 import type { Deck } from '../types/deck'
 
 const DATABASE_NAME = 'magic-catalog-sqlite'
-const DATABASE_VERSION = 2
+const DATABASE_VERSION = 3
 const DATABASE_STORE = 'database'
 const DATABASE_KEY = 'catalog'
+const DOWNLOADS_STORE = 'catalog-downloads'
 const DECKS_STORE = 'decks'
 const REQUIRED_CATALOG_COLUMNS = [
   'primary_face_name',
@@ -24,11 +25,67 @@ function openStorage(): Promise<IDBDatabase> {
     request.onupgradeneeded = () => {
       const db = request.result
       if (!db.objectStoreNames.contains(DATABASE_STORE)) db.createObjectStore(DATABASE_STORE)
+      if (!db.objectStoreNames.contains(DOWNLOADS_STORE)) db.createObjectStore(DOWNLOADS_STORE)
       if (!db.objectStoreNames.contains(DECKS_STORE)) db.createObjectStore(DECKS_STORE, { keyPath: 'id' })
     }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error)
   })
+}
+
+export interface CatalogDownloadCheckpoint {
+  bytes: Uint8Array
+  totalBytes?: number
+}
+
+export async function readCatalogDownloadCheckpoint(
+  key: string,
+): Promise<CatalogDownloadCheckpoint | null> {
+  const storage = await openStorage()
+  return new Promise((resolve, reject) => {
+    const request = storage.transaction(DOWNLOADS_STORE, 'readonly')
+      .objectStore(DOWNLOADS_STORE)
+      .get(key)
+    request.onsuccess = () => {
+      storage.close()
+      const checkpoint = request.result as { bytes: Uint8Array; totalBytes?: number } | undefined
+      resolve(checkpoint ? { bytes: new Uint8Array(checkpoint.bytes), totalBytes: checkpoint.totalBytes } : null)
+    }
+    request.onerror = () => {
+      storage.close()
+      reject(request.error)
+    }
+  })
+}
+
+export async function persistCatalogDownloadCheckpoint(
+  key: string,
+  checkpoint: CatalogDownloadCheckpoint,
+): Promise<void> {
+  const storage = await openStorage()
+  await new Promise<void>((resolve, reject) => {
+    const request = storage.transaction(DOWNLOADS_STORE, 'readwrite')
+      .objectStore(DOWNLOADS_STORE)
+      .put({
+        bytes: checkpoint.bytes,
+        totalBytes: checkpoint.totalBytes,
+      }, key)
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+  })
+  storage.close()
+}
+
+export async function clearCatalogDownloadCheckpoint(key: string): Promise<void> {
+  const storage = await openStorage()
+  await new Promise<void>((resolve, reject) => {
+    const request = storage.transaction(DOWNLOADS_STORE, 'readwrite')
+      .objectStore(DOWNLOADS_STORE)
+      .delete(key)
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+  })
+  storage.close()
 }
 
 async function readStoredDatabase(): Promise<Uint8Array | null> {
@@ -118,13 +175,8 @@ export async function getCatalogDatabase(): Promise<Database | null> {
 }
 
 export async function replaceCatalogDatabase(bytes: Uint8Array): Promise<void> {
-  const SQL = await initSqlJs({ locateFile: () => wasmUrl })
-  const nextDatabase = new SQL.Database(bytes)
-  nextDatabase.exec('PRAGMA integrity_check')
-  nextDatabase.close()
-
   await persistCatalogDatabase(bytes)
-  databasePromise = Promise.resolve(new SQL.Database(bytes))
+  databasePromise = null
 }
 
 export async function hasLocalCatalog(): Promise<boolean> {

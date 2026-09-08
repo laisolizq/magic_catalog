@@ -26,6 +26,12 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
+    proxy: {
+      '/catalog-artifact': {
+        target: 'http://127.0.0.1:8080',
+        rewrite: (path) => path.replace(/^\/catalog-artifact/, ''),
+      },
+    },
     warmup: {
       clientFiles: ['./src/main.tsx', './src/App.tsx'],
     },

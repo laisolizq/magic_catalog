@@ -1,5 +1,10 @@
 import type { CatalogArtifactMetadata } from '../types/catalog'
 import {
+  clearCatalogDownloadCheckpoint,
+  persistCatalogDownloadCheckpoint,
+  readCatalogDownloadCheckpoint,
+} from '../db/sqliteClient'
+import {
   getCatalogMetadata,
   importCatalogArtifact,
   type CatalogImportProgress,
@@ -39,7 +44,7 @@ export type CatalogUpdateStatus =
 export async function bootstrapCatalogFromEmbeddedAssets(
   onProgress?: (progress: CatalogImportProgress) => void,
 ): Promise<CatalogUpdateStatus> {
-  onProgress?.({ phase: 'Loading starter catalog', percent: 5 })
+  onProgress?.({ database: 'recent', phase: 'Preparing recent database', percent: 0 })
 
   if (BOOTSTRAP_DATABASE_URL && BOOTSTRAP_METADATA_URL) {
     return updateFromLocalArtifact(
@@ -126,16 +131,115 @@ function metadataForDatabase(
   }
 }
 
-async function fetchArtifactBlob(url: string): Promise<Blob> {
+type DownloadProgress = (percent: number) => void
+
+async function responseToBlob(
+  response: Response,
+  onProgress?: DownloadProgress,
+  expectedBytes?: number,
+  prefix = new Uint8Array() as unknown as Uint8Array<ArrayBuffer>,
+  checkpointKey?: string,
+): Promise<Blob> {
+  const reader = response.body?.getReader()
+  if (!reader) {
+    const blob = await response.blob()
+    onProgress?.(100)
+    return blob
+  }
+
+  const contentLength = Number(response.headers.get('content-length'))
+  const totalBytes = Number.isFinite(contentLength) && contentLength > 0
+    ? contentLength + prefix.byteLength
+    : expectedBytes
+  const chunks: Uint8Array[] = [prefix]
+  let receivedBytes = prefix.byteLength
+  let persistedBytes = prefix.byteLength
+  let pendingBytes = 0
+  let lastPercent = -1
+
+  const reportProgress = () => {
+    if (!totalBytes) return
+    const percent = Math.min(99, Math.floor((receivedBytes / totalBytes) * 100))
+    if (percent === lastPercent) return
+    lastPercent = percent
+    onProgress?.(percent)
+  }
+
+  try {
+    while (true) {
+      const result = await reader.read()
+      if (result.done) break
+      chunks.push(new Uint8Array(result.value) as unknown as Uint8Array<ArrayBuffer>)
+      receivedBytes += result.value.byteLength
+      pendingBytes += result.value.byteLength
+      reportProgress()
+      if (checkpointKey && pendingBytes >= 4 * 1024 * 1024) {
+        await persistCatalogDownloadCheckpoint(checkpointKey, {
+          bytes: concatBytes(chunks),
+          totalBytes,
+        })
+        persistedBytes = receivedBytes
+        pendingBytes = 0
+      }
+    }
+  } finally {
+    reader.releaseLock()
+  }
+
+  onProgress?.(100)
+  if (checkpointKey && receivedBytes > persistedBytes) {
+    await persistCatalogDownloadCheckpoint(checkpointKey, {
+      bytes: concatBytes(chunks),
+      totalBytes,
+    })
+  }
+  return new Blob(
+    chunks as unknown as BlobPart[],
+    { type: response.headers.get('content-type') || 'application/octet-stream' },
+  )
+}
+
+function concatBytes(chunks: Uint8Array[]): Uint8Array {
+  const bytes = new Uint8Array(chunks.reduce((total, chunk) => total + chunk.byteLength, 0))
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return bytes
+}
+
+async function fetchArtifactBlob(
+  url: string,
+  onProgress?: DownloadProgress,
+  expectedBytes?: number,
+  checkpointKey?: string,
+): Promise<Blob> {
   let lastError: unknown
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
+      const checkpoint = checkpointKey
+        ? await readCatalogDownloadCheckpoint(checkpointKey)
+        : null
+      const resumeBytes = (checkpoint?.bytes ?? new Uint8Array()) as unknown as Uint8Array<ArrayBuffer>
       const response = await fetch(url, {
         cache: 'no-store',
+        headers: resumeBytes.byteLength > 0
+          ? { Range: `bytes=${resumeBytes.byteLength}-` }
+          : undefined,
       })
       if (!response.ok) throw new Error(`Artifact request failed with HTTP ${response.status}`)
-      return await response.blob()
+      const canResume = resumeBytes.byteLength > 0 && response.status === 206
+      const blob = await responseToBlob(
+        response,
+        onProgress,
+        expectedBytes,
+        canResume ? resumeBytes : new Uint8Array(),
+        checkpointKey,
+      )
+      if (checkpointKey) await clearCatalogDownloadCheckpoint(checkpointKey)
+      return blob
     } catch (error) {
       lastError = error
       if (attempt === 2) throw lastError
@@ -146,26 +250,47 @@ async function fetchArtifactBlob(url: string): Promise<Blob> {
   throw lastError
 }
 
-async function fetchReleaseAssetBlob(asset: GitHubReleaseAsset): Promise<Blob> {
+async function fetchReleaseAssetBlob(
+  asset: GitHubReleaseAsset,
+  onProgress?: DownloadProgress,
+  expectedBytes?: number,
+  checkpointKey?: string,
+): Promise<Blob> {
   if (typeof asset.id !== 'number') {
-    return fetchArtifactBlob(asset.browser_download_url)
+    return fetchArtifactBlob(asset.browser_download_url, onProgress, expectedBytes, checkpointKey)
   }
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
+      const checkpoint = checkpointKey
+        ? await readCatalogDownloadCheckpoint(checkpointKey)
+        : null
+      const resumeBytes = (checkpoint?.bytes ?? new Uint8Array()) as unknown as Uint8Array<ArrayBuffer>
       const response = await fetch(
         `https://api.github.com/repos/laisolizq/magic_catalog/releases/assets/${asset.id}`,
         {
           cache: 'no-store',
           headers: {
             Accept: 'application/octet-stream',
+            ...(resumeBytes.byteLength > 0
+              ? { Range: `bytes=${resumeBytes.byteLength}-` }
+              : {}),
           },
         },
       )
       if (!response.ok) {
         throw new Error(`Release asset request failed with HTTP ${response.status}`)
       }
-      return await response.blob()
+      const canResume = resumeBytes.byteLength > 0 && response.status === 206
+      const blob = await responseToBlob(
+        response,
+        onProgress,
+        expectedBytes,
+        canResume ? resumeBytes : new Uint8Array(),
+        checkpointKey,
+      )
+      if (checkpointKey) await clearCatalogDownloadCheckpoint(checkpointKey)
+      return blob
     } catch (error) {
       void error
       if (attempt === 2) break
@@ -174,7 +299,7 @@ async function fetchReleaseAssetBlob(asset: GitHubReleaseAsset): Promise<Blob> {
   }
 
   console.warn(`[catalog] release asset API fetch failed; falling back to browser URL for ${asset.name}`)
-  return fetchArtifactBlob(asset.browser_download_url)
+  return fetchArtifactBlob(asset.browser_download_url, onProgress, expectedBytes, checkpointKey)
 }
 
 async function updateFromLocalArtifact(
@@ -198,15 +323,25 @@ async function updateFromLocalArtifact(
 
   logDatabaseDownload(metadata, databaseUrl)
   const databaseStartedAt = performance.now()
-  const databaseBlob = await fetchArtifactBlob(databaseUrl)
+  const reportDownloadProgress = (percent: number) => {
+    onProgress?.({ database, phase: 'Downloading database', percent })
+  }
+  reportDownloadProgress(0)
+  const checkpointKey = `catalog:${database}:${metadata.databaseChecksum}`
+  const databaseBlob = await fetchArtifactBlob(
+    databaseUrl,
+    reportDownloadProgress,
+    metadata.databaseCompressedBytes,
+    checkpointKey,
+  )
   logCompleted('SQLite database download', databaseStartedAt)
-  onProgress?.({ phase: 'Downloading SQLite database', percent: 15 })
 
   const importStartedAt = performance.now()
   await importCatalogArtifact(
     databaseBlob,
     metadata,
     onProgress,
+    database,
   )
   logCompleted('SQLite catalog import', importStartedAt)
   logCompleted('catalog update', updateStartedAt)
@@ -240,15 +375,25 @@ async function updateFromGitHubRelease(
 
   logDatabaseDownload(metadata, databaseAsset.browser_download_url)
   const databaseStartedAt = performance.now()
-  const databaseBlob = await fetchReleaseAssetBlob(databaseAsset)
+  const reportDownloadProgress = (percent: number) => {
+    onProgress?.({ database: 'full', phase: 'Downloading database', percent })
+  }
+  reportDownloadProgress(0)
+  const checkpointKey = `catalog:full:${metadata.databaseChecksum}`
+  const databaseBlob = await fetchReleaseAssetBlob(
+    databaseAsset,
+    reportDownloadProgress,
+    metadata.databaseCompressedBytes,
+    checkpointKey,
+  )
   logCompleted('SQLite database download', databaseStartedAt)
-  onProgress?.({ phase: 'Downloading SQLite database', percent: 15 })
 
   const importStartedAt = performance.now()
   await importCatalogArtifact(
     databaseBlob,
     { ...metadata, artifactVersion: metadata.artifactVersion || release.tag_name },
     onProgress,
+    'full',
   )
   logCompleted('SQLite catalog import', importStartedAt)
   return 'updated'
