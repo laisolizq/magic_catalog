@@ -1,7 +1,7 @@
 {
   "artifactVersion": "1",
   "schemaVersion": 9,
-  "generatedAt": "2026-09-07T22:49:57.665928+00:00",
+  "generatedAt": "2026-09-08T01:12:05.463851+00:00",
   "sourceUpdatedAt": "2026-09-07T21:05:28.970+00:00",
   "rulingsSourceUpdatedAt": "2026-09-07T21:00:31.723+00:00",
   "cardCount": 105173,
@@ -25,7 +25,7 @@
       "compressedBytes": 1635323,
       "uncompressedBytes": 6828032,
       "description": "Cards added in the last 3 months",
-      "cutoffDate": "2026-06-09"
+      "cutoffDate": "2026-06-10"
     }
   },
   "databaseAssetName": "catalog.sqlite.gz",
