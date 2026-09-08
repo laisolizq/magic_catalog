@@ -4,6 +4,7 @@ import path from 'node:path'
 import { mockCards } from '../data/mockCards'
 import type { Card } from '../types/card'
 import { persistCatalogMetadata, replaceCatalogDatabase } from '../db/sqliteClient'
+import { CATALOG_SCHEMA_VERSION } from '../types/catalog'
 import { selectLatestPrintings } from '../pages/CatalogPage/selectLatestPrintings'
 
 // Real set names/types, matching Scryfall, for the sets present in
@@ -61,7 +62,7 @@ export async function seedCards(
   })
   const database = new SQL.Database()
   database.exec(`
-    CREATE TABLE cards (id TEXT PRIMARY KEY, set_code TEXT NOT NULL, set_type TEXT NOT NULL DEFAULT '', released_at TEXT NOT NULL DEFAULT '', collector_number TEXT, oracle_id TEXT, rarity TEXT NOT NULL, faces_json TEXT NOT NULL, added_at TEXT NOT NULL DEFAULT '', legalities_json TEXT NOT NULL DEFAULT '', primary_face_name TEXT NOT NULL DEFAULT '', primary_mana_value REAL NOT NULL DEFAULT 0, collector_number_numeric INTEGER NOT NULL DEFAULT 9007199254740991, collector_number_suffix TEXT NOT NULL DEFAULT '', is_preferred_printing INTEGER NOT NULL DEFAULT 0);
+    CREATE TABLE cards (id TEXT PRIMARY KEY, set_code TEXT NOT NULL, set_type TEXT NOT NULL DEFAULT '', released_at TEXT NOT NULL DEFAULT '', collector_number TEXT, oracle_id TEXT, rarity TEXT NOT NULL, faces_json TEXT NOT NULL, added_at TEXT NOT NULL DEFAULT '', legalities_json TEXT NOT NULL DEFAULT '', primary_face_name TEXT NOT NULL DEFAULT '', primary_mana_value REAL NOT NULL DEFAULT 0, collector_number_numeric INTEGER NOT NULL DEFAULT 9007199254740991, collector_number_suffix TEXT NOT NULL DEFAULT '', is_preferred_printing INTEGER NOT NULL DEFAULT 0, printing_preference_rank INTEGER NOT NULL DEFAULT 0);
     CREATE TABLE face_types (card_id TEXT, face_index INTEGER, type_name TEXT, PRIMARY KEY (card_id, face_index, type_name));
     CREATE TABLE face_subtypes (card_id TEXT, face_index INTEGER, subtype_name TEXT, PRIMARY KEY (card_id, face_index, subtype_name));
     CREATE TABLE face_colors (card_id TEXT, face_index INTEGER, color TEXT, PRIMARY KEY (card_id, face_index, color));
@@ -77,7 +78,7 @@ export async function seedCards(
     CREATE INDEX sets_released_at_idx ON sets(released_at);
   `)
 
-  const insertCard = database.prepare('INSERT INTO cards (id, set_code, set_type, released_at, collector_number, oracle_id, rarity, faces_json, added_at, legalities_json, primary_face_name, primary_mana_value, collector_number_numeric, collector_number_suffix, is_preferred_printing) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+  const insertCard = database.prepare('INSERT INTO cards (id, set_code, set_type, released_at, collector_number, oracle_id, rarity, faces_json, added_at, legalities_json, primary_face_name, primary_mana_value, collector_number_numeric, collector_number_suffix, is_preferred_printing, printing_preference_rank) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
   const insertType = database.prepare('INSERT OR IGNORE INTO face_types VALUES (?, ?, ?)')
   const insertSubtype = database.prepare('INSERT OR IGNORE INTO face_subtypes VALUES (?, ?, ?)')
   const insertColor = database.prepare('INSERT OR IGNORE INTO face_colors VALUES (?, ?, ?)')
@@ -86,6 +87,22 @@ export async function seedCards(
   // Reference implementation (not a re-port) so the fixture's dedup column
   // always matches whatever selectLatestPrintings.ts actually does.
   const preferredIds = new Set(selectLatestPrintings(cards).map((card) => card.id))
+  const ranks = new Map<string, number>()
+  const cardsByName = new Map<string, Card[]>()
+  cards.forEach((card) => {
+    const name = card.faces[0]?.name ?? ''
+    cardsByName.set(name, [...(cardsByName.get(name) ?? []), card])
+  })
+  cardsByName.forEach((printings) => {
+    let remaining = [...printings]
+    let rank = 0
+    while (remaining.length > 0) {
+      const preferred = selectLatestPrintings(remaining)[0]
+      if (!preferred) break
+      ranks.set(preferred.id, rank++)
+      remaining = remaining.filter((card) => card.id !== preferred.id)
+    }
+  })
 
   for (const card of cards) {
     const primaryFace = card.faces[0]
@@ -106,6 +123,7 @@ export async function seedCards(
       collectorNumeric,
       collectorSuffix,
       preferredIds.has(card.id) ? 1 : 0,
+      ranks.get(card.id) ?? 0,
     ])
     card.faces.forEach((face, faceIndex) => {
       const [mainPart, subtypePart] = face.typeLine.split('\u2014')
@@ -138,7 +156,7 @@ export async function seedCards(
   await replaceCatalogDatabase(bytes)
   await persistCatalogMetadata({
     id: 'catalog',
-    schemaVersion: 5,
+    schemaVersion: CATALOG_SCHEMA_VERSION,
     artifactVersion: 'test',
     generatedAt: new Date().toISOString(),
     databaseChecksum: 'test',
