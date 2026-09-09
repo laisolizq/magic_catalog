@@ -46,6 +46,7 @@ export function CardModal({
   const [currentFaceIndex, setCurrentFaceIndex] = useState<number>(
     Math.max(0, Math.min(initialFaceIndex, (card.faces || []).length - 1)),
   )
+  const [loadedImageUrl, setLoadedImageUrl] = useState<string | null>(null)
   const [rulingsOpen, setRulingsOpen] = useState(false)
   const [rulings, setRulings] = useState(card.rulings ?? [])
 
@@ -148,14 +149,14 @@ export function CardModal({
 
     // Vertical swipes: navigate faces; if at boundary, navigate cards
     if (absY > absX && absY > SWIPE_THRESHOLD) {
-      if (deltaY < -SWIPE_THRESHOLD) {
-        // swipe up -> next face
+      if (deltaY > SWIPE_THRESHOLD) {
+        // swipe down -> next face
         goToNextFace()
         return
       }
 
-      if (deltaY > SWIPE_THRESHOLD) {
-        // swipe down -> previous face
+      if (deltaY < -SWIPE_THRESHOLD) {
+        // swipe up -> previous face
         goToPreviousFace()
       }
     }
@@ -227,6 +228,8 @@ export function CardModal({
   }, [initialFaceIndex, card.faces])
 
   const face = card.faces?.[currentFaceIndex]
+  const imageUrl = face?.imageUrl
+  const isImageLoaded = Boolean(imageUrl) && loadedImageUrl === imageUrl
 
   const toggleRulings = () => {
     setRulingsOpen((v) => !v)
@@ -257,7 +260,15 @@ export function CardModal({
         }}
       >
         <div className="card-modal-image-wrap">
-          <img className="card-modal-image" src={face?.imageUrl} alt={face?.name} />
+          {!isImageLoaded && (
+            <div className="card-modal-image-placeholder" aria-hidden="true" />
+          )}
+          <img
+            className={`card-modal-image ${isImageLoaded ? 'is-loaded' : ''}`}
+            src={imageUrl}
+            alt={face?.name}
+            onLoad={() => setLoadedImageUrl(imageUrl ?? null)}
+          />
         </div>
 
         <ControlsBar

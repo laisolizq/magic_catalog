@@ -281,6 +281,12 @@ export function CatalogPage() {
   const [selectedCard, setSelectedCard] =
     useState<Card | null>(null)
 
+  const [isLoadingNextModalBatch, setIsLoadingNextModalBatch] =
+    useState(false)
+
+  const [shouldAdvanceToNextModalCard, setShouldAdvanceToNextModalCard] =
+    useState(false)
+
   const [selectedFaceIndex, setSelectedFaceIndex] =
     useState<number>(0)
 
@@ -489,6 +495,8 @@ export function CatalogPage() {
         hasLoadedCatalogRef.current = true
       } catch (error) {
         if (cancelled) return
+        setIsLoadingNextModalBatch(false)
+        setShouldAdvanceToNextModalCard(false)
         setCatalogError(
           error instanceof Error ? error.message : 'Unable to load the card catalog.',
         )
@@ -634,6 +642,36 @@ export function CatalogPage() {
         )
       : -1
 
+  const canLoadMoreModalCards =
+    isServerPaginated && modalCards.length < catalogTotal
+
+  const hasNextModalCard =
+    selectedCardIndex >= 0 &&
+    (selectedCardIndex < modalCards.length - 1 || canLoadMoreModalCards)
+
+  useEffect(() => {
+    if (
+      !isLoadingNextModalBatch ||
+      selectedCardIndex < 0 ||
+      selectedCardIndex >= modalCards.length - 1
+    ) return
+
+    const timer = window.setTimeout(() => {
+      if (shouldAdvanceToNextModalCard) {
+        setSelectedCard(modalCards[selectedCardIndex + 1])
+      }
+      setShouldAdvanceToNextModalCard(false)
+      setIsLoadingNextModalBatch(false)
+    }, 0)
+
+    return () => window.clearTimeout(timer)
+  }, [
+    modalCards,
+    selectedCardIndex,
+    isLoadingNextModalBatch,
+    shouldAdvanceToNextModalCard,
+  ])
+
   const showPreviousCard = () => {
     if (selectedCardIndex <= 0) return
 
@@ -642,12 +680,30 @@ export function CatalogPage() {
     )
   }
 
+  const loadNextModalBatch = () => {
+    if (!canLoadMoreModalCards || isLoadingNextModalBatch) return
+
+    setIsLoadingNextModalBatch(true)
+    setVisibleCount((previous) =>
+      Math.min(previous + BATCH_SIZE, catalogTotal),
+    )
+  }
+
   const showNextCard = () => {
-    if (
-      selectedCardIndex < 0 ||
-      selectedCardIndex >= modalCards.length - 1
-    ) {
+    if (selectedCardIndex < 0) {
       return
+    }
+
+    if (selectedCardIndex >= modalCards.length - 1) {
+      if (!canLoadMoreModalCards) return
+
+      setShouldAdvanceToNextModalCard(true)
+      loadNextModalBatch()
+      return
+    }
+
+    if (selectedCardIndex === modalCards.length - 2) {
+      loadNextModalBatch()
     }
 
     setSelectedCard(
@@ -689,6 +745,8 @@ export function CatalogPage() {
       setVisibleCount((previous) => Math.max(previous, cardIndex + 1))
     }
 
+    setIsLoadingNextModalBatch(false)
+    setShouldAdvanceToNextModalCard(false)
     setSelectedCard(null)
 
     // The card may need to be rendered before it can be used as a scroll target.
@@ -752,6 +810,8 @@ export function CatalogPage() {
   const handleSortChange = (
     value: SortOption,
   ) => {
+    setIsLoadingNextModalBatch(false)
+    setShouldAdvanceToNextModalCard(false)
     setSortOption(value)
     setVisibleCount(BATCH_SIZE)
   }
@@ -771,6 +831,8 @@ export function CatalogPage() {
   const handleFilterChange = (
     callback: () => void,
   ) => {
+    setIsLoadingNextModalBatch(false)
+    setShouldAdvanceToNextModalCard(false)
     callback()
 
     setVisibleCount(BATCH_SIZE)
@@ -1010,11 +1072,7 @@ export function CatalogPage() {
           onShowPrevious={showPreviousCard}
           onShowNext={showNextCard}
           hasPrevious={selectedCardIndex > 0}
-          hasNext={
-            selectedCardIndex >= 0 &&
-            selectedCardIndex <
-              modalCards.length - 1
-          }
+          hasNext={hasNextModalCard}
           previousCard={
             selectedCardIndex > 0
               ? modalCards[

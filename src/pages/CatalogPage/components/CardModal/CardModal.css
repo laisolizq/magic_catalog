@@ -22,6 +22,9 @@
   min-height: 0;
   display: grid;
   place-items: center;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5 / 7;
   overflow: auto;
 }
 
@@ -32,6 +35,36 @@
   object-fit: contain;
   border-radius: 16px;
   border: 2px solid var(--ink-soft);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.card-modal-image.is-loaded {
+  opacity: 1;
+}
+
+.card-modal-image-placeholder {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 4%) 25%,
+    rgb(255 255 255 / 12%) 37%,
+    rgb(255 255 255 / 4%) 63%
+  );
+  background-size: 400% 100%;
+  animation: card-modal-image-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes card-modal-image-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: 0 0;
+  }
 }
 
 .card-modal-image-wrap::after {
@@ -212,5 +245,11 @@
 
   .card-modal-image {
     max-height: calc(100dvh - 6.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-modal-image-placeholder {
+    animation: none;
   }
 }
