@@ -119,7 +119,7 @@ export function AppHeader({ catalogProgress }: AppHeaderProps) {
 
           <div className="app-brand">
             <span className="app-name">
-              Cardscade
+              Ca<span className="app-name-mark">rd</span>scade
             </span>
           </div>
         </div>

@@ -20,10 +20,6 @@
   display: flex;
   align-items: center;
 
-  /* app-header centers its row, which would otherwise leave a bigger gap
-     above the menu button than beside it - pin it to the top so both match. */
-  align-self: flex-start;
-
   gap: 0.5rem;
 }
 
@@ -67,8 +63,14 @@
 .app-name {
   color: var(--ink-strong);
 
+  font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 700;
+  text-transform: uppercase;
+}
+
+.app-name-mark {
+  color: #ef452f;
 }
 
 /* =========================
