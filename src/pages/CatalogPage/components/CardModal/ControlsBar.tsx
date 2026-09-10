@@ -46,6 +46,11 @@ export function ControlsBar({
         href={scryfallUrl}
         target="_blank"
         rel="noreferrer"
+        onTouchEnd={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          window.open(scryfallUrl, '_blank', 'noopener,noreferrer')
+        }}
         aria-label="Open card on Scryfall"
         title="Open card on Scryfall"
       >
@@ -62,6 +67,11 @@ export function ControlsBar({
         type="button"
         className={`controls-button ${rulingsOpen ? 'active' : ''}`}
         onClick={onToggleRulings}
+        onTouchEnd={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          onToggleRulings()
+        }}
         aria-pressed={rulingsOpen}
         aria-label="Toggle card details"
       >
@@ -92,6 +102,11 @@ export function ControlsBar({
         type="button"
         className={`controls-button ${rulingsOpen ? 'disabled' : ''}`}
         onClick={onClose}
+        onTouchEnd={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          onClose()
+        }}
         aria-label="Close"
         disabled={rulingsOpen}
       >

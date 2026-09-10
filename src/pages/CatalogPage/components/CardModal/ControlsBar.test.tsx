@@ -81,4 +81,35 @@ describe('ControlsBar', () => {
     expect(onShowPrevious).toHaveBeenCalledOnce()
     expect(onShowNext).toHaveBeenCalledOnce()
   })
+
+  it('activates Scryfall, card details, and close on the first touch', () => {
+    const onToggleRulings = vi.fn()
+    const onClose = vi.fn()
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+    render(
+      <ControlsBar
+        card={mockCard}
+        rulingsOpen={false}
+        onToggleRulings={onToggleRulings}
+        onShowPrevious={vi.fn()}
+        onShowNext={vi.fn()}
+        onClose={onClose}
+        hasPrevious={true}
+        hasNext={true}
+      />,
+    )
+
+    fireEvent.touchEnd(screen.getByRole('link', { name: /scryfall/i }))
+    fireEvent.touchEnd(screen.getByRole('button', { name: 'Toggle card details' }))
+    fireEvent.touchEnd(screen.getByRole('button', { name: 'Close' }))
+
+    expect(open).toHaveBeenCalledOnce()
+    expect(open).toHaveBeenCalledWith(
+      'https://scryfall.com/card/hob/1',
+      '_blank',
+      'noopener,noreferrer',
+    )
+    expect(onToggleRulings).toHaveBeenCalledOnce()
+    expect(onClose).toHaveBeenCalledOnce()
+  })
 })

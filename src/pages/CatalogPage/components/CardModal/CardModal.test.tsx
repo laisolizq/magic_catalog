@@ -113,6 +113,25 @@ describe('CardModal', () => {
     expect(getByRole('img', { name: 'Test Card' })).toBeInTheDocument()
   })
 
+  it('responds to the first close, details, and Scryfall touch after a swipe', () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+    const { container, props } = renderModal({ card: doubleFacedCard })
+    const { getByRole } = within(container)
+    const overlay = container.querySelector('.card-modal-overlay') as HTMLElement
+
+    swipe(overlay, { x: 100, y: 700 }, { x: 100, y: 600 })
+    fireEvent.touchEnd(getByRole('link', { name: /scryfall/i }))
+    fireEvent.touchEnd(getByRole('button', { name: 'Close' }))
+    fireEvent.touchEnd(getByRole('button', { name: 'Toggle card details' }))
+
+    expect(open).toHaveBeenCalledOnce()
+    expect(props.onClose).toHaveBeenCalledOnce()
+    expect(getByRole('button', { name: 'Toggle card details' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
   it('swipes up to the next card and down to the previous card at face boundaries', () => {
     const { container, props } = renderModal({ hasPrevious: true, hasNext: true })
     const overlay = container.querySelector('.card-modal-overlay') as HTMLElement
