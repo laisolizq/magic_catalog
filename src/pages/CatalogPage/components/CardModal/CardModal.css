@@ -15,7 +15,7 @@
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   gap: 0.5rem;
-  touch-action: pan-y;
+  touch-action: none;
 }
 
 .card-modal-image-wrap {
@@ -25,7 +25,7 @@
   position: relative;
   width: 100%;
   aspect-ratio: 5 / 7;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .card-modal-image {

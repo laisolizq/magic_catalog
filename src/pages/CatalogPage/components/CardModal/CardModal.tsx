@@ -149,14 +149,14 @@ export function CardModal({
 
     // Vertical swipes: navigate faces; if at boundary, navigate cards
     if (absY > absX && absY > SWIPE_THRESHOLD) {
-      if (deltaY > SWIPE_THRESHOLD) {
-        // swipe down -> next face
+      if (deltaY < -SWIPE_THRESHOLD) {
+        // swipe up -> next face
         goToNextFace()
         return
       }
 
-      if (deltaY < -SWIPE_THRESHOLD) {
-        // swipe up -> previous face
+      if (deltaY > SWIPE_THRESHOLD) {
+        // swipe down -> previous face
         goToPreviousFace()
       }
     }
