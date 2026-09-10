@@ -235,29 +235,40 @@ export function CardModal({
     setRulingsOpen((v) => !v)
   }
 
+  const handleTouchStart = (event: React.TouchEvent) => {
+    const touch = event.changedTouches[0]
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY }
+  }
+
+  const handleTouchEnd = (event: React.TouchEvent) => {
+    const start = touchStartRef.current
+    const touch = event.changedTouches[0]
+    touchStartRef.current = null
+    if (!start || !touch) return
+
+    handleSwipe(touch.clientX - start.x, touch.clientY - start.y)
+  }
+
   const handlePrev = goToPreviousFace
   const handleNext = goToNextFace
 
   return (
-    <div className="card-modal-overlay" role="presentation" onClick={onClose}>
+    <div
+      className="card-modal-overlay"
+      role="presentation"
+      onClick={onClose}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={() => {
+        touchStartRef.current = null
+      }}
+    >
       <aside
         className="card-modal"
         role="dialog"
         aria-modal="true"
         aria-label={`${face?.name ?? ''} details`}
         onClick={(event) => event.stopPropagation()}
-        onTouchStart={(event) => {
-          const touch = event.changedTouches[0]
-          touchStartRef.current = { x: touch.clientX, y: touch.clientY }
-        }}
-        onTouchEnd={(event) => {
-          const start = touchStartRef.current
-          const touch = event.changedTouches[0]
-          if (!start || !touch) return
-
-          handleSwipe(touch.clientX - start.x, touch.clientY - start.y)
-          touchStartRef.current = null
-        }}
       >
         <div className="card-modal-image-wrap">
           {!isImageLoaded && (

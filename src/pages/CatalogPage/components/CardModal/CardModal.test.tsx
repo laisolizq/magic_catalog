@@ -52,14 +52,14 @@ function renderModal(overrides: Partial<React.ComponentProps<typeof CardModal>> 
 }
 
 function swipe(
-  dialog: HTMLElement,
+  target: HTMLElement,
   from: { x: number; y: number },
   to: { x: number; y: number },
 ) {
-  fireEvent.touchStart(dialog, {
+  fireEvent.touchStart(target, {
     changedTouches: [{ clientX: from.x, clientY: from.y }],
   })
-  fireEvent.touchEnd(dialog, {
+  fireEvent.touchEnd(target, {
     changedTouches: [{ clientX: to.x, clientY: to.y }],
   })
 }
@@ -92,25 +92,36 @@ describe('CardModal', () => {
   it('swipes up to the next face and down to the previous face', () => {
     const { container } = renderModal({ card: doubleFacedCard })
     const { getByRole } = within(container)
-    const dialog = getByRole('dialog')
+    const overlay = container.querySelector('.card-modal-overlay') as HTMLElement
 
-    swipe(dialog, { x: 100, y: 180 }, { x: 100, y: 80 })
+    swipe(overlay, { x: 100, y: 700 }, { x: 100, y: 600 })
     expect(getByRole('img', { name: 'Test Card Back' })).toBeInTheDocument()
 
-    swipe(dialog, { x: 100, y: 80 }, { x: 100, y: 180 })
+    swipe(overlay, { x: 100, y: 600 }, { x: 100, y: 700 })
+    expect(getByRole('img', { name: 'Test Card' })).toBeInTheDocument()
+  })
+
+  it('responds to the first navigation button click after a swipe', () => {
+    const { container } = renderModal({ card: doubleFacedCard, hasPrevious: true })
+    const { getByRole } = within(container)
+    const overlay = container.querySelector('.card-modal-overlay') as HTMLElement
+
+    swipe(overlay, { x: 100, y: 700 }, { x: 100, y: 600 })
+    expect(getByRole('img', { name: 'Test Card Back' })).toBeInTheDocument()
+
+    fireEvent.click(getByRole('button', { name: 'Previous' }))
     expect(getByRole('img', { name: 'Test Card' })).toBeInTheDocument()
   })
 
   it('swipes up to the next card and down to the previous card at face boundaries', () => {
     const { container, props } = renderModal({ hasPrevious: true, hasNext: true })
-    const { getByRole } = within(container)
-    const dialog = getByRole('dialog')
+    const overlay = container.querySelector('.card-modal-overlay') as HTMLElement
 
-    swipe(dialog, { x: 100, y: 180 }, { x: 100, y: 80 })
+    swipe(overlay, { x: 100, y: 700 }, { x: 100, y: 600 })
     expect(props.onShowNext).toHaveBeenCalledOnce()
     expect(props.onShowPrevious).not.toHaveBeenCalled()
 
-    swipe(dialog, { x: 100, y: 80 }, { x: 100, y: 180 })
+    swipe(overlay, { x: 100, y: 600 }, { x: 100, y: 700 })
     expect(props.onShowPrevious).toHaveBeenCalledOnce()
   })
 })

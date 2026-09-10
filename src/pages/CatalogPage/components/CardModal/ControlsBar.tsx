@@ -29,7 +29,12 @@ export function ControlsBar({
     : `https://scryfall.com/search?q=oracleid%3A${encodeURIComponent(card.oracleId ?? card.id)}`
 
   return (
-    <div className="card-modal-controls">
+    <div
+      className="card-modal-controls"
+      onTouchStart={(event) => event.stopPropagation()}
+      onTouchEnd={(event) => event.stopPropagation()}
+      onTouchCancel={(event) => event.stopPropagation()}
+    >
       <a
         className="controls-button scryfall-button"
         href={scryfallUrl}
