@@ -210,4 +210,45 @@ describe('CatalogPage', () => {
       expect(screen.getAllByRole('button', { name: /open details for/i })).toHaveLength(24)
     })
   })
+
+  it('starts the default query before the scroll sentinel can alter its batch', async () => {
+    let hasIntersected = false
+    vi.stubGlobal('IntersectionObserver', class {
+      private callback: IntersectionObserverCallback
+
+      constructor(callback: IntersectionObserverCallback) {
+        this.callback = callback
+      }
+
+      observe() {
+        if (hasIntersected) return
+        hasIntersected = true
+        this.callback(
+          [{ isIntersecting: true } as IntersectionObserverEntry],
+          this as unknown as IntersectionObserver,
+        )
+      }
+
+      unobserve() {}
+      disconnect() {}
+    })
+    const queryCards = vi.spyOn(sqliteCardQuery, 'queryCards')
+
+    render(
+      <MemoryRouter initialEntries={['/catalog']}>
+        <CatalogPage />
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(queryCards.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
+        text: '',
+        sortOption: 'added-desc',
+        limit: 12,
+        offset: 0,
+      }))
+      expect(screen.getAllByRole('button', { name: /open details for/i }).length).toBeGreaterThan(0)
+    })
+    expect(queryCards).not.toHaveBeenCalledWith(expect.objectContaining({ limit: 0 }))
+  })
 })

@@ -611,18 +611,22 @@ export function CatalogPage() {
    */
 
   useEffect(() => {
+    if (!isCatalogReady || isCatalogLoading) return
+
     const sentinel = sentinelRef.current
     if (!sentinel) return
 
     const observer = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting) {
-            setVisibleCount((prev) =>
-              Math.min(
-                prev + BATCH_SIZE,
-                isServerPaginated ? catalogTotal : sortedFilteredCards.length,
-              ),
-            )
+            setVisibleCount((previous) => {
+              const availableCount = isServerPaginated
+                ? catalogTotal
+                : sortedFilteredCards.length
+
+              if (availableCount <= previous) return previous
+              return Math.min(previous + BATCH_SIZE, availableCount)
+            })
           }
         },
       { rootMargin: '1200px 0px' },
@@ -631,7 +635,7 @@ export function CatalogPage() {
     observer.observe(sentinel)
 
     return () => observer.disconnect()
-  }, [sortedFilteredCards.length, isServerPaginated, catalogTotal])
+  }, [sortedFilteredCards.length, isServerPaginated, catalogTotal, isCatalogReady, isCatalogLoading])
 
   /*
    * Visible cards
