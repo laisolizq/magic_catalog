@@ -1,17 +1,20 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CatalogPage, resolveDefaultSort } from './CatalogPage'
 import { mockCards } from '../../data/mockCards'
 import { clearCatalogDatabase } from '../../db/sqliteClient'
-import { seedCatalogFixture } from '../../test/catalogFixture'
+import { seedCards, seedCatalogFixture } from '../../test/catalogFixture'
+import * as sqliteCardQuery from '../../services/sqliteCardQuery'
 import { parseScryfallQuery } from '../../utils/scryfallQuery'
 
 afterEach(() => cleanup())
 beforeEach(async () => seedCatalogFixture())
 afterEach(async () => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
   await clearCatalogDatabase()
 })
 
@@ -146,5 +149,65 @@ describe('CatalogPage', () => {
         name: 'Name ↑/↓',
       }),
     ).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('prefetches and appends SQL pages with an offset', async () => {
+    const cards = Array.from({ length: 30 }, (_, index) => ({
+      ...mockCards[0],
+      id: `paged-card-${index.toString().padStart(2, '0')}`,
+      collectorNumber: String(index),
+      faces: [{
+        ...mockCards[0].faces[0],
+        name: `Paged Card ${index.toString().padStart(2, '0')}`,
+      }],
+    }))
+    await seedCards(cards)
+
+    let intersectionCallback: IntersectionObserverCallback | undefined
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) {
+        intersectionCallback = callback
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    })
+    const queryCards = vi.spyOn(sqliteCardQuery, 'queryCards')
+
+    render(
+      <MemoryRouter initialEntries={['/catalog?all=1&sort=name-asc']}>
+        <CatalogPage />
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /open details for/i })).toHaveLength(12)
+    })
+    expect(queryCards).toHaveBeenCalledWith(expect.objectContaining({
+      limit: 12,
+      offset: 0,
+    }))
+    await waitFor(() => {
+      expect(queryCards).toHaveBeenCalledWith(expect.objectContaining({
+        limit: 12,
+        offset: 12,
+      }))
+    })
+    expect(screen.getAllByRole('button', { name: /open details for/i })).toHaveLength(12)
+
+    act(() => {
+      intersectionCallback?.(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      )
+    })
+
+    await waitFor(() => {
+      expect(queryCards).toHaveBeenCalledWith(expect.objectContaining({
+        limit: 6,
+        offset: 24,
+      }))
+      expect(screen.getAllByRole('button', { name: /open details for/i })).toHaveLength(24)
+    })
   })
 })

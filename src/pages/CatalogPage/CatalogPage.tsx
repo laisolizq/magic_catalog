@@ -328,6 +328,7 @@ export function CatalogPage() {
   )
 
   const catalogBootstrapRef = useRef<Promise<CatalogUpdateStatus> | null>(null)
+  const loadedCatalogQueryRef = useRef<string | null>(null)
 
   const sentinelRef = useRef<HTMLDivElement>(null)
   const ignoreScrollRef = useRef(false)
@@ -465,6 +466,23 @@ export function CatalogPage() {
     let cancelled = false
 
     async function loadCatalog() {
+      const catalogQueryKey = JSON.stringify({
+        parsedQuery,
+        sortOption: effectiveSortOption,
+        showAllPrints,
+        catalogRevision,
+      })
+      const isSameQuery = loadedCatalogQueryRef.current === catalogQueryKey
+
+      if (isSameQuery && !isServerPaginated) return
+
+      const offset = isSameQuery ? displayCards.length : 0
+      const targetLoadedCount = isSameQuery
+        ? Math.min(visibleCount + BATCH_SIZE, catalogTotal)
+        : visibleCount
+      const limit = targetLoadedCount - offset
+      if (limit <= 0) return
+
       if (!hasLoadedCatalogRef.current) {
         setIsCatalogLoading(true)
       }
@@ -484,14 +502,20 @@ export function CatalogPage() {
           colorCount: parsedQuery.colorCount,
           sortOption: effectiveSortOption,
           showAllPrints,
-          limit: visibleCount,
+          limit,
+          offset,
         })
         console.log(`[catalog] card query ${JSON.stringify(parsedQuery)} completed in ${(performance.now() - queryStartedAt).toFixed(0)}ms`)
 
         if (cancelled) return
-        setDisplayCards(result.cards)
+        setDisplayCards((currentCards) =>
+          isSameQuery && result.serverPaginated
+            ? [...currentCards, ...result.cards]
+            : result.cards,
+        )
         setIsServerPaginated(Boolean(result.serverPaginated))
         setCatalogTotal(result.total)
+        loadedCatalogQueryRef.current = catalogQueryKey
         hasLoadedCatalogRef.current = true
       } catch (error) {
         if (cancelled) return
@@ -511,7 +535,7 @@ export function CatalogPage() {
     return () => {
       cancelled = true
     }
-  }, [parsedQuery, setValue, typeValue, rarityValue, colorValue, colorMode, isCatalogReady, catalogRevision, effectiveSortOption, showAllPrints, visibleCount])
+  }, [parsedQuery, setValue, typeValue, rarityValue, colorValue, colorMode, isCatalogReady, catalogRevision, effectiveSortOption, showAllPrints, visibleCount, isServerPaginated, displayCards.length, catalogTotal])
 
   useEffect(() => {
     if (!isCatalogReady) return
@@ -601,7 +625,7 @@ export function CatalogPage() {
             )
           }
         },
-      { rootMargin: '300px' },
+      { rootMargin: '1200px 0px' },
       )
 
     observer.observe(sentinel)
@@ -615,6 +639,20 @@ export function CatalogPage() {
 
   const visibleCardsSorted =
     sortedFilteredCards.slice(0, visibleCount)
+
+  useEffect(() => {
+    if (!isServerPaginated) return
+
+    sortedFilteredCards
+      .slice(visibleCount, visibleCount + BATCH_SIZE)
+      .flatMap((card) => card.faces)
+      .forEach((face) => {
+        const imageUrl = face.artCropUrl ?? face.imageUrl
+        if (!imageUrl) return
+        const image = new Image()
+        image.src = imageUrl
+      })
+  }, [sortedFilteredCards, visibleCount, isServerPaginated])
 
   /*
    * EXPAND ORACLES
