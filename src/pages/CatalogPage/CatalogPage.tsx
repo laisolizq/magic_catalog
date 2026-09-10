@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { List } from './components/List/List'
@@ -333,6 +333,7 @@ export function CatalogPage() {
   const sentinelRef = useRef<HTMLDivElement>(null)
   const ignoreScrollRef = useRef(false)
   const hasLoadedCatalogRef = useRef(false)
+  const pendingCatalogScrollResetRef = useRef(false)
 
   const refreshAfterCatalogUpdate = useCallback(
     (status: CatalogUpdateStatus) => {
@@ -593,8 +594,9 @@ export function CatalogPage() {
    * SCROLL
    */
 
-  // Jump back to the top of the list whenever the query (search text or
-  // filters) or the sort order changes, but not on the initial mount.
+  // Mark query/sort changes for a reset after their replacement rows commit.
+  // Waiting for that commit prevents browser scroll anchoring from restoring
+  // the previous result set's position.
   const isFirstQueryOrSortRenderRef = useRef(true)
 
   useEffect(() => {
@@ -603,8 +605,16 @@ export function CatalogPage() {
       return
     }
 
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    pendingCatalogScrollResetRef.current = true
+    setVisibleCount(BATCH_SIZE)
   }, [query, sortOption, colorMode])
+
+  useLayoutEffect(() => {
+    if (!pendingCatalogScrollResetRef.current) return
+
+    pendingCatalogScrollResetRef.current = false
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [displayCards])
 
   /*
    * INFINITE SCROLL

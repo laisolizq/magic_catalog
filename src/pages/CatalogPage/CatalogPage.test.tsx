@@ -19,6 +19,25 @@ afterEach(async () => {
 })
 
 describe('CatalogPage', () => {
+  it('scrolls to the first row after a changed query renders', async () => {
+    const user = userEvent.setup()
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+
+    render(
+      <MemoryRouter initialEntries={['/catalog?q=s%3Ahob']}>
+        <CatalogPage />
+      </MemoryRouter>,
+    )
+
+    const queryInput = await screen.findByPlaceholderText(/search cards or filters/i)
+    await user.clear(queryInput)
+    await user.type(queryInput, 'Along the Crooked Way')
+
+    await waitFor(() => {
+      expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' })
+    })
+  })
+
   it('resolves Default sorting from the query and set release date', () => {
     const setOptions = [
       { code: 'released', name: 'Released Set', releasedAt: '2025-01-01', setType: 'expansion' },
