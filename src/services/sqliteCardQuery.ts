@@ -15,6 +15,7 @@ type SearchIndexEntry = {
 let cachedAllCardsFuse: Fuse<SearchIndexEntry> | null = null
 const cachedFilterResults = new Map<string, Card[]>()
 const cachedFilterFuse = new Map<string, Fuse<SearchIndexEntry>>()
+const cardsTableColumnsCache = new WeakMap<object, Set<string>>()
 
 function rowToCard(row: unknown[]): Card {
   return {
@@ -32,8 +33,13 @@ function rowToCard(row: unknown[]): Card {
 }
 
 function getCardsTableColumns(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): Set<string> {
+  const cachedColumns = cardsTableColumnsCache.get(database)
+  if (cachedColumns) return cachedColumns
+
   const rows = database.exec('PRAGMA table_info(cards)')[0]?.values ?? []
-  return new Set(rows.map((row) => String(row[1])))
+  const columns = new Set(rows.map((row) => String(row[1])))
+  cardsTableColumnsCache.set(database, columns)
+  return columns
 }
 
 function cardColumnsSql(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>, tableAlias = ''): string {
@@ -82,6 +88,10 @@ function supportsSqlSortOption(
 // instead of a SQL window-function query at browse time.
 function supportsPreferenceRank(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): boolean {
   return getCardsTableColumns(database).has('printing_preference_rank')
+}
+
+function supportsPreferredPrinting(database: NonNullable<Awaited<ReturnType<typeof getCatalogDatabase>>>): boolean {
+  return getCardsTableColumns(database).has('is_preferred_printing')
 }
 
 interface SqlCondition {
@@ -358,6 +368,10 @@ function buildWhereConditions(
     if (flags.hasLegalitiesColumn) parameters.push(query.legality.status)
   }
 
+  if (flags.preferredPrintingOnly) {
+    conditions.push('is_preferred_printing = 1')
+  }
+
   if (flags.hasCardIdsFilter) {
     const names = query.cardIds!.map(() => '?')
     query.cardIds!.forEach((id) => parameters.push(id))
@@ -556,6 +570,8 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   const oracle = query.oracle?.trim() ?? ''
   const hasText = text.length > 0
   const hasOracleFilter = oracle.length > 0
+  const hasStructuredFilters = hasSetFilter || hasRarityFilter || hasTypeFilter || hasColorFilter ||
+    hasColorCountFilter || hasCardIdsFilter || hasLegalityFilter || hasOracleFilter
 
   // Free-text search still needs Fuse. When the generated preference rank is
   // available, structured filters are applied before deduplication so Fuse
@@ -564,6 +580,7 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   const canRunInSql = !hasText && supportsSqlSortOption(database, query.sortOption) &&
     (showAllPrints || supportsPreferenceRank(database))
   if (canRunInSql) {
+    const usePreferredPrintingFilter = !showAllPrints && !hasStructuredFilters && supportsPreferredPrinting(database)
     const whereCondition = buildWhereConditions(query, {
       hasCardIdsFilter,
       hasLegalityFilter,
@@ -574,9 +591,9 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
       hasColorFilter,
       hasOracleFilter,
       oracle,
-      preferredPrintingOnly: false,
+      preferredPrintingOnly: usePreferredPrintingFilter,
     })
-    return runServerPaginatedQuery(database, whereCondition, query, !showAllPrints)
+    return runServerPaginatedQuery(database, whereCondition, query, !showAllPrints && !usePreferredPrintingFilter)
   }
 
   if (hasText && !showAllPrints && supportsPreferenceRank(database)) {

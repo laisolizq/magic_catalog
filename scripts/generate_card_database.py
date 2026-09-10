@@ -668,6 +668,7 @@ def build_sqlite_database(
         CREATE INDEX cards_primary_mana_value_idx ON cards(primary_mana_value);
         CREATE INDEX cards_collector_idx ON cards(set_code, collector_number_numeric, collector_number_suffix);
         CREATE INDEX cards_preferred_idx ON cards(is_preferred_printing);
+        CREATE INDEX cards_preferred_added_idx ON cards(is_preferred_printing, added_at DESC, primary_face_name COLLATE NOCASE ASC);
         CREATE INDEX cards_preference_rank_idx ON cards(primary_face_name, printing_preference_rank);
         CREATE INDEX face_types_name_idx ON face_types(type_name);
         CREATE INDEX face_types_card_idx ON face_types(card_id);
