@@ -6,11 +6,19 @@
   place-items: center;
   z-index: 20;
   padding: 0.75rem;
-  overflow-y: auto;
+  overflow: hidden;
+}
+
+.card-modal-swipe-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   touch-action: none;
 }
 
 .card-modal {
+  position: relative;
+  z-index: 1;
   width: min(100%, 420px);
   max-height: calc(100dvh - 1.5rem);
   display: grid;
@@ -26,6 +34,7 @@
   width: 100%;
   aspect-ratio: 5 / 7;
   overflow: hidden;
+  touch-action: none;
 }
 
 .card-modal-image {
@@ -150,6 +159,7 @@
   padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
   background: transparent;
   z-index: 40;
+  touch-action: manipulation;
 }
 
 .controls-button {

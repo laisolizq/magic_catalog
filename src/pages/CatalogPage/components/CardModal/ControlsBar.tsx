@@ -31,9 +31,15 @@ export function ControlsBar({
   return (
     <div
       className="card-modal-controls"
-      onTouchStart={(event) => event.stopPropagation()}
-      onTouchEnd={(event) => event.stopPropagation()}
-      onTouchCancel={(event) => event.stopPropagation()}
+      onTouchStart={(event) => {
+        event.stopPropagation()
+      }}
+      onTouchEnd={(event) => {
+        event.stopPropagation()
+      }}
+      onTouchCancel={(event) => {
+        event.stopPropagation()
+      }}
     >
       <a
         className="controls-button scryfall-button"
@@ -71,6 +77,11 @@ export function ControlsBar({
         type="button"
         className={`controls-button ${disabledWhenRulings || !hasPrevious ? 'disabled' : ''}`}
         onClick={onShowPrevious}
+        onTouchEnd={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          onShowPrevious()
+        }}
         aria-label="Previous"
         disabled={disabledWhenRulings || !hasPrevious}
       >
@@ -91,6 +102,11 @@ export function ControlsBar({
         type="button"
         className={`controls-button ${disabledWhenRulings || !hasNext ? 'disabled' : ''}`}
         onClick={onShowNext}
+        onTouchEnd={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          onShowNext()
+        }}
         aria-label="Next"
         disabled={disabledWhenRulings || !hasNext}
       >

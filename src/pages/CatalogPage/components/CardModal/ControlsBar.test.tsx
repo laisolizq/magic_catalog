@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ControlsBar } from './ControlsBar'
 import type { Card } from '../../../../types/card'
@@ -57,5 +57,28 @@ describe('ControlsBar', () => {
     // 5. Down (Next)
     expect(children[4]).toHaveAttribute('aria-label', 'Next')
     expect(children[4].textContent?.trim()).toBe('▼')
+  })
+
+  it('navigates exactly once on the first touch', () => {
+    const onShowPrevious = vi.fn()
+    const onShowNext = vi.fn()
+    render(
+      <ControlsBar
+        card={mockCard}
+        rulingsOpen={false}
+        onToggleRulings={vi.fn()}
+        onShowPrevious={onShowPrevious}
+        onShowNext={onShowNext}
+        onClose={vi.fn()}
+        hasPrevious={true}
+        hasNext={true}
+      />,
+    )
+
+    fireEvent.touchEnd(screen.getByRole('button', { name: 'Previous' }))
+    fireEvent.touchEnd(screen.getByRole('button', { name: 'Next' }))
+
+    expect(onShowPrevious).toHaveBeenCalledOnce()
+    expect(onShowNext).toHaveBeenCalledOnce()
   })
 })

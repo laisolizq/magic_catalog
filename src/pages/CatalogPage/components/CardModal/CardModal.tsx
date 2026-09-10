@@ -134,8 +134,8 @@ export function CardModal({
     }
   }
 
-  const handleSwipe = (deltaX: number, deltaY: number) => {
-    if (rulingsOpen) return
+  const handleSwipe = (deltaX: number, deltaY: number): boolean => {
+    if (rulingsOpen) return false
     const absX = Math.abs(deltaX)
     const absY = Math.abs(deltaY)
 
@@ -144,7 +144,7 @@ export function CardModal({
       if (deltaX < -SWIPE_THRESHOLD) {
         onClose()
       }
-      return
+      return true
     }
 
     // Vertical swipes: navigate faces; if at boundary, navigate cards
@@ -152,14 +152,17 @@ export function CardModal({
       if (deltaY < -SWIPE_THRESHOLD) {
         // swipe up -> next face
         goToNextFace()
-        return
+        return true
       }
 
       if (deltaY > SWIPE_THRESHOLD) {
         // swipe down -> previous face
         goToPreviousFace()
+        return true
       }
     }
+
+    return false
   }
 
   useEffect(() => {
@@ -246,7 +249,10 @@ export function CardModal({
     touchStartRef.current = null
     if (!start || !touch) return
 
-    handleSwipe(touch.clientX - start.x, touch.clientY - start.y)
+    handleSwipe(
+      touch.clientX - start.x,
+      touch.clientY - start.y,
+    )
   }
 
   const handlePrev = goToPreviousFace
@@ -256,13 +262,16 @@ export function CardModal({
     <div
       className="card-modal-overlay"
       role="presentation"
-      onClick={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={() => {
         touchStartRef.current = null
       }}
     >
+      <div className="card-modal-swipe-surface" aria-hidden="true" />
       <aside
         className="card-modal"
         role="dialog"
