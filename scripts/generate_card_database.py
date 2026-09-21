@@ -29,6 +29,8 @@ MAX_SAFE_INTEGER = 9007199254740991
 MANA_SYMBOL_RE = re.compile(r"\{([^}]+)\}")
 COLLECTOR_NUMBER_RE = re.compile(r"^(\d+)(.*)$")
 ARTIFACT_VERSION = "3"
+UPDATE_HISTORY_DAYS = 14
+UPDATE_ARTIFACT_NAME = "catalog-updates.json.gz"
 VALID_RARITIES = {"common", "uncommon", "rare", "mythic"}
 VALID_COLORS = {"W", "U", "B", "R", "G"}
 EXCLUDED_LAYOUTS = {
@@ -265,7 +267,11 @@ def default_previous_database_url() -> str | None:
     return f"https://github.com/{repo}/releases/download/card-database-latest/catalog.sqlite.gz"
 
 
-def fetch_previous_added_dates(url: str) -> dict[str, str]:
+def update_artifact_url_for_database(database_url: str) -> str:
+    return database_url.rsplit("/", 1)[0] + f"/{UPDATE_ARTIFACT_NAME}"
+
+
+def fetch_previous_database(url: str) -> tuple[Path, dict[str, str]]:
     """Read each card's 'added_at' from a previously published database, so
     repeat runs can carry forward the date a card was first seen instead of
     resetting it to today (Scryfall exposes no spoiler/preview date)."""
@@ -277,20 +283,146 @@ def fetch_previous_added_dates(url: str) -> dict[str, str]:
         handle.write(gzip.decompress(compressed))
         temp_path = Path(handle.name)
 
+    database = sqlite3.connect(temp_path)
     try:
-        database = sqlite3.connect(temp_path)
-        try:
-            columns = database.execute("PRAGMA table_info(cards)").fetchall()
-            if not any(column[1] == "added_at" for column in columns):
-                return {}
-            rows = database.execute(
-                "SELECT id, added_at FROM cards WHERE added_at != ''"
-            ).fetchall()
-            return {row[0]: row[1] for row in rows}
-        finally:
-            database.close()
+        columns = database.execute("PRAGMA table_info(cards)").fetchall()
+        if not any(column[1] == "added_at" for column in columns):
+            return temp_path, {}
+        rows = database.execute(
+            "SELECT id, added_at FROM cards WHERE added_at != ''"
+        ).fetchall()
+        return temp_path, {row[0]: row[1] for row in rows}
     finally:
-        temp_path.unlink(missing_ok=True)
+        database.close()
+
+
+def file_sha256(path: Path) -> str:
+    checksum = hashlib.sha256()
+    with path.open("rb") as source:
+        while chunk := source.read(1024 * 1024):
+            checksum.update(chunk)
+    return checksum.hexdigest()
+
+
+def sql_literal(value: Any) -> str:
+    if value is None:
+        return "NULL"
+    if isinstance(value, bytes):
+        return f"X'{value.hex()}'"
+    if isinstance(value, str):
+        return "'" + value.replace("'", "''") + "'"
+    if isinstance(value, float):
+        return format(value, ".17g")
+    return str(value)
+
+
+def table_rows(database: sqlite3.Connection, table: str) -> list[tuple[Any, ...]]:
+    return database.execute(f'SELECT * FROM "{table}"').fetchall()
+
+
+def build_database_update_commands(previous_path: Path, current_path: Path) -> list[str]:
+    """Build SQL that transforms one catalog schema into the next catalog."""
+    previous = sqlite3.connect(previous_path)
+    current = sqlite3.connect(current_path)
+    try:
+        previous_schema = previous.execute(
+            "SELECT name, sql FROM sqlite_master WHERE type = 'table' ORDER BY name"
+        ).fetchall()
+        current_schema = current.execute(
+            "SELECT name, sql FROM sqlite_master WHERE type = 'table' ORDER BY name"
+        ).fetchall()
+        if previous_schema != current_schema:
+            raise ValueError("previous catalog schema does not match the new catalog schema")
+
+        commands = ["BEGIN IMMEDIATE;"]
+        keyed_tables = {
+            "cards": (0,),
+            "face_types": (0, 1, 2),
+            "face_subtypes": (0, 1, 2),
+            "face_colors": (0, 1, 2),
+            "sets": (0,),
+        }
+        for table, key_indexes in keyed_tables.items():
+            old_rows = {tuple(row[index] for index in key_indexes): row for row in table_rows(previous, table)}
+            new_rows = {tuple(row[index] for index in key_indexes): row for row in table_rows(current, table)}
+            key_columns = [
+                row[1] for row in current.execute(f'PRAGMA table_info("{table}")').fetchall()
+                if row[0] in key_indexes
+            ]
+            for key in sorted(old_rows.keys() - new_rows.keys()):
+                where = " AND ".join(
+                    f'"{column}" = {sql_literal(value)}'
+                    for column, value in zip(key_columns, key)
+                )
+                commands.append(f'DELETE FROM "{table}" WHERE {where};')
+            for key in sorted(new_rows):
+                if old_rows.get(key) == new_rows[key]:
+                    continue
+                values = ",".join(sql_literal(value) for value in new_rows[key])
+                commands.append(f'INSERT OR REPLACE INTO "{table}" VALUES ({values});')
+
+        old_rulings = table_rows(previous, "rulings")
+        new_rulings = table_rows(current, "rulings")
+        old_by_oracle: dict[str, list[tuple[Any, ...]]] = {}
+        new_by_oracle: dict[str, list[tuple[Any, ...]]] = {}
+        for row in old_rulings:
+            old_by_oracle.setdefault(row[0], []).append(row)
+        for row in new_rulings:
+            new_by_oracle.setdefault(row[0], []).append(row)
+        for oracle_id in sorted(set(old_by_oracle) | set(new_by_oracle)):
+            if sorted(old_by_oracle.get(oracle_id, [])) == sorted(new_by_oracle.get(oracle_id, [])):
+                continue
+            commands.append(f'DELETE FROM "rulings" WHERE "oracle_id" = {sql_literal(oracle_id)};')
+            for row in sorted(new_by_oracle.get(oracle_id, [])):
+                values = ",".join(sql_literal(value) for value in row)
+                commands.append(f'INSERT INTO "rulings" VALUES ({values});')
+
+        commands.append("COMMIT;")
+        return commands
+    finally:
+        previous.close()
+        current.close()
+
+
+def load_previous_update_artifact(url: str) -> dict[str, Any]:
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(request, timeout=120) as response:
+        return json.loads(gzip.decompress(response.read()).decode("utf-8"))
+
+
+def write_update_artifact(
+    output_path: Path,
+    previous_artifact: dict[str, Any] | None,
+    commands: list[str] | None,
+    base_checksum: str | None,
+    target_checksum: str,
+    generated_at: str,
+) -> tuple[str, int, int, int]:
+    cutoff = datetime.fromisoformat(generated_at) - timedelta(days=UPDATE_HISTORY_DAYS)
+    migrations = []
+    if previous_artifact:
+        for migration in previous_artifact.get("migrations", []):
+            try:
+                migration_date = datetime.fromisoformat(migration["generatedAt"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if migration_date >= cutoff:
+                migrations.append(migration)
+    if commands is not None and base_checksum is not None:
+        migrations.append({
+            "baseChecksum": base_checksum,
+            "targetChecksum": target_checksum,
+            "generatedAt": generated_at,
+            "commands": commands,
+        })
+    payload = json.dumps(
+        {"formatVersion": 1, "historyDays": UPDATE_HISTORY_DAYS, "migrations": migrations},
+        ensure_ascii=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    with gzip.open(output_path, "wb", compresslevel=9) as output:
+        output.write(payload)
+    return file_sha256(output_path), output_path.stat().st_size, len(payload), len(migrations)
 
 
 def find_bulk_download_url(data_type: str) -> tuple[str, str]:
@@ -711,6 +843,7 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     metadata_path = output_dir / "metadata.json"
     database_path = output_dir / "catalog.sqlite.gz"
+    update_artifact_path = output_dir / UPDATE_ARTIFACT_NAME
 
     # If no custom options are set and we have a previous database, check if Scryfall data has changed
     if not args.download_url and not args.sets:
@@ -726,6 +859,8 @@ def main() -> int:
                     and previous_metadata.get("schemaVersion") == SCHEMA_VERSION
                     and previous_metadata.get("sourceUpdatedAt") == source_updated_at
                     and previous_metadata.get("rulingsSourceUpdatedAt") == rulings_updated_at
+                    and previous_metadata.get("updates")
+                    and update_artifact_path.exists()
                 ):
                     print(
                         f"[generate-card-database] Scryfall data unchanged; skipping download",
@@ -766,16 +901,28 @@ def main() -> int:
                 )
 
     previous_added_dates: dict[str, str] = {}
+    previous_database_path: Path | None = None
+    previous_update_artifact: dict[str, Any] | None = None
     if not args.skip_previous_lookup:
         previous_database_url = args.previous_database_url or default_previous_database_url()
         if previous_database_url:
             print(f"Fetching previous card database from {previous_database_url}...", file=sys.stderr)
             try:
-                previous_added_dates = fetch_previous_added_dates(previous_database_url)
+                previous_database_path, previous_added_dates = fetch_previous_database(previous_database_url)
                 print(
                     f"Loaded {len(previous_added_dates)} known 'added' dates from the previous release.",
                     file=sys.stderr,
                 )
+                try:
+                    previous_update_artifact = load_previous_update_artifact(
+                        update_artifact_url_for_database(previous_database_url)
+                    )
+                except Exception as error:
+                    print(
+                        f"Warning: could not load previous update history ({error}); "
+                        "starting a new update chain.",
+                        file=sys.stderr,
+                    )
             except Exception as error:
                 print(
                     f"Warning: could not load previous card database ({error}); "
@@ -911,8 +1058,50 @@ def main() -> int:
     checksum_full, compressed_bytes_full, uncompressed_bytes_full = compress_and_checksum_database(
         temporary_sqlite_path, temporary_database_path
     )
-    temporary_sqlite_path.unlink()
     temporary_database_path.replace(database_path)
+
+    update_metadata: dict[str, Any]
+    temporary_update_path = output_dir / f"{UPDATE_ARTIFACT_NAME}.{run_id}.tmp"
+    base_checksum: str | None = None
+    update_commands: list[str] | None = None
+    if previous_database_path is not None:
+        print("[generate-card-database] Building rolling update artifact...", file=sys.stderr)
+        try:
+            base_checksum = file_sha256(previous_database_path)
+            update_commands = build_database_update_commands(
+                previous_database_path, temporary_sqlite_path
+            )
+        except Exception as error:
+            print(
+                f"Warning: could not build update artifact ({error}).",
+                file=sys.stderr,
+            )
+            base_checksum = None
+            update_commands = None
+    update_checksum, update_compressed_bytes, update_uncompressed_bytes, migration_count = write_update_artifact(
+        temporary_update_path,
+        previous_update_artifact,
+        update_commands,
+        base_checksum,
+        checksum_full,
+        generated_at,
+    )
+    temporary_update_path.replace(update_artifact_path)
+    update_metadata = {
+        "assetName": UPDATE_ARTIFACT_NAME,
+        "format": "sqlite-sql-json-gzip",
+        "formatVersion": 1,
+        "historyDays": UPDATE_HISTORY_DAYS,
+        "migrationCount": migration_count,
+        "latestBaseChecksum": base_checksum,
+        "targetChecksum": checksum_full,
+        "checksum": update_checksum,
+        "compressedBytes": update_compressed_bytes,
+        "uncompressedBytes": update_uncompressed_bytes,
+    }
+    temporary_sqlite_path.unlink()
+    if previous_database_path is not None:
+        previous_database_path.unlink(missing_ok=True)
     
     # Build recent database (last 3 months)
     print("[generate-card-database] Building recent database (last 3 months)...", file=sys.stderr)
@@ -975,6 +1164,7 @@ def main() -> int:
                 "cutoffDate": three_months_ago,
             },
         },
+        "updates": update_metadata,
         # Legacy fields for backward compatibility
         "databaseAssetName": "catalog.sqlite.gz",
         "databaseChecksum": checksum_full,

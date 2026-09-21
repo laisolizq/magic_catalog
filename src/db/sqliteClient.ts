@@ -179,6 +179,22 @@ export async function replaceCatalogDatabase(bytes: Uint8Array): Promise<void> {
   databasePromise = null
 }
 
+export async function applyCatalogMigration(commands: string[]): Promise<Uint8Array> {
+  const database = await getCatalogDatabase()
+  if (!database) throw new Error('No local catalog database is available to migrate.')
+
+  const SQL = await initSqlJs({ locateFile: () => wasmUrl })
+  const migrated = new SQL.Database(database.export())
+  try {
+    migrated.exec(commands.join('\n'))
+    const integrity = migrated.exec('PRAGMA integrity_check')[0]?.values[0]?.[0]
+    if (integrity !== 'ok') throw new Error(`Migrated catalog failed integrity check: ${integrity}`)
+    return migrated.export()
+  } finally {
+    migrated.close()
+  }
+}
+
 export async function hasLocalCatalog(): Promise<boolean> {
   return Boolean(await readStoredDatabase())
 }

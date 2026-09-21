@@ -1,4 +1,9 @@
-import type { CatalogArtifactMetadata } from '../types/catalog'
+import type {
+  CatalogArtifactMetadata,
+  CatalogMetadata,
+  CatalogMigration,
+  CatalogUpdateArtifact,
+} from '../types/catalog'
 import {
   clearCatalogDownloadCheckpoint,
   persistCatalogDownloadCheckpoint,
@@ -7,6 +12,7 @@ import {
 import {
   getCatalogMetadata,
   importCatalogArtifact,
+  importCatalogMigrations,
   type CatalogImportProgress,
 } from './catalogImport'
 
@@ -78,6 +84,7 @@ export async function bootstrapCatalogFromEmbeddedAssets(
     return await updateFromGitHubRelease(
       (metadata) => metadata.databases?.recent?.assetName || 'catalog-recent.sqlite.gz',
       onProgress,
+      'recent',
     )
   } catch (error) {
     console.error('[catalog] bootstrap failed', error)
@@ -129,6 +136,113 @@ function metadataForDatabase(
     databaseCompressedBytes: selected.compressedBytes,
     databaseUncompressedBytes: selected.uncompressedBytes,
   }
+}
+
+export function findCatalogMigrationPath(
+  migrations: CatalogMigration[],
+  baseChecksum: string,
+  targetChecksum: string,
+): CatalogMigration[] | undefined {
+  const queue: Array<{ checksum: string; path: CatalogMigration[] }> = [
+    { checksum: baseChecksum, path: [] },
+  ]
+  const visited = new Set([baseChecksum])
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (!current) break
+    if (current.checksum === targetChecksum) return current.path
+
+    for (const migration of migrations) {
+      if (
+        migration.baseChecksum !== current.checksum
+        || visited.has(migration.targetChecksum)
+        || !Array.isArray(migration.commands)
+        || !migration.commands.every((command) => typeof command === 'string')
+      ) continue
+      visited.add(migration.targetChecksum)
+      queue.push({
+        checksum: migration.targetChecksum,
+        path: [...current.path, migration],
+      })
+    }
+  }
+
+  return undefined
+}
+
+async function sha256Blob(blob: Blob): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer())
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+async function readUpdateArtifact(blob: Blob): Promise<CatalogUpdateArtifact> {
+  if (typeof DecompressionStream === 'undefined') {
+    throw new Error('This browser does not support gzip update artifacts.')
+  }
+  const body = new Response(await blob.arrayBuffer()).body
+  if (!body) throw new Error('Unable to read the catalog update artifact.')
+  const stream = body.pipeThrough(new DecompressionStream('gzip'))
+  return JSON.parse(await new Response(stream).text()) as CatalogUpdateArtifact
+}
+
+async function applyAvailableMigrations(
+  metadata: CatalogArtifactMetadata,
+  local: CatalogMetadata | undefined,
+  fetchUpdates: () => Promise<Blob>,
+  onProgress?: (progress: CatalogImportProgress) => void,
+): Promise<boolean> {
+  const updateMetadata = metadata.updates
+  const localChecksum = local?.databaseChecksum || local?.checksum
+  const targetChecksum = metadata.databaseChecksum
+  if (
+    !updateMetadata
+    || updateMetadata.format !== 'sqlite-sql-json-gzip'
+    || updateMetadata.formatVersion !== 1
+    || !localChecksum
+    || !targetChecksum
+    || updateMetadata.targetChecksum !== targetChecksum
+  ) return false
+
+  try {
+    onProgress?.({ database: 'full', phase: 'Downloading catalog updates', percent: 0 })
+    const blob = await fetchUpdates()
+    if (await sha256Blob(blob) !== updateMetadata.checksum) {
+      throw new Error('Catalog update artifact checksum mismatch.')
+    }
+    onProgress?.({ database: 'full', phase: 'Downloading catalog updates', percent: 100 })
+
+    const artifact = await readUpdateArtifact(blob)
+    if (artifact.formatVersion !== updateMetadata.formatVersion) {
+      throw new Error('Unsupported catalog update artifact version.')
+    }
+    const path = findCatalogMigrationPath(
+      artifact.migrations,
+      localChecksum,
+      targetChecksum,
+    )
+    if (!path || path.length === 0) return false
+
+    console.info('[catalog] applying SQLite migrations', {
+      migrationCount: path.length,
+      from: localChecksum.slice(0, 12),
+      to: targetChecksum.slice(0, 12),
+    })
+    await importCatalogMigrations(
+      path.flatMap((migration) => migration.commands),
+      metadata,
+      onProgress,
+    )
+    return true
+  } catch (error) {
+    console.warn('[catalog] migration unavailable or failed; downloading full database', error)
+    return false
+  }
+}
+
+function siblingArtifactUrl(metadataUrl: string, assetName: string): string {
+  const baseUrl = typeof window === 'undefined' ? 'http://localhost/' : window.location.href
+  return new URL(assetName, new URL(metadataUrl, baseUrl)).toString()
 }
 
 type DownloadProgress = (percent: number) => void
@@ -321,6 +435,24 @@ async function updateFromLocalArtifact(
   const local = await getCatalogMetadata()
   if (!isNewer(local, metadata)) return 'up-to-date'
 
+  if (
+    database === 'full'
+    && metadata.updates
+    && await applyAvailableMigrations(
+      metadata,
+      local,
+      () => fetchArtifactBlob(
+        siblingArtifactUrl(metadataUrl, metadata.updates!.assetName),
+        undefined,
+        metadata.updates!.compressedBytes,
+      ),
+      onProgress,
+    )
+  ) {
+    logCompleted('catalog migration', updateStartedAt)
+    return 'updated'
+  }
+
   logDatabaseDownload(metadata, databaseUrl)
   const databaseStartedAt = performance.now()
   const reportDownloadProgress = (percent: number) => {
@@ -351,6 +483,7 @@ async function updateFromLocalArtifact(
 async function updateFromGitHubRelease(
   selectDatabaseAssetName: (metadata: CatalogArtifactMetadata) => string,
   onProgress?: (progress: CatalogImportProgress) => void,
+  database: 'full' | 'recent' = 'full',
 ): Promise<CatalogUpdateStatus> {
   const response = await fetch(RELEASE_API_URL, {
     headers: { Accept: 'application/vnd.github+json' },
@@ -364,22 +497,42 @@ async function updateFromGitHubRelease(
   const metadataStartedAt = performance.now()
   const metadataBlob = await fetchReleaseAssetBlob(metadataAsset)
   logCompleted('metadata download', metadataStartedAt)
-  const metadata = JSON.parse(await metadataBlob.text()) as CatalogArtifactMetadata
+  const releaseMetadata = JSON.parse(await metadataBlob.text()) as CatalogArtifactMetadata
+  const metadata = metadataForDatabase(releaseMetadata, database)
 
-  const databaseAssetName = selectDatabaseAssetName(metadata)
-  const databaseAsset = findAsset(release, databaseAssetName)
-  if (!databaseAsset) return 'unavailable'
+  const databaseAssetName = selectDatabaseAssetName(releaseMetadata)
   const local = await getCatalogMetadata()
 
   if (!isNewer(local, metadata)) return 'up-to-date'
 
+  const updateAsset = metadata.updates
+    ? findAsset(release, metadata.updates.assetName)
+    : undefined
+  if (
+    database === 'full'
+    && updateAsset
+    && await applyAvailableMigrations(
+      metadata,
+      local,
+      () => fetchReleaseAssetBlob(
+        updateAsset,
+        undefined,
+        metadata.updates?.compressedBytes,
+      ),
+      onProgress,
+    )
+  ) return 'updated'
+
+  const databaseAsset = findAsset(release, databaseAssetName)
+  if (!databaseAsset) return 'unavailable'
+
   logDatabaseDownload(metadata, databaseAsset.browser_download_url)
   const databaseStartedAt = performance.now()
   const reportDownloadProgress = (percent: number) => {
-    onProgress?.({ database: 'full', phase: 'Downloading database', percent })
+    onProgress?.({ database, phase: 'Downloading database', percent })
   }
   reportDownloadProgress(0)
-  const checkpointKey = `catalog:full:${metadata.databaseChecksum}`
+  const checkpointKey = `catalog:${database}:${metadata.databaseChecksum}`
   const databaseBlob = await fetchReleaseAssetBlob(
     databaseAsset,
     reportDownloadProgress,
@@ -393,7 +546,7 @@ async function updateFromGitHubRelease(
     databaseBlob,
     { ...metadata, artifactVersion: metadata.artifactVersion || release.tag_name },
     onProgress,
-    'full',
+    database,
   )
   logCompleted('SQLite catalog import', importStartedAt)
   return 'updated'

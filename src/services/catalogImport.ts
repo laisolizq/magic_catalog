@@ -1,5 +1,6 @@
 import type { CatalogArtifactMetadata, CatalogMetadata } from '../types/catalog'
 import {
+  applyCatalogMigration,
   hasLocalCatalog as hasStoredCatalog,
   persistCatalogMetadata,
   readCatalogMetadata,
@@ -31,6 +32,20 @@ async function sha256(bytes: Uint8Array): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
+async function persistImportedMetadata(artifact: CatalogArtifactMetadata): Promise<void> {
+  await persistCatalogMetadata({
+    id: 'catalog',
+    schemaVersion: artifact.schemaVersion,
+    artifactVersion: artifact.artifactVersion,
+    generatedAt: artifact.generatedAt,
+    sourceUpdatedAt: artifact.sourceUpdatedAt,
+    checksum: artifact.databaseChecksum,
+    databaseChecksum: artifact.databaseChecksum,
+    cardCount: artifact.cardCount,
+    importedAt: new Date().toISOString(),
+  } satisfies CatalogMetadata)
+}
+
 export async function importCatalogArtifact(
   source: Blob | ArrayBuffer,
   artifact: CatalogArtifactMetadata,
@@ -59,23 +74,27 @@ export async function importCatalogArtifact(
   onProgress?.({ database, phase: 'Initializing: saving SQLite database', percent: 25 })
   await replaceCatalogDatabase(bytes)
   onProgress?.({ database, phase: 'Initializing: database saved', percent: 75 })
-  await persistCatalogMetadata({
-    id: 'catalog',
-    schemaVersion: artifact.schemaVersion,
-    artifactVersion: artifact.artifactVersion,
-    generatedAt: artifact.generatedAt,
-    sourceUpdatedAt: artifact.sourceUpdatedAt,
-    checksum: artifact.databaseChecksum,
-    databaseChecksum: artifact.databaseChecksum,
-    cardCount: artifact.cardCount,
-    importedAt: new Date().toISOString(),
-  } satisfies CatalogMetadata)
+  await persistImportedMetadata(artifact)
   console.info('[catalog] SQLite database initialized', {
     assetName: artifact.databaseAssetName,
     artifactVersion: artifact.artifactVersion,
     cardCount: artifact.cardCount,
   })
   onProgress?.({ database, phase: 'Initializing: catalog ready', percent: 100 })
+}
+
+export async function importCatalogMigrations(
+  commands: string[],
+  artifact: CatalogArtifactMetadata,
+  onProgress?: (progress: CatalogImportProgress) => void,
+): Promise<void> {
+  onProgress?.({ database: 'full', phase: 'Updating: applying migrations', percent: 25 })
+  const bytes = await applyCatalogMigration(commands)
+  onProgress?.({ database: 'full', phase: 'Updating: database verified', percent: 70 })
+  onProgress?.({ database: 'full', phase: 'Updating: saving database', percent: 85 })
+  await replaceCatalogDatabase(bytes)
+  await persistImportedMetadata(artifact)
+  onProgress?.({ database: 'full', phase: 'Updating: catalog ready', percent: 100 })
 }
 
 export async function hasLocalCatalog(): Promise<boolean> {

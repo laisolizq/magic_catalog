@@ -34,4 +34,5 @@ jobs:
           files: |
             artifacts/card-database/catalog.sqlite.gz
             artifacts/card-database/catalog-recent.sqlite.gz
+            artifacts/card-database/catalog-updates.json.gz
             artifacts/card-database/metadata.json

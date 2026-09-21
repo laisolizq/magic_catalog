@@ -26,7 +26,7 @@ behind the offline catalog, and [doc/components/](components/) /
 flowchart LR
     subgraph Offline["scripts/ (Python, run outside the browser)"]
         A[Scryfall bulk data API] --> B[generate_card_database.py]
-        B --> C[catalog.sqlite.gz + metadata.json]
+        B --> C[full, recent, and rolling update artifacts + metadata]
     end
 
     C --> D["GitHub Release\ncard-database-latest"]

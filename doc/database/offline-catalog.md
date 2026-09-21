@@ -13,6 +13,8 @@ npm run data:database
 The command writes these files to `artifacts/card-database/`:
 
 - `catalog.sqlite.gz`: prebuilt SQLite database with card, face, type, color, and ruling indexes
+- `catalog-recent.sqlite.gz`: bootstrap database containing cards added in the last three months
+- `catalog-updates.json.gz`: lightweight rolling SQL migrations between full catalogs generated in the last 14 days
 - `metadata.json`: artifact version, schema version, timestamps, card count, sizes, and SHA-256 checksum
 
 Only records whose Scryfall `lang` field is `en` are included. A card is included only if it is `legal`, `restricted`, or `banned` (i.e. tournament-relevant) in at least one of these formats: `standard`, `pioneer`, `modern`, `pauper`, `legacy`, `vintage`, `commander`. Cards that are `not_legal` in all of them are excluded, regardless of set type. Unreleased/preview cards (`released_at` in the future) report `not_legal` everywhere on Scryfall until their set actually releases, so they're included anyway based on that future release date. Each card row also stores its legality status (`legal`, `not_legal`, `restricted`, or `banned`) for every tracked format. Token cards (`token` and `double_faced_token` layouts) and art-series cards (`art_series` layout) are also skipped before the artifact is written. Rulings are loaded from Scryfall's bulk rulings file and filtered by the selected cards' `oracle_id` values; no per-card rulings requests are made.
@@ -29,6 +31,8 @@ python3 scripts/generate_card_database.py \
 
 The selected set codes are also written to `metadata.json`. If `--sets` is omitted, all English sets are included.
 
+When a previous full catalog is available, the generator compares every SQLite table and appends a transactional SQL migration to `catalog-updates.json.gz`. Each migration identifies its required `baseChecksum` and resulting `targetChecksum`. Existing migrations are carried forward for 14 days, allowing a client to apply the chain from any retained full-catalog version; older entries are discarded. A generation without a compatible previous catalog still emits the artifact with an empty migration list.
+
 The artifact is intentionally not bundled into the Vite application. The browser verifies its checksum, opens it with SQLite WASM, and persists the SQLite bytes only after validation succeeds.
 
 ## Publish a release
@@ -37,9 +41,10 @@ The workflow in `.github/workflows/card-database.yml` supports both manual dispa
 
 - `catalog.sqlite.gz`: Full database with all cards
 - `catalog-recent.sqlite.gz`: Curated database with only cards added in the last 3 months (used for faster bootstrap)
+- `catalog-updates.json.gz`: Rolling update commands for full catalogs generated during the last 14 days
 - `metadata.json`: Artifact version, schema version, timestamps, card counts, and checksums for both databases
 
-The browser checks the latest release metadata when online. Queries never require a network connection. After a successful import, the catalog remains available offline.
+The browser checks the latest release metadata when online. If the installed full-catalog checksum has a path through the rolling update artifact, it downloads and applies those migrations instead of downloading the full database. The update artifact is checksum-verified, migrations run against a cloned database, and SQLite integrity is checked before the result is persisted. Missing or invalid migration paths fall back to the full database artifact. Queries never require a network connection. After a successful import, the catalog remains available offline.
 
 ### Bootstrap Database
 

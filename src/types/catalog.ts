@@ -76,6 +76,31 @@ export interface CatalogArtifactMetadata {
       cutoffDate?: string
     }
   }
+  updates?: {
+    assetName: string
+    format: 'sqlite-sql-json-gzip'
+    formatVersion: number
+    historyDays: number
+    migrationCount: number
+    latestBaseChecksum: string | null
+    targetChecksum: string
+    checksum: string
+    compressedBytes: number
+    uncompressedBytes: number
+  }
+}
+
+export interface CatalogMigration {
+  baseChecksum: string
+  targetChecksum: string
+  generatedAt: string
+  commands: string[]
+}
+
+export interface CatalogUpdateArtifact {
+  formatVersion: number
+  historyDays: number
+  migrations: CatalogMigration[]
 }
 
 export interface CatalogQuery {

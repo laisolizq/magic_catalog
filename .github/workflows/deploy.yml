@@ -42,6 +42,7 @@ jobs:
             --pattern metadata.json \
             --pattern catalog.sqlite.gz \
             --pattern catalog-recent.sqlite.gz \
+            --pattern catalog-updates.json.gz \
             --dir dist/card-database
 
       - name: Deploy to GitHub Pages
