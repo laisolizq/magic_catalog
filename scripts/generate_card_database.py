@@ -28,10 +28,17 @@ SCHEMA_VERSION = 10
 MAX_SAFE_INTEGER = 9007199254740991
 MANA_SYMBOL_RE = re.compile(r"\{([^}]+)\}")
 COLLECTOR_NUMBER_RE = re.compile(r"^(\d+)(.*)$")
-ARTIFACT_VERSION = "1"
+ARTIFACT_VERSION = "3"
 VALID_RARITIES = {"common", "uncommon", "rare", "mythic"}
 VALID_COLORS = {"W", "U", "B", "R", "G"}
-EXCLUDED_LAYOUTS = {"token", "double_faced_token", "art_series"}
+EXCLUDED_LAYOUTS = {
+    "token",
+    "double_faced_token",
+    "emblem",
+    "art_series",
+    "front_card",
+}
+EXCLUDED_TYPE_LINES = {"Stickers"}
 # Formats tracked for inclusion and per-card legality. A card is kept if it is
 # legal, restricted, or banned (i.e. tournament-relevant) in at least one of
 # these formats; cards that are not_legal everywhere are excluded.
@@ -192,6 +199,9 @@ def normalize_card(
         return None
 
     if data.get("layout") in EXCLUDED_LAYOUTS:
+        return None
+
+    if data.get("type_line") in EXCLUDED_TYPE_LINES:
         return None
 
     legalities = extract_legalities(data)
@@ -712,7 +722,9 @@ def main() -> int:
                 _, rulings_updated_at = find_bulk_download_url("rulings")
                 
                 if (
-                    previous_metadata.get("sourceUpdatedAt") == source_updated_at
+                    previous_metadata.get("artifactVersion") == ARTIFACT_VERSION
+                    and previous_metadata.get("schemaVersion") == SCHEMA_VERSION
+                    and previous_metadata.get("sourceUpdatedAt") == source_updated_at
                     and previous_metadata.get("rulingsSourceUpdatedAt") == rulings_updated_at
                 ):
                     print(
@@ -722,6 +734,16 @@ def main() -> int:
                     return 0
                 else:
                     updated_sources = []
+                    previous_artifact_version = previous_metadata.get("artifactVersion")
+                    if previous_artifact_version != ARTIFACT_VERSION:
+                        updated_sources.append(
+                            f"artifact version ({previous_artifact_version or 'unknown'} -> {ARTIFACT_VERSION})"
+                        )
+                    previous_schema_version = previous_metadata.get("schemaVersion")
+                    if previous_schema_version != SCHEMA_VERSION:
+                        updated_sources.append(
+                            f"schema version ({previous_schema_version or 'unknown'} -> {SCHEMA_VERSION})"
+                        )
                     previous_source_updated_at = previous_metadata.get("sourceUpdatedAt")
                     if previous_source_updated_at != source_updated_at:
                         updated_sources.append(
