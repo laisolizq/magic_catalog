@@ -57,6 +57,7 @@ export default defineConfig({
         description: 'Browse and review Magic: The Gathering cards',
         start_url: '/magic_catalog/',
         display: 'standalone',
+        orientation: 'portrait',
         background_color: '#f2ecdf',
         theme_color: '#2b2216',
         icons: [
