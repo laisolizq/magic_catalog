@@ -128,7 +128,10 @@ export function DeckViewPage() {
     expandAllCards={expandAllCards}
     showAllPrints={showAllPrints}
     onAdvancedOpenChange={setIsAdvancedOpen}
-    onExpandAllChange={setExpandAllCards}
+    onExpandAllChange={(value) => {
+      setExpandAllCards(value)
+      setExpandedOracles({})
+    }}
     onSortChange={setSortOption}
     onQueryChange={setQuery}
     onTypeChange={(value) => updateFilters({ types: value })}
@@ -150,7 +153,7 @@ export function DeckViewPage() {
     </header>
     {deck.unresolvedLines.length > 0 && <aside className="deck-warning" role="status"><strong>Unresolved decklist lines</strong><ul>{deck.unresolvedLines.map((line) => <li key={line.rawLine}>{line.rawLine}: {line.reason}</li>)}</ul></aside>}
     {error && <p role="alert">{error}</p>}
-    {isLoading ? <p role="status">Loading cards...</p> : <List cards={displayedCards} expandedOracles={expandAllCards ? Object.fromEntries(displayedCards.map((card) => [card.id, true])) : expandedOracles} quantities={quantities} onToggleOracle={(cardId) => setExpandedOracles((current) => ({ ...current, [cardId]: !current[cardId] }))} onOpenDetails={(card, faceIndex = 0) => { setSelectedCard(card); setSelectedFaceIndex(faceIndex) }} />}
+    {isLoading ? <p role="status">Loading cards...</p> : <List cards={displayedCards} expandedOracles={Object.fromEntries(displayedCards.map((card) => [card.id, expandedOracles[card.id] ?? expandAllCards]))} quantities={quantities} onToggleOracle={(cardId) => setExpandedOracles((current) => ({ ...current, [cardId]: !(current[cardId] ?? expandAllCards) }))} onOpenDetails={(card, faceIndex = 0) => { setSelectedCard(card); setSelectedFaceIndex(faceIndex) }} />}
     {selectedCard && <CardModal card={selectedCard} initialFaceIndex={selectedFaceIndex} onClose={() => setSelectedCard(null)} onShowPrevious={() => { if (selectedIndex > 0) setSelectedCard(displayedCards[selectedIndex - 1]) }} onShowNext={() => { if (selectedIndex >= 0 && selectedIndex < displayedCards.length - 1) setSelectedCard(displayedCards[selectedIndex + 1]) }} hasPrevious={selectedIndex > 0} hasNext={selectedIndex >= 0 && selectedIndex < displayedCards.length - 1} previousCard={selectedIndex > 0 ? displayedCards[selectedIndex - 1] : null} nextCard={selectedIndex >= 0 ? displayedCards[selectedIndex + 1] ?? null : null} />}
     <button type="button" className="deck-back-button" onClick={() => navigate('/decks')}>Back to decks</button>
   </section>

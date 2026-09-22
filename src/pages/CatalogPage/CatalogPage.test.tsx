@@ -102,6 +102,24 @@ describe('CatalogPage', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('collapses an individual oracle by clicking its expanded text', async () => {
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter initialEntries={['/catalog?q=s%3Ahob']}>
+        <CatalogPage />
+      </MemoryRouter>,
+    )
+
+    const [oracleToggle] = await screen.findAllByRole('button', {
+      name: /toggle oracle text/i,
+    })
+    await user.click(screen.getByRole('button', { name: /expand oracles/i }))
+    expect(oracleToggle).toHaveAttribute('aria-expanded', 'true')
+
+    await user.click(oracleToggle)
+    expect(oracleToggle).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('sorts by selected option and keeps sort after filtering', async () => {
     const user = userEvent.setup()
     render(

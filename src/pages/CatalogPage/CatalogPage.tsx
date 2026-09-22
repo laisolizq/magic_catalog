@@ -672,14 +672,12 @@ export function CatalogPage() {
    * EXPAND ORACLES
    */
 
-  const expandedOraclesView = expandAllCards
-      ? Object.fromEntries(
-        sortedFilteredCards.map((card) => [
-              card.id,
-              true,
-        ]),
-        )
-      : expandedOracles
+  const expandedOraclesView = Object.fromEntries(
+    sortedFilteredCards.map((card) => [
+      card.id,
+      expandedOracles[card.id] ?? expandAllCards,
+    ]),
+  )
 
   /*
    * MODAL
@@ -830,18 +828,7 @@ export function CatalogPage() {
     ignoreScrollRef.current = true
 
     setExpandAllCards(checked)
-
-    if (checked) {
-      const expanded: Record<string, boolean> = {}
-
-      sortedFilteredCards.forEach((card) => {
-          expanded[card.id] = true
-      })
-
-      setExpandedOracles(expanded)
-    } else {
-      setExpandedOracles({})
-    }
+    setExpandedOracles({})
 
     requestAnimationFrame(() => {
       window.scrollTo({
@@ -1099,7 +1086,7 @@ export function CatalogPage() {
           onToggleOracle={(cardId) =>
             setExpandedOracles((prev) => ({
               ...prev,
-              [cardId]: !prev[cardId],
+              [cardId]: !(prev[cardId] ?? expandAllCards),
             }))
           }
           onOpenDetails={(card, faceIndex = 0) => {
