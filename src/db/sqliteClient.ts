@@ -1,6 +1,7 @@
 import initSqlJs, { type Database } from 'sql.js'
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
 
+import { invalidateCatalogQueryWorker } from '../services/catalogQueryWorkerClient'
 import type { Deck } from '../types/deck'
 
 const DATABASE_NAME = 'magic-catalog-sqlite'
@@ -147,6 +148,7 @@ export async function readCatalogMetadata<T>(): Promise<T | undefined> {
 }
 
 export async function clearCatalogDatabase(): Promise<void> {
+  invalidateCatalogQueryWorker()
   databasePromise = null
   const storage = await openStorage()
   await new Promise<void>((resolve, reject) => {
@@ -175,6 +177,7 @@ export async function getCatalogDatabase(): Promise<Database | null> {
 }
 
 export async function replaceCatalogDatabase(bytes: Uint8Array): Promise<void> {
+  invalidateCatalogQueryWorker()
   await persistCatalogDatabase(bytes)
   databasePromise = null
 }

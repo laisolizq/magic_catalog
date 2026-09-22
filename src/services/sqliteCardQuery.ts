@@ -1,6 +1,7 @@
 import Fuse from 'fuse.js'
 
 import { getCatalogDatabase } from '../db/sqliteClient'
+import { queryCardsInWorker } from './catalogQueryWorkerClient'
 import type { Card } from '../types/card'
 import type { CatalogQuery, CatalogQueryResult, CatalogSortOption, SetOption } from '../types/catalog'
 import type { ColorCountOperator, ColorFilterMode } from '../utils/scryfallQuery'
@@ -547,14 +548,14 @@ function searchCards(
     .map((result) => result.item.card)
 }
 
-export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResult> {
+export async function queryCardsOnCurrentThread(query: CatalogQuery): Promise<CatalogQueryResult> {
   const databaseStartedAt = performance.now()
   const database = await getCatalogDatabase()
   console.log(`[catalog] database ready in ${(performance.now() - databaseStartedAt).toFixed(0)}ms`)
   if (!database) return { cards: [], total: 0 }
 
   // Let the browser paint the latest input before synchronous SQLite work.
-  await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
+  await new Promise<void>((resolve) => globalThis.setTimeout(resolve, 0))
 
   resetCacheIfDatabaseChanged(database as unknown as object)
 
@@ -736,6 +737,14 @@ export async function queryCards(query: CatalogQuery): Promise<CatalogQueryResul
   const searchedCards = searchCards(fuse, cards, text)
   console.log(`[catalog] SQLite Fuse search completed in ${(performance.now() - searchStartedAt).toFixed(0)}ms`)
   return { cards: searchedCards, total: searchedCards.length }
+}
+
+export function queryCards(query: CatalogQuery): Promise<CatalogQueryResult> {
+  if (typeof Worker === 'undefined' || typeof window === 'undefined') {
+    return queryCardsOnCurrentThread(query)
+  }
+
+  return queryCardsInWorker(query)
 }
 
 // Used by decklist import to resolve a pasted card name to a printing.
