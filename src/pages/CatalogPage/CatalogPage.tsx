@@ -29,6 +29,10 @@ import {
 } from '../../db/sqliteClient'
 import { CardSkeleton } from './components/List/components/CardSkeleton/CardSkeleton'
 import { selectLatestPrintings } from './selectLatestPrintings'
+import {
+  captureViewportCardAnchor,
+  restoreViewportCardAnchor,
+} from './viewportCardAnchor'
 import './CatalogPage.css'
 
 const BATCH_SIZE = 12
@@ -823,7 +827,7 @@ export function CatalogPage() {
   const handleExpandAllChange = (
     checked: boolean,
   ) => {
-    const currentScrollY = window.scrollY
+    const viewportAnchor = captureViewportCardAnchor()
 
     ignoreScrollRef.current = true
 
@@ -831,10 +835,7 @@ export function CatalogPage() {
     setExpandedOracles({})
 
     requestAnimationFrame(() => {
-      window.scrollTo({
-        top: currentScrollY,
-        behavior: 'instant',
-      })
+      restoreViewportCardAnchor(viewportAnchor)
 
       requestAnimationFrame(() => {
         ignoreScrollRef.current = false
