@@ -24,7 +24,7 @@ const mockCard: Card = {
 }
 
 describe('ControlsBar', () => {
-  it('renders buttons in the correct layout order: Scryfall, Rulings, Up, Close, Down', () => {
+  it('renders buttons in the correct layout order: Scryfall, Up, Close, Down, Rulings', () => {
     render(
       <ControlsBar
         card={mockCard}
@@ -46,17 +46,17 @@ describe('ControlsBar', () => {
 
     // 1. Scryfall
     expect(children[0]).toHaveAttribute('aria-label', 'Open card on Scryfall')
-    // 2. Rulings
-    expect(children[1]).toHaveAttribute('aria-label', 'Toggle card details')
-    // 3. Up (Previous)
-    expect(children[2]).toHaveAttribute('aria-label', 'Previous')
-    expect(children[2].textContent?.trim()).toBe('▲')
-    // 4. Close
-    expect(children[3]).toHaveAttribute('aria-label', 'Close')
-    expect(children[3].textContent?.trim()).toBe('✖')
-    // 5. Down (Next)
-    expect(children[4]).toHaveAttribute('aria-label', 'Next')
-    expect(children[4].textContent?.trim()).toBe('▼')
+    // 2. Up (Previous)
+    expect(children[1]).toHaveAttribute('aria-label', 'Previous')
+    expect(children[1].textContent?.trim()).toBe('▲')
+    // 3. Close
+    expect(children[2]).toHaveAttribute('aria-label', 'Close')
+    expect(children[2].textContent?.trim()).toBe('✖')
+    // 4. Down (Next)
+    expect(children[3]).toHaveAttribute('aria-label', 'Next')
+    expect(children[3].textContent?.trim()).toBe('▼')
+    // 5. Rulings
+    expect(children[4]).toHaveAttribute('aria-label', 'Toggle card details')
   })
 
   it('navigates exactly once on the first touch', () => {

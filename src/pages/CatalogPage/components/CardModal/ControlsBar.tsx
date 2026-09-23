@@ -62,27 +62,6 @@ export function ControlsBar({
         />
       </a>
 
-      
-      <button
-        type="button"
-        className={`controls-button ${rulingsOpen ? 'active' : ''}`}
-        onClick={onToggleRulings}
-        onTouchEnd={(event) => {
-          event.preventDefault()
-          event.stopPropagation()
-          onToggleRulings()
-        }}
-        aria-pressed={rulingsOpen}
-        aria-label="Toggle card details"
-      >
-        <img
-          className="book-icon"
-          src={bookIcon}
-          alt=""
-          aria-hidden="true"
-        />
-      </button>
-
       <button
         type="button"
         className={`controls-button ${disabledWhenRulings || !hasPrevious ? 'disabled' : ''}`}
@@ -126,6 +105,26 @@ export function ControlsBar({
         disabled={disabledWhenRulings || !hasNext}
       >
         ▼
+      </button>
+
+      <button
+        type="button"
+        className={`controls-button ${rulingsOpen ? 'active' : ''}`}
+        onClick={onToggleRulings}
+        onTouchEnd={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          onToggleRulings()
+        }}
+        aria-pressed={rulingsOpen}
+        aria-label="Toggle card details"
+      >
+        <img
+          className="book-icon"
+          src={bookIcon}
+          alt=""
+          aria-hidden="true"
+        />
       </button>
     </div>
   )
