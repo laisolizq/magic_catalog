@@ -33,6 +33,7 @@ import {
   captureViewportCardAnchor,
   restoreViewportCardAnchor,
 } from './viewportCardAnchor'
+import { mergeUniqueCards } from './mergeUniqueCards'
 import './CatalogPage.css'
 
 const BATCH_SIZE = 12
@@ -515,8 +516,8 @@ export function CatalogPage() {
         if (cancelled) return
         setDisplayCards((currentCards) =>
           isSameQuery && result.serverPaginated
-            ? [...currentCards, ...result.cards]
-            : result.cards,
+            ? mergeUniqueCards(currentCards, result.cards)
+            : mergeUniqueCards([], result.cards),
         )
         setIsServerPaginated(Boolean(result.serverPaginated))
         setCatalogTotal(result.total)

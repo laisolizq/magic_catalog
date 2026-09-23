@@ -321,17 +321,17 @@ function buildOrderBySql(sortOption: CatalogSortOption | undefined, columns: Sor
     case 'set-desc':
       return `${columns.setCode} DESC, ${columns.collectorNumeric} DESC, ${columns.collectorSuffix} DESC, ${columns.id} DESC`
     case 'name-asc':
-      return `${columns.primaryFaceName} COLLATE NOCASE ASC`
+      return `${columns.primaryFaceName} COLLATE NOCASE ASC, ${columns.id} ASC`
     case 'name-desc':
-      return `${columns.primaryFaceName} COLLATE NOCASE DESC`
+      return `${columns.primaryFaceName} COLLATE NOCASE DESC, ${columns.id} ASC`
     case 'cmc-asc':
-      return `${columns.primaryManaValue} ASC, ${columns.primaryFaceName} COLLATE NOCASE ASC`
+      return `${columns.primaryManaValue} ASC, ${columns.primaryFaceName} COLLATE NOCASE ASC, ${columns.id} ASC`
     case 'cmc-desc':
-      return `${columns.primaryManaValue} DESC, ${columns.primaryFaceName} COLLATE NOCASE ASC`
+      return `${columns.primaryManaValue} DESC, ${columns.primaryFaceName} COLLATE NOCASE ASC, ${columns.id} ASC`
     case 'added-asc':
-      return `${columns.addedAt} ASC, ${columns.primaryFaceName} COLLATE NOCASE ASC`
+      return `${columns.addedAt} ASC, ${columns.primaryFaceName} COLLATE NOCASE ASC, ${columns.id} ASC`
     case 'added-desc':
-      return `${columns.addedAt} DESC, ${columns.primaryFaceName} COLLATE NOCASE ASC`
+      return `${columns.addedAt} DESC, ${columns.primaryFaceName} COLLATE NOCASE ASC, ${columns.id} ASC`
     default:
       return `${columns.id} ASC`
   }
