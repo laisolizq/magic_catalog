@@ -225,6 +225,14 @@
   font-weight: 700;
 }
 
+.sort-menu-dot {
+  flex: 0 0 auto;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--ink-strong);
+}
+
 /* =========================
    COLOR FILTER
    ========================= */

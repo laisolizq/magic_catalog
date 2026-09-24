@@ -627,6 +627,9 @@ export function SearchBar({
                     onClick={() => handleSortSelect(value)}
                     >
                     <span className="sort-menu-label">{label}</span>
+                      {isActive && value === 'default' && (
+                        <span className="sort-menu-dot" aria-hidden="true" />
+                      )}
                       {isActive && value !== 'default' && ' '}
                       {isActive && value !== 'default' && (
                         <span className="sort-menu-arrows">
