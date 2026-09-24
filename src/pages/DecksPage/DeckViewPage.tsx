@@ -91,7 +91,7 @@ export function DeckViewPage() {
   }, [deck, parsedQuery])
 
   const effectiveSortOption = sortOption === 'default'
-    ? resolveDefaultSort(parsedQuery, setOptions)
+    ? resolveDefaultSort(parsedQuery)
     : sortOption
   const displayedCards = useMemo(() => sortCards(cards, effectiveSortOption), [cards, effectiveSortOption])
   const quantities = useMemo(() => Object.fromEntries(deck?.cards.map((entry) => [entry.cardId, entry.quantity]) ?? []), [deck])

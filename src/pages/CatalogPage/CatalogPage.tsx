@@ -138,7 +138,6 @@ function compareSetOrder(left: Card, right: Card): number {
 
 export function resolveDefaultSort(
   query: ParsedQuery,
-  setOptions: SetOption[],
 ): Exclude<SortOption, 'default'> {
   if (!query.text.trim() && query.sets.length === 0 &&
       query.types.length === 0 && query.rarities.length === 0 &&
@@ -147,16 +146,7 @@ export function resolveDefaultSort(
   }
 
   if (query.sets.length > 0) {
-    const today = new Date().toISOString().slice(0, 10)
-    const releasedSets = new Set(
-      setOptions
-        .filter((set) => set.releasedAt && set.releasedAt <= today)
-        .map((set) => set.code.toLowerCase()),
-    )
-
-    return query.sets.some((set) => releasedSets.has(set.toLowerCase()))
-      ? 'set-asc'
-      : 'added-desc'
+    return 'set-asc'
   }
 
   return 'name-asc'
@@ -327,9 +317,9 @@ export function CatalogPage() {
 
   const effectiveSortOption = useMemo(
     () => sortOption === 'default'
-      ? resolveDefaultSort(parsedQuery, setOptions)
+      ? resolveDefaultSort(parsedQuery)
       : sortOption,
-    [sortOption, parsedQuery, setOptions],
+    [sortOption, parsedQuery],
   )
 
   const catalogBootstrapRef = useRef<Promise<CatalogUpdateStatus> | null>(null)
