@@ -125,7 +125,7 @@
   display: flex;
 
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
 
   gap: 0.5rem;
 }
@@ -530,7 +530,7 @@
   }
 
   .type-line {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
   }
 
   .set-rarity {
@@ -556,6 +556,8 @@
     line-height: 1.35;
 
     max-height: calc(1.35em * 2);
+    margin-top: 0.2rem;
+    font-size: 1.0rem;
   }
 
   .oracle.expanded {
@@ -564,7 +566,9 @@
     overflow-wrap: anywhere;
 
     word-break: break-word;
-    margin-top: 0.2rem;
+    margin-top: 0.4rem;
+    font-size: 1.05rem;
+
     
   }
 
