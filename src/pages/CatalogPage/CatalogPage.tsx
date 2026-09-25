@@ -85,6 +85,25 @@ function decodeQueryParams(search: string): Partial<QueryUrlParams> {
   }
 }
 
+const QUERY_STORAGE_KEY = 'magic-catalog:query'
+const SORT_STORAGE_KEY = 'magic-catalog:sortOption'
+
+function readStoredQuery(): string {
+  try {
+    return localStorage.getItem(QUERY_STORAGE_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function readStoredSortOption(): SortOption {
+  try {
+    return (localStorage.getItem(SORT_STORAGE_KEY) as SortOption) || 'default'
+  } catch {
+    return 'default'
+  }
+}
+
 function getFaceName(card: Card): string {
   return card.faces[0]?.name ?? ''
 }
@@ -246,7 +265,7 @@ export function CatalogPage() {
    *   dragon c>=wu t:creature r:r
    */
   const [query, setQuery] =
-    useState(urlParams.query || '')
+    useState(urlParams.query ?? readStoredQuery())
 
   const parsedQuery = useMemo(
     () => parseScryfallQuery(query),
@@ -295,7 +314,7 @@ export function CatalogPage() {
     useState(false)
 
   const [sortOption, setSortOption] =
-    useState<SortOption>(urlParams.sortOption || 'added-desc')
+    useState<SortOption>(urlParams.sortOption ?? readStoredSortOption())
 
   const [displayCards, setDisplayCards] = useState<Card[]>([])
   // Set when queryCards ran the SQL sort/dedup/pagination path (schema v8+,
@@ -361,6 +380,23 @@ export function CatalogPage() {
       )
     }
   }, [query, sortOption, showAllPrints, visibleCount, navigate, location.pathname, location.search])
+
+  // Persist the last used query/sort so they survive reloads and new visits
+  useEffect(() => {
+    try {
+      localStorage.setItem(QUERY_STORAGE_KEY, query)
+    } catch {
+      // ignore storage errors (e.g. private browsing)
+    }
+  }, [query])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, sortOption)
+    } catch {
+      // ignore storage errors (e.g. private browsing)
+    }
+  }, [sortOption])
 
   useEffect(() => {
     let cancelled = false
