@@ -30,15 +30,26 @@ describe('viewport card anchoring', () => {
     vi.restoreAllMocks()
   })
 
-  it('captures the visible card nearest the viewport center', () => {
+  it('captures the first visible card instead of the one nearest viewport center', () => {
     vi.stubGlobal('innerHeight', 800)
     cardTile(-300, 100)
-    const nearestCard = cardTile(330, 120)
+    const firstVisibleCard = cardTile(330, 120)
     cardTile(600, 100)
 
     expect(captureViewportCardAnchor()).toEqual({
-      element: nearestCard,
+      element: firstVisibleCard,
       top: 330,
+    })
+  })
+
+  it('prefers a partially visible card at the top over one closer to the center', () => {
+    vi.stubGlobal('innerHeight', 800)
+    const topEdgeCard = cardTile(-10, 100)
+    cardTile(380, 100)
+
+    expect(captureViewportCardAnchor()).toEqual({
+      element: topEdgeCard,
+      top: -10,
     })
   })
 

@@ -4,28 +4,18 @@ export interface ViewportCardAnchor {
 }
 
 export function captureViewportCardAnchor(): ViewportCardAnchor | null {
-  const viewportCenter = window.innerHeight / 2
-  let closestElement: HTMLElement | null = null
-  let closestTop = 0
-  let closestDistance = Number.POSITIVE_INFINITY
+  const elements = document.querySelectorAll<HTMLElement>('.card-tile[data-card-id]')
 
-  document
-    .querySelectorAll<HTMLElement>('.card-tile[data-card-id]')
-    .forEach((element) => {
-      const bounds = element.getBoundingClientRect()
-      if (bounds.bottom <= 0 || bounds.top >= window.innerHeight) return
+  // Anchor to the first visible card (in document order) so expanding/collapsing
+  // grows the layout from the top of the viewport instead of its center.
+  for (const element of elements) {
+    const bounds = element.getBoundingClientRect()
+    if (bounds.bottom <= 0 || bounds.top >= window.innerHeight) continue
 
-      const distance = Math.abs(bounds.top + bounds.height / 2 - viewportCenter)
-      if (distance >= closestDistance) return
+    return { element, top: bounds.top }
+  }
 
-      closestElement = element
-      closestTop = bounds.top
-      closestDistance = distance
-    })
-
-  return closestElement
-    ? { element: closestElement, top: closestTop }
-    : null
+  return null
 }
 
 export function restoreViewportCardAnchor(
