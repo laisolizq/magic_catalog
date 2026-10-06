@@ -1,21 +1,21 @@
 {
   "artifactVersion": "3",
   "schemaVersion": 10,
-  "generatedAt": "2026-10-06T07:33:33.861927+00:00",
-  "sourceUpdatedAt": "2026-10-05T21:05:40.525+00:00",
-  "rulingsSourceUpdatedAt": "2026-10-05T21:00:33.905+00:00",
-  "cardCount": 106241,
+  "generatedAt": "2026-10-06T15:10:53.598785+00:00",
+  "sourceUpdatedAt": "2026-10-06T09:05:42.700+00:00",
+  "rulingsSourceUpdatedAt": "2026-10-06T09:00:32.666+00:00",
+  "cardCount": 106242,
   "rulingsCount": 76262,
   "sets": null,
   "dbFormat": "sqlite",
   "databases": {
     "full": {
       "assetName": "catalog.sqlite.gz",
-      "cardCount": 106241,
+      "cardCount": 106242,
       "rulingsCount": 76262,
-      "checksum": "be9e60cb41495f5fe58fb158d7d5443c3e1e4ae02e8f029bb448b8509110caa1",
-      "compressedBytes": 50334795,
-      "uncompressedBytes": 198201344
+      "checksum": "b5b9106e766576d6ab7b2bc3eb5d1fe24fe81c21440527b703f4188320122035",
+      "compressedBytes": 50331060,
+      "uncompressedBytes": 198205440
     },
     "recent": {
       "assetName": "catalog-recent.sqlite.gz",
@@ -33,15 +33,15 @@
     "format": "sqlite-sql-json-gzip",
     "formatVersion": 1,
     "historyDays": 14,
-    "migrationCount": 56,
+    "migrationCount": 57,
     "latestBaseChecksum": "be9e60cb41495f5fe58fb158d7d5443c3e1e4ae02e8f029bb448b8509110caa1",
-    "targetChecksum": "be9e60cb41495f5fe58fb158d7d5443c3e1e4ae02e8f029bb448b8509110caa1",
-    "checksum": "1444718c2bcf27a5e610f06eb041f89a5a4a36786be4fd228a5444179674088f",
-    "compressedBytes": 477143,
-    "uncompressedBytes": 3135113
+    "targetChecksum": "b5b9106e766576d6ab7b2bc3eb5d1fe24fe81c21440527b703f4188320122035",
+    "checksum": "0bb28df6b0d6ffb01d7c5052e51190c317110c300c2e10181e3c291e44eccf6c",
+    "compressedBytes": 496042,
+    "uncompressedBytes": 3251556
   },
   "databaseAssetName": "catalog.sqlite.gz",
-  "databaseChecksum": "be9e60cb41495f5fe58fb158d7d5443c3e1e4ae02e8f029bb448b8509110caa1",
-  "databaseCompressedBytes": 50334795,
-  "databaseUncompressedBytes": 198201344
+  "databaseChecksum": "b5b9106e766576d6ab7b2bc3eb5d1fe24fe81c21440527b703f4188320122035",
+  "databaseCompressedBytes": 50331060,
+  "databaseUncompressedBytes": 198205440
 }
