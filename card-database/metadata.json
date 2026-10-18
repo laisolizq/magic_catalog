@@ -1,7 +1,7 @@
 {
   "artifactVersion": "3",
   "schemaVersion": 10,
-  "generatedAt": "2026-10-18T17:21:59.155518+00:00",
+  "generatedAt": "2026-10-18T20:40:55.079780+00:00",
   "sourceUpdatedAt": "2026-10-18T09:06:08.225+00:00",
   "rulingsSourceUpdatedAt": "2026-10-18T09:00:32.785+00:00",
   "cardCount": 106373,
@@ -36,7 +36,7 @@
     "migrationCount": 65,
     "latestBaseChecksum": "97d651ac1c37a093074e1d6e4e05235729b4fac4ed4829b8ba9aa8ca1911cfc6",
     "targetChecksum": "97d651ac1c37a093074e1d6e4e05235729b4fac4ed4829b8ba9aa8ca1911cfc6",
-    "checksum": "038d6d16962a19c3f09fd6dcbcff7895831cdbf3617c0b49620c627c54e8014c",
+    "checksum": "7b005ee82d7d005858efcbd4304e5449a192a894795c1f7b8a71e7d472e8aa46",
     "compressedBytes": 865940,
     "uncompressedBytes": 6524426
   },
