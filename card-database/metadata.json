@@ -1,7 +1,7 @@
 {
   "artifactVersion": "3",
   "schemaVersion": 10,
-  "generatedAt": "2026-10-19T23:39:42.697647+00:00",
+  "generatedAt": "2026-10-20T04:48:36.081113+00:00",
   "sourceUpdatedAt": "2026-10-19T21:05:50.153+00:00",
   "rulingsSourceUpdatedAt": "2026-10-19T21:00:33.252+00:00",
   "cardCount": 106302,
@@ -13,8 +13,8 @@
       "assetName": "catalog.sqlite.gz",
       "cardCount": 106302,
       "rulingsCount": 76255,
-      "checksum": "a582fdaf66aef9a9485df879466eecf1e8e97669fa20f851e7d9682bc9448ddb",
-      "compressedBytes": 50351377,
+      "checksum": "60aab2fa39beb6fb3c8279b31c33217d475406139563159d0f6813679ed59fa8",
+      "compressedBytes": 50351248,
       "uncompressedBytes": 198279168
     },
     "recent": {
@@ -25,7 +25,7 @@
       "compressedBytes": 1696489,
       "uncompressedBytes": 6901760,
       "description": "Cards added in the last 3 months",
-      "cutoffDate": "2026-07-21"
+      "cutoffDate": "2026-07-22"
     }
   },
   "updates": {
@@ -34,14 +34,14 @@
     "formatVersion": 1,
     "historyDays": 14,
     "migrationCount": 67,
-    "latestBaseChecksum": "b4b43047b9b2566e5e1b87c93e435e49cf5fe87fe7a0e02c1e91dc454ecc76cf",
-    "targetChecksum": "a582fdaf66aef9a9485df879466eecf1e8e97669fa20f851e7d9682bc9448ddb",
-    "checksum": "eb24b22507e55fc7fc94441a5d4ca3edb5191839b1140311405b8e7c9b4cd942",
-    "compressedBytes": 820470,
-    "uncompressedBytes": 6408478
+    "latestBaseChecksum": "a582fdaf66aef9a9485df879466eecf1e8e97669fa20f851e7d9682bc9448ddb",
+    "targetChecksum": "60aab2fa39beb6fb3c8279b31c33217d475406139563159d0f6813679ed59fa8",
+    "checksum": "d79dbe90d1ad2c6fb19175b2dbc42d1bba2d4e422187ee42c25a777a80d56cc4",
+    "compressedBytes": 841903,
+    "uncompressedBytes": 6675970
   },
   "databaseAssetName": "catalog.sqlite.gz",
-  "databaseChecksum": "a582fdaf66aef9a9485df879466eecf1e8e97669fa20f851e7d9682bc9448ddb",
-  "databaseCompressedBytes": 50351377,
+  "databaseChecksum": "60aab2fa39beb6fb3c8279b31c33217d475406139563159d0f6813679ed59fa8",
+  "databaseCompressedBytes": 50351248,
   "databaseUncompressedBytes": 198279168
 }
