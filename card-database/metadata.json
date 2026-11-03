@@ -1,9 +1,9 @@
 {
   "artifactVersion": "3",
   "schemaVersion": 10,
-  "generatedAt": "2026-11-03T02:54:27.490856+00:00",
-  "sourceUpdatedAt": "2026-11-02T22:06:52.708+00:00",
-  "rulingsSourceUpdatedAt": "2026-11-02T22:00:35.225+00:00",
+  "generatedAt": "2026-11-03T10:50:23.460803+00:00",
+  "sourceUpdatedAt": "2026-11-03T10:06:59.001+00:00",
+  "rulingsSourceUpdatedAt": "2026-11-03T10:00:35.047+00:00",
   "cardCount": 107311,
   "rulingsCount": 76255,
   "sets": null,
@@ -13,8 +13,8 @@
       "assetName": "catalog.sqlite.gz",
       "cardCount": 107311,
       "rulingsCount": 76255,
-      "checksum": "11ba467e3d8054e32b7515a50ae58d98052335a6c0e5bf3b2bef975f36b6caf2",
-      "compressedBytes": 50819658,
+      "checksum": "88b0c007a0b188806fbe6f248dae2d57abbc355bb72f9239a95e76a8d919c7f6",
+      "compressedBytes": 50819669,
       "uncompressedBytes": 199942144
     },
     "recent": {
@@ -33,15 +33,15 @@
     "format": "sqlite-sql-json-gzip",
     "formatVersion": 1,
     "historyDays": 14,
-    "migrationCount": 68,
-    "latestBaseChecksum": "d410ff2912ced153b82cbfc4504180e7d5662819f8c2ceae5a315d4484937304",
-    "targetChecksum": "11ba467e3d8054e32b7515a50ae58d98052335a6c0e5bf3b2bef975f36b6caf2",
-    "checksum": "f6ac3f38254e02ff510068ac0915a9bd1952e22c6d657cbab338a23577634ae6",
-    "compressedBytes": 1631407,
-    "uncompressedBytes": 13869162
+    "migrationCount": 67,
+    "latestBaseChecksum": "11ba467e3d8054e32b7515a50ae58d98052335a6c0e5bf3b2bef975f36b6caf2",
+    "targetChecksum": "88b0c007a0b188806fbe6f248dae2d57abbc355bb72f9239a95e76a8d919c7f6",
+    "checksum": "6c5cc53d2028456602978c9c2202f6330955e41df6c2415cf0112c7b254ec200",
+    "compressedBytes": 1609132,
+    "uncompressedBytes": 13464933
   },
   "databaseAssetName": "catalog.sqlite.gz",
-  "databaseChecksum": "11ba467e3d8054e32b7515a50ae58d98052335a6c0e5bf3b2bef975f36b6caf2",
-  "databaseCompressedBytes": 50819658,
+  "databaseChecksum": "88b0c007a0b188806fbe6f248dae2d57abbc355bb72f9239a95e76a8d919c7f6",
+  "databaseCompressedBytes": 50819669,
   "databaseUncompressedBytes": 199942144
 }
