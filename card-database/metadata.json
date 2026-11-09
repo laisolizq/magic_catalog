@@ -1,7 +1,7 @@
 {
   "artifactVersion": "3",
   "schemaVersion": 10,
-  "generatedAt": "2026-11-09T00:53:17.062313+00:00",
+  "generatedAt": "2026-11-09T07:57:19.519093+00:00",
   "sourceUpdatedAt": "2026-11-08T22:06:48.557+00:00",
   "rulingsSourceUpdatedAt": "2026-11-08T22:00:34.472+00:00",
   "cardCount": 107391,
@@ -13,16 +13,16 @@
       "assetName": "catalog.sqlite.gz",
       "cardCount": 107391,
       "rulingsCount": 76255,
-      "checksum": "adc9be9b89e703ac2dc3a3ec618fcf6abe348f43cc971cfb4a89d63feaf36df7",
-      "compressedBytes": 50842055,
+      "checksum": "0df3bb14ec7384dc8edb596661371b51b7543e817bf6ee14172796c6a3e1955c",
+      "compressedBytes": 50842163,
       "uncompressedBytes": 200110080
     },
     "recent": {
       "assetName": "catalog-recent.sqlite.gz",
       "cardCount": 3961,
       "rulingsCount": 5614,
-      "checksum": "f6de482a9827ac636b54fa6e01a84aeff12439ad714fc644bd74a9b4a9573cb7",
-      "compressedBytes": 2145254,
+      "checksum": "48ec0d8307bc57df0c0880a4f30d67e2a69011f38b28969de6f64baf388cddc1",
+      "compressedBytes": 2145212,
       "uncompressedBytes": 8712192,
       "description": "Cards added in the last 3 months",
       "cutoffDate": "2026-08-11"
@@ -33,15 +33,15 @@
     "format": "sqlite-sql-json-gzip",
     "formatVersion": 1,
     "historyDays": 14,
-    "migrationCount": 3,
-    "latestBaseChecksum": "792bcbc5cbd4a8c3612ad0d6477bcc42ee3954d99b8abc6eaf1e4453941e5337",
-    "targetChecksum": "adc9be9b89e703ac2dc3a3ec618fcf6abe348f43cc971cfb4a89d63feaf36df7",
-    "checksum": "aae3c5e3f67921b4d0db787dcf082ce0a63ec7c19ecdc6ba52c5597d8c798f08",
-    "compressedBytes": 1776,
-    "uncompressedBytes": 6101
+    "migrationCount": 0,
+    "latestBaseChecksum": null,
+    "targetChecksum": "0df3bb14ec7384dc8edb596661371b51b7543e817bf6ee14172796c6a3e1955c",
+    "checksum": "2b4e8f5e1de75e12e241d6abb7b930791b396aeac0cdfdf675f81126dfd9f662",
+    "compressedBytes": 121,
+    "uncompressedBytes": 52
   },
   "databaseAssetName": "catalog.sqlite.gz",
-  "databaseChecksum": "adc9be9b89e703ac2dc3a3ec618fcf6abe348f43cc971cfb4a89d63feaf36df7",
-  "databaseCompressedBytes": 50842055,
+  "databaseChecksum": "0df3bb14ec7384dc8edb596661371b51b7543e817bf6ee14172796c6a3e1955c",
+  "databaseCompressedBytes": 50842163,
   "databaseUncompressedBytes": 200110080
 }
