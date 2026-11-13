@@ -1,29 +1,29 @@
 {
   "artifactVersion": "3",
   "schemaVersion": 10,
-  "generatedAt": "2026-11-13T16:20:05.787901+00:00",
-  "sourceUpdatedAt": "2026-11-13T10:06:23.955+00:00",
-  "rulingsSourceUpdatedAt": "2026-11-13T10:00:31.968+00:00",
-  "cardCount": 107411,
+  "generatedAt": "2026-11-13T22:36:16.532166+00:00",
+  "sourceUpdatedAt": "2026-11-13T22:06:41.635+00:00",
+  "rulingsSourceUpdatedAt": "2026-11-13T22:00:32.619+00:00",
+  "cardCount": 107443,
   "rulingsCount": 76255,
   "sets": null,
   "dbFormat": "sqlite",
   "databases": {
     "full": {
       "assetName": "catalog.sqlite.gz",
-      "cardCount": 107411,
+      "cardCount": 107443,
       "rulingsCount": 76255,
-      "checksum": "b8bd642620c817caecc314d9637b4632537060fb7104b8f0cc4a52581cce499e",
-      "compressedBytes": 50846834,
-      "uncompressedBytes": 200130560
+      "checksum": "75a6c633f1761c76c6ffd80e62ac9c4a7ab750fab81e202354f90b5581eab1e5",
+      "compressedBytes": 50869875,
+      "uncompressedBytes": 200175616
     },
     "recent": {
       "assetName": "catalog-recent.sqlite.gz",
-      "cardCount": 3502,
-      "rulingsCount": 4896,
-      "checksum": "f36bb5cd29f7f3cf0bc68fee5b538109e542c42a049b5e954fdc9fd9781aecfe",
-      "compressedBytes": 1878050,
-      "uncompressedBytes": 7598080,
+      "cardCount": 3534,
+      "rulingsCount": 4907,
+      "checksum": "ad3009f29613966a667df01bdc2df166d78be818617332a890f8c2cc8f8a23d4",
+      "compressedBytes": 1891472,
+      "uncompressedBytes": 7659520,
       "description": "Cards added in the last 3 months",
       "cutoffDate": "2026-08-15"
     }
@@ -33,15 +33,15 @@
     "format": "sqlite-sql-json-gzip",
     "formatVersion": 1,
     "historyDays": 14,
-    "migrationCount": 14,
-    "latestBaseChecksum": "4676949122d5f496d6ddf743a733354437107c4bc2ef44118545ac2b96bab062",
-    "targetChecksum": "b8bd642620c817caecc314d9637b4632537060fb7104b8f0cc4a52581cce499e",
-    "checksum": "b57129cb0dc1f0f754a41e4e7b1a04f6c9be9f5cd41961a323b0c2496a8e0e7a",
-    "compressedBytes": 310958,
-    "uncompressedBytes": 1958773
+    "migrationCount": 15,
+    "latestBaseChecksum": "b8bd642620c817caecc314d9637b4632537060fb7104b8f0cc4a52581cce499e",
+    "targetChecksum": "75a6c633f1761c76c6ffd80e62ac9c4a7ab750fab81e202354f90b5581eab1e5",
+    "checksum": "a3413205c3f87b317f3f5aa38024e057cd31fe293298e6e1ad7459168ad0e020",
+    "compressedBytes": 320484,
+    "uncompressedBytes": 2029860
   },
   "databaseAssetName": "catalog.sqlite.gz",
-  "databaseChecksum": "b8bd642620c817caecc314d9637b4632537060fb7104b8f0cc4a52581cce499e",
-  "databaseCompressedBytes": 50846834,
-  "databaseUncompressedBytes": 200130560
+  "databaseChecksum": "75a6c633f1761c76c6ffd80e62ac9c4a7ab750fab81e202354f90b5581eab1e5",
+  "databaseCompressedBytes": 50869875,
+  "databaseUncompressedBytes": 200175616
 }
