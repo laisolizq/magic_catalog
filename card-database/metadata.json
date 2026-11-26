@@ -1,7 +1,7 @@
 {
   "artifactVersion": "3",
   "schemaVersion": 10,
-  "generatedAt": "2026-11-25T22:30:12.829738+00:00",
+  "generatedAt": "2026-11-26T05:01:21.803769+00:00",
   "sourceUpdatedAt": "2026-11-25T22:06:35.065+00:00",
   "rulingsSourceUpdatedAt": "2026-11-25T22:00:33.648+00:00",
   "cardCount": 107505,
@@ -25,7 +25,7 @@
       "compressedBytes": 2003983,
       "uncompressedBytes": 8146944,
       "description": "Cards added in the last 3 months",
-      "cutoffDate": "2026-08-27"
+      "cutoffDate": "2026-08-28"
     }
   },
   "updates": {
@@ -34,10 +34,10 @@
     "formatVersion": 1,
     "historyDays": 14,
     "migrationCount": 45,
-    "latestBaseChecksum": "9089fc80bfb24bbfbddb66a0b256dbc29317bba6d2d4b7e8e894d6cf098951ca",
+    "latestBaseChecksum": "18a94cf2971b84f3a02a62a676a23816b80928c593dcdd7448ad05266a811718",
     "targetChecksum": "18a94cf2971b84f3a02a62a676a23816b80928c593dcdd7448ad05266a811718",
-    "checksum": "58b8b8fae1735a0c87a31cb7384eee0127b2438fb1afa23796243a5d2046d63d",
-    "compressedBytes": 480367,
+    "checksum": "dde2149875e8097f0336ab4f42251816af032022b5d5177f8e27f6672a6fe4c3",
+    "compressedBytes": 480356,
     "uncompressedBytes": 3142097
   },
   "databaseAssetName": "catalog.sqlite.gz",
