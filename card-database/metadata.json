@@ -1,9 +1,9 @@
 {
   "artifactVersion": "3",
   "schemaVersion": 10,
-  "generatedAt": "2026-11-27T08:27:58.792905+00:00",
-  "sourceUpdatedAt": "2026-11-26T22:06:24.338+00:00",
-  "rulingsSourceUpdatedAt": "2026-11-26T22:00:32.942+00:00",
+  "generatedAt": "2026-11-27T18:57:15.579400+00:00",
+  "sourceUpdatedAt": "2026-11-27T10:06:22.105+00:00",
+  "rulingsSourceUpdatedAt": "2026-11-27T10:00:34.709+00:00",
   "cardCount": 107505,
   "rulingsCount": 77477,
   "sets": null,
@@ -13,8 +13,8 @@
       "assetName": "catalog.sqlite.gz",
       "cardCount": 107505,
       "rulingsCount": 77477,
-      "checksum": "c115439c58a85fdfa9912dfc2bd80b2bb4af179a552e82f04e5dd0023023b26f",
-      "compressedBytes": 50996516,
+      "checksum": "97da4e5564f2c1288abc8b90fe7727bc0c6ef1f2cbdff107e767b13f0ce0cda1",
+      "compressedBytes": 50996546,
       "uncompressedBytes": 200720384
     },
     "recent": {
@@ -35,13 +35,13 @@
     "historyDays": 14,
     "migrationCount": 44,
     "latestBaseChecksum": "c115439c58a85fdfa9912dfc2bd80b2bb4af179a552e82f04e5dd0023023b26f",
-    "targetChecksum": "c115439c58a85fdfa9912dfc2bd80b2bb4af179a552e82f04e5dd0023023b26f",
-    "checksum": "474561de91fa8ad03044e83669baaca38f7407c97a6dd1f2f452a8d044896397",
-    "compressedBytes": 449289,
-    "uncompressedBytes": 2830932
+    "targetChecksum": "97da4e5564f2c1288abc8b90fe7727bc0c6ef1f2cbdff107e767b13f0ce0cda1",
+    "checksum": "4975c2a8cee85643ecb0f79554f38318a089376fecdac85d751152e69a1214d4",
+    "compressedBytes": 481588,
+    "uncompressedBytes": 3016501
   },
   "databaseAssetName": "catalog.sqlite.gz",
-  "databaseChecksum": "c115439c58a85fdfa9912dfc2bd80b2bb4af179a552e82f04e5dd0023023b26f",
-  "databaseCompressedBytes": 50996516,
+  "databaseChecksum": "97da4e5564f2c1288abc8b90fe7727bc0c6ef1f2cbdff107e767b13f0ce0cda1",
+  "databaseCompressedBytes": 50996546,
   "databaseUncompressedBytes": 200720384
 }
